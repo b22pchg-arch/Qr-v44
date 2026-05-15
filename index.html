@@ -702,20 +702,7 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
     function goExPage(d) { exPageIdx = Math.max(1, Math.min(exPageIdx+d, Math.ceil(filteredEx.length/exPageSize))); renderExPage(); }
     async function dlZip(p) { const b = await activeZip.file(p).async("blob"); saveFile(b, p.split('/').pop()); }
     function autoQR(t) { document.getElementById('qr-input').value = t; buildFragsQR(); }
- 
-	function setSide(m) { 
-    document.getElementById('side-gen').style.display = m==='gen'?'block':'none'; 
-    document.getElementById('side-scan').style.display = m==='scan'?'block':'none'; 
-    document.getElementById('btn-q-gen').classList.toggle('active',m==='gen'); 
-    document.getElementById('btn-q-scan').classList.toggle('active',m==='scan'); 
-
-    // Tự động quản lý Camera khi chuyển Tab
-    if (m === 'scan') {
-        startCam();
-    } else {
-        stopCam();
-    }
-}
+    function setSide(m) { document.getElementById('side-gen').style.display = m==='gen'?'block':'none'; document.getElementById('side-scan').style.display = m==='scan'?'block':'none'; document.getElementById('btn-q-gen').classList.toggle('active',m==='gen'); document.getElementById('btn-q-scan').classList.toggle('active',m==='scan'); }
 	
     // ==========================================
     // KHỐI 9: AIR-GAP TRANSFER (BẢN MASTER - LỖI SỬA CHỮA + PRE-RENDER PNG)
