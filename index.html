@@ -702,23 +702,21 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
     function goExPage(d) { exPageIdx = Math.max(1, Math.min(exPageIdx+d, Math.ceil(filteredEx.length/exPageSize))); renderExPage(); }
     async function dlZip(p) { const b = await activeZip.file(p).async("blob"); saveFile(b, p.split('/').pop()); }
     function autoQR(t) { document.getElementById('qr-input').value = t; buildFragsQR(); }
- function setSide(m) { 
-        // 1. Logic chuyển đổi giao diện gốc của bạn
-        document.getElementById('side-gen').style.display = m==='gen'?'block':'none'; 
-        document.getElementById('side-scan').style.display = m==='scan'?'block':'none'; 
-        document.getElementById('btn-q-gen').classList.toggle('active',m==='gen'); 
-        document.getElementById('btn-q-scan').classList.toggle('active',m==='scan'); 
+ 
+	function setSide(m) { 
+    document.getElementById('side-gen').style.display = m==='gen'?'block':'none'; 
+    document.getElementById('side-scan').style.display = m==='scan'?'block':'none'; 
+    document.getElementById('btn-q-gen').classList.toggle('active',m==='gen'); 
+    document.getElementById('btn-q-scan').classList.toggle('active',m==='scan'); 
 
-        // 2. Logic bật/tắt luồng Camera Air-Gap
-        const receiverUI = document.getElementById('airgap-receiver-ui');
-        if (m === 'scan') {
-            if (receiverUI) receiverUI.style.display = 'block';
-            if (typeof startCam === 'function') startCam(); // Tự động kích hoạt Camera
-        } else {
-            if (typeof stopCam === 'function') stopCam(); // Dừng Camera để tiết kiệm pin
-            if (receiverUI) receiverUI.style.display = 'none';
-        }
+    // Tự động quản lý Camera khi chuyển Tab
+    if (m === 'scan') {
+        startCam();
+    } else {
+        stopCam();
     }
+}
+	
     // ==========================================
     // KHỐI 9: AIR-GAP TRANSFER (BẢN MASTER - LỖI SỬA CHỮA + PRE-RENDER PNG)
     // ==========================================
@@ -994,30 +992,36 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
     // CẬP NHẬT MÁY THU: RADAR QUÉT TOÀN MÀN HÌNH HD & DÒ MẢNH
     // ==========================================
 
-    let allCameras = [];
+   let allCameras = [];
 let currentCamIdx = 0;
 let isCamRunning = false;
 
 async function startCam() {
     const camBox = document.getElementById('camera-box');
     if (camBox) camBox.style.display = 'block';
+    
     if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader");
 
     try {
+        // Luôn làm mới danh sách Camera
         allCameras = await Html5Qrcode.getCameras();
         if (allCameras && allCameras.length > 0) {
-            // Lần đầu tiên: Ưu tiên tìm camera có chữ "back" hoặc "rear"
-            let backCamIdx = allCameras.findIndex(c => 
+            // Chiến thuật: Tìm cam có nhãn "back/rear", nếu không thấy thì lấy cái cuối cùng
+            let backIdx = allCameras.findIndex(c => 
                 c.label.toLowerCase().includes('back') || 
-                c.label.toLowerCase().includes('rear') ||
-                c.label.toLowerCase().includes('0') // Thường cam sau là ID 0 hoặc cuối
+                c.label.toLowerCase().includes('rear')
             );
-            currentCamIdx = backCamIdx !== -1 ? backCamIdx : (allCameras.length - 1);
+            
+            // Nếu tìm thấy Cam sau thì dùng, không thì lấy cái cuối cùng trong list
+            currentCamIdx = (backIdx !== -1) ? backIdx : (allCameras.length - 1);
+            
             runCamWithId(allCameras[currentCamIdx].id);
         } else {
-            alert("Không tìm thấy Camera!");
+            alert("Không tìm thấy Camera! Vui lòng kiểm tra quyền truy cập.");
         }
-    } catch (e) { alert("Lỗi truy cập: " + e); }
+    } catch (e) {
+        alert("Lỗi truy cập thiết bị: " + e);
+    }
 }
 
 function runCamWithId(cameraId) {
@@ -1026,42 +1030,46 @@ function runCamWithId(cameraId) {
             isCamRunning = false;
             launchCam(cameraId);
         }).catch(() => launchCam(cameraId));
-    } else { launchCam(cameraId); }
+    } else {
+        launchCam(cameraId);
+    }
 }
 
 function launchCam(cameraId) {
     const config = { 
         fps: 20, 
-        videoConstraints: { width: { ideal: 1280 }, height: { ideal: 720 }, focusMode: "continuous" } 
+        videoConstraints: { 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 }, 
+            focusMode: "continuous" 
+        } 
     };
+
     html5QrCodeCam.start(cameraId, config, (txt) => {
         let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
         if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
         appendScanResult("Cam", d);
-    }, (err) => {}).then(() => { isCamRunning = true; });
+    }, (err) => {}).then(() => { 
+        isCamRunning = true; 
+    }).catch(e => alert("Lỗi khởi động: " + e));
 }
 
 function flipCamera() {
     if (allCameras.length < 2) return alert("Thiết bị chỉ có 1 Camera!");
+    // Chuyển sang Camera tiếp theo trong danh sách
     currentCamIdx = (currentCamIdx + 1) % allCameras.length;
     runCamWithId(allCameras[currentCamIdx].id);
 }
 
-    function stopCam() {
-        if (html5QrCodeCam && isCamRunning) {
-            html5QrCodeCam.stop().then(() => {
-                html5QrCodeCam.clear();
-                isCamRunning = false;
-                
-                // Ẩn khung camera đi cho gọn
-                const camBox = document.getElementById('camera-box');
-                if (camBox) camBox.style.display = 'none';
-            }).catch(e => console.warn("Lỗi khi tắt Camera: ", e));
-        } else {
-            const camBox = document.getElementById('camera-box');
-            if (camBox) camBox.style.display = 'none';
-        }
+function stopCam() {
+    if (html5QrCodeCam && isCamRunning) {
+        html5QrCodeCam.stop().then(() => {
+            html5QrCodeCam.clear();
+            isCamRunning = false;
+            document.getElementById('camera-box').style.display = 'none';
+        }).catch(() => {});
     }
+}
 
     let currentReceivingFile = ""; 
     let missingFramesSet = new Set();
