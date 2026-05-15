@@ -1048,61 +1048,66 @@ function stopCam() {
     let expectedTotal = 0;
 
     function interceptAirGapData(decodedText) {
-        if (!decodedText.startsWith("[FZ]|")) return false;
-        const parts = decodedText.split("|");
-        const fileName = parts[1];
-        const index = parseInt(parts[2]);
-        const total = parseInt(parts[3]);
-        const data = parts[4];
+    if (!decodedText.startsWith("[FZ]|")) return false;
+    
+    // --- LỆNH QUAN TRỌNG: ĐÁNH THỨC GIAO DIỆN HIỂN THỊ ---
+    const ui = document.getElementById('airgap-receiver-ui');
+    if (ui) ui.style.display = 'block';
 
-        // --- KHỞI TẠO HOẶC RESET KHI CÓ FILE MỚI ---
-        if (expectedTotal === 0 || currentReceivingFile !== fileName) {
-            expectedTotal = total;
-            currentReceivingFile = fileName;
-            airgapBuffer.clear();
-            missingFramesSet = new Set(Array.from({length: total}, (_, i) => i + 1));
+    const parts = decodedText.split("|");
+    const fileName = parts[1];
+    const index = parseInt(parts[2]);
+    const total = parseInt(parts[3]);
+    const data = parts[4];
 
-            // RESET THANH TIẾN ĐỘ VỀ 0% NGAY LẬP TỨC
-            let bar = document.getElementById('airgap-receive-bar');
-            if (bar) {
-                bar.style.width = '0%';
-                bar.classList.add('progress-bar-animated'); // Chạy hiệu ứng sóng
-            }
-            
-            let st = document.getElementById('airgap-receive-status');
-            if (st) st.innerText = `Bắt đầu nhận file: ${fileName}...`;
+    // --- KHỞI TẠO HOẶC RESET KHI CÓ FILE MỚI ---
+    if (expectedTotal === 0 || currentReceivingFile !== fileName) {
+        expectedTotal = total;
+        currentReceivingFile = fileName;
+        airgapBuffer.clear();
+        missingFramesSet = new Set(Array.from({length: total}, (_, i) => i + 1));
+
+        // RESET THANH TIẾN ĐỘ VỀ 0% NGAY LẬP TỨC
+        let bar = document.getElementById('airgap-receive-bar');
+        if (bar) {
+            bar.style.width = '0%';
+            bar.classList.add('progress-bar-animated'); 
         }
-
-        if (!airgapBuffer.has(index - 1)) {
-            airgapBuffer.set(index - 1, data);
-            missingFramesSet.delete(index); 
-
-            // Cập nhật thanh tiến độ theo thực tế
-            let percent = (airgapBuffer.size / expectedTotal) * 100;
-            let bar = document.getElementById('airgap-receive-bar');
-            if (bar) bar.style.width = percent + '%';
-
-            // Cập nhật danh sách mảnh sót
-            const listEl = document.getElementById('airgap-missing-list');
-            if (listEl) {
-                const arr = Array.from(missingFramesSet);
-                listEl.innerHTML = arr.length > 0 ? 
-                    `<b class="text-danger">Còn thiếu:</b> ${arr.join(", ")}` : 
-                    `<b class="text-success">Đã nhận đủ toàn bộ!</b>`;
-            }
-
-            const st = document.getElementById('airgap-receive-status');
-            if (st) st.innerText = `Tiến độ: ${airgapBuffer.size} / ${expectedTotal} mảnh (${Math.round(percent)}%)`;
-
-            // Khi hoàn thành 100%
-            if (airgapBuffer.size === expectedTotal) {
-                if (bar) bar.classList.remove('progress-bar-animated'); // Dừng hiệu ứng sóng khi xong
-                if (st) st.innerHTML = "<span class='text-success fw-bold'>✅ ĐANG GHÉP FILE...</span>";
-                assembleAndDownloadFile(fileName);
-            }
-        }
-        return true;
+        
+        let st = document.getElementById('airgap-receive-status');
+        if (st) st.innerText = `Đang nạp file: ${fileName}...`;
     }
+
+    if (!airgapBuffer.has(index - 1)) {
+        airgapBuffer.set(index - 1, data);
+        missingFramesSet.delete(index); 
+
+        // CẬP NHẬT THANH TIẾN ĐỘ THEO THỰC TẾ
+        let percent = (airgapBuffer.size / expectedTotal) * 100;
+        let bar = document.getElementById('airgap-receive-bar');
+        if (bar) bar.style.width = percent + '%';
+
+        // CẬP NHẬT DANH SÁCH MẢNH SÓT LÊN MÀN HÌNH
+        const listEl = document.getElementById('airgap-missing-list');
+        if (listEl) {
+            const arr = Array.from(missingFramesSet);
+            listEl.innerHTML = arr.length > 0 ? 
+                `<b class="text-danger">Còn thiếu:</b> ${arr.join(", ")}` : 
+                `<b class="text-success">Đã nhận đủ toàn bộ!</b>`;
+        }
+
+        const st = document.getElementById('airgap-receive-status');
+        if (st) st.innerText = `Tiến độ: ${airgapBuffer.size} / ${expectedTotal} mảnh (${Math.round(percent)}%)`;
+
+        // KHI HOÀN THÀNH 100%
+        if (airgapBuffer.size === expectedTotal) {
+            if (bar) bar.classList.remove('progress-bar-animated'); 
+            if (st) st.innerHTML = "<span class='text-success fw-bold'>✅ ĐANG GHÉP FILE...</span>";
+            assembleAndDownloadFile(fileName);
+        }
+    }
+    return true;
+}
 
     async function assembleAndDownloadFile(fileName) {
         let fullBase64 = "";
