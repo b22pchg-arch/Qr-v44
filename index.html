@@ -979,81 +979,53 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
     // CẬP NHẬT MÁY THU: RADAR QUÉT TOÀN MÀN HÌNH HD & DÒ MẢNH
     // ==========================================
 // Biến trạng thái toàn cục
-let currentFacingMode = "environment"; // "environment" là cam sau, "user" là cam trước
-let isCamRunning = false;
+ let isCamRunning = false;
+    let currentFacingMode = "environment"; // Mặc định mở Camera Sau
 
-// 2. Hàm gọi Camera
-function startCam() {
-    const camBox = document.getElementById('camera-box');
-    if (camBox) camBox.style.display = 'block';
-    
-    if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader");
-
-    if (!isCamRunning) {
-        launchCam(currentFacingMode);
+    function startCam() { 
+        document.getElementById('camera-box').style.display = 'block'; 
+        if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader"); 
+        
+        if (!isCamRunning) {
+            runCamParams();
+        }
     }
-}
 
-// 3. Lõi khởi động luồng Video
-function launchCam(mode) {
-    // Truyền trực tiếp facingMode, tuyệt đối KHÔNG dùng "exact" để máy tự do chọn ống kính chính xác nhất
-    const camConfig = { facingMode: mode }; 
-    
-    const scanConfig = { 
-        fps: 20, 
-        videoConstraints: { 
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 },
-            focusMode: "continuous"
-        } 
-    };
+    function runCamParams() {
+        const scanConfig = { 
+            facingMode: currentFacingMode,
+			fps: 15
+        };
 
-    html5QrCodeCam.start(
-        { facingMode: mode }, 
-        { fps: 20, qrbox: { width: 250, height: 250 } }, 
-        (txt) => {
-            let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
-            if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
-            if (typeof appendScanResult === "function") appendScanResult("Camera", d);
-        }, 
-        (err) => {} // Giấu các lỗi dò nét để máy không bị giật
-    ).then(() => { 
-        isCamRunning = true; 
-    }).catch(e => {
-        console.warn("Máy không hỗ trợ HD, đang hạ cấp...", e);
-        // Chế độ dự phòng: Nếu điện thoại quá cũ hoặc báo lỗi, chạy với cấu hình thấp nhất
-        html5QrCodeCam.start({ facingMode: mode }, { fps: 15 }, (txt) => {
-            let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
-            if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
-            if (typeof appendScanResult === "function") appendScanResult("Camera", d);
-        }, (err) => {}).then(() => { isCamRunning = true; })
-        .catch(err2 => alert("Không thể mở Camera: " + err2));
-    });
-}
-
-// 4. Lệnh đảo Cam mượt mà (CÓ ĐỘ TRỄ 300ms)
-function flipCamera() {
-    // Đổi trạng thái biến
-    currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
-    
-    if (isCamRunning && html5QrCodeCam) {
-        // Bắt buộc phải chờ luồng cũ tắt HẲN rồi mới gọi luồng mới
-        html5QrCodeCam.stop().then(() => {
-            html5QrCodeCam.clear();
-            isCamRunning = false;
-            // Chờ 300ms cho phần cứng điện thoại "xả" bộ nhớ
-            setTimeout(() => {
-                launchCam(currentFacingMode);
-            }, 300);
-        }).catch(() => {
-            // Nếu tắt bị lỗi, cứ ép bật lại
-            isCamRunning = false;
-            setTimeout(() => { launchCam(currentFacingMode); }, 300);
-        });
-    } else {
-        launchCam(currentFacingMode);
+        html5QrCodeCam.start( 
+            { facingMode: currentFacingMode }, 
+            { fps: 20, qrbox: { width: 250, height: 250 } }, 
+            (rawDecodedText) => { 
+                let decodedText = rawDecodedText;
+                try { decodedText = decodeURIComponent(escape(rawDecodedText)); } catch(e) {}
+                if (typeof interceptAirGapData === "function" && interceptAirGapData(decodedText)) return;
+                appendScanResult("Camera", decodedText); 
+            }, 
+            (err) => {} // Bỏ qua lỗi bắt nét
+        ).then(() => {
+            isCamRunning = true;
+        }).catch(e => {
+            alert("Lỗi khởi tạo Camera: " + e);
+        }); 
     }
-}
+
+    function stopCam() {
+        if (html5QrCodeCam && isCamRunning) {
+            // Dừng luồng và xóa sạch giao diện Camera hiện tại
+            html5QrCodeCam.stop().then(() => {
+                html5QrCodeCam.clear();
+                isCamRunning = false;
+                document.getElementById('camera-box').style.display = 'none';
+            }).catch(e => {});
+        } else {
+            document.getElementById('camera-box').style.display = 'none';
+        }
+    }
 
 // 5. Tắt Camera an toàn
 function stopCam() {
