@@ -726,43 +726,59 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
 
     // --- BƯỚC 1: ĐÓNG GÓI ZIP ---
     async function packFileToQRZip(input) {
-        const file = input.files[0];
-        if (!file) return;
-        showLoading(true, "Đang nén dữ liệu gốc...");
+    let file = input.files[0]; // Đổi từ const sang let
+    if (!file) return;
+
+    showLoading(true, "Đang chuẩn bị dữ liệu...");
+
+    // BỔ SUNG: Kiểm tra và ép kiểu Excel sang CSV
+    const fileNameLower = file.name.toLowerCase();
+    if (fileNameLower.endsWith('.xlsx') || fileNameLower.endsWith('.xls')) {
+        document.getElementById('loading-text').innerText = "Đang bóc tách dữ liệu Excel sang CSV...";
         try {
-            const zipCompress = new JSZip();
-            zipCompress.file(file.name, file);
-            const base64Data = await zipCompress.generateAsync({type: "base64", compression: "DEFLATE"});
-
-            const CHUNK_SIZE = getChunkSize(); 
-            const totalFrags = Math.ceil(base64Data.length / CHUNK_SIZE);
-            const qrZip = new JSZip(); 
-            const dummyDiv = document.createElement('div');
-
-            for (let i = 0; i < totalFrags; i++) {
-                if (i % 20 === 0 || i === totalFrags - 1) {
-                    document.getElementById('loading-text').innerText = `Mật độ ${CHUNK_SIZE}: Đang vẽ ${i + 1} / ${totalFrags} mã QR...`;
-                    await new Promise(r => setTimeout(r, 0)); 
-                }
-                let chunkData = base64Data.substring(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-                let rawText = `[FZ]|${file.name}|${i + 1}|${totalFrags}|${chunkData}`;
-                let qrText = safeUtf8ForQrjs(rawText);
-                
-                dummyDiv.innerHTML = "";
-                new QRCode(dummyDiv, { text: qrText, width: 550, height: 550, correctLevel: QRCode.CorrectLevel.L });
-                let blob = await new Promise(res => dummyDiv.querySelector('canvas').toBlob(res, "image/png"));
-                let numStr = String(i + 1).padStart(4, '0');
-                qrZip.file(`AirGap_Manh_${numStr}.png`, blob);
-            }
-            document.getElementById('loading-text').innerText = "Đang xuất file ZIP...";
-            await new Promise(r => setTimeout(r, 10)); 
-            const finalZipBlob = await qrZip.generateAsync({type: "blob", compression: "STORE"});
-            saveFile(finalZipBlob, `AIRGAP_${file.name}.zip`);
+            file = await convertExcelToCSV(file); // Ghi đè file gốc
+        } catch (e) {
+            alert("Lỗi ép kiểu Excel: " + e);
             showLoading(false);
-            alert(`✅ Xong! Đã tạo ${totalFrags} mã QR (Mật độ: ${CHUNK_SIZE} ký tự/mã).`);
-        } catch (e) { alert("Lỗi: " + e.message); showLoading(false); }
-        input.value = ""; 
+            return;
+        }
     }
+
+    document.getElementById('loading-text').innerText = "Đang nén dữ liệu gốc...";
+    try {
+        const zipCompress = new JSZip();
+        zipCompress.file(file.name, file);
+        const base64Data = await zipCompress.generateAsync({type: "base64", compression: "DEFLATE", compressionOptions: { level: 9 }});
+
+        const CHUNK_SIZE = getChunkSize(); 
+        const totalFrags = Math.ceil(base64Data.length / CHUNK_SIZE);
+        const qrZip = new JSZip(); 
+        const dummyDiv = document.createElement('div');
+
+        for (let i = 0; i < totalFrags; i++) {
+            if (i % 20 === 0 || i === totalFrags - 1) {
+                document.getElementById('loading-text').innerText = `Mật độ ${CHUNK_SIZE}: Đang vẽ ${i + 1} / ${totalFrags} mã QR...`;
+                await new Promise(r => setTimeout(r, 0)); 
+            }
+            let chunkData = base64Data.substring(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+            let rawText = `[FZ]|${file.name}|${i + 1}|${totalFrags}|${chunkData}`;
+            let qrText = safeUtf8ForQrjs(rawText);
+            
+            dummyDiv.innerHTML = "";
+            new QRCode(dummyDiv, { text: qrText, width: 550, height: 550, correctLevel: QRCode.CorrectLevel.L });
+            let blob = await new Promise(res => dummyDiv.querySelector('canvas').toBlob(res, "image/png"));
+            let numStr = String(i + 1).padStart(4, '0');
+            qrZip.file(`AirGap_Manh_${numStr}.png`, blob);
+        }
+        document.getElementById('loading-text').innerText = "Đang xuất file ZIP...";
+        await new Promise(r => setTimeout(r, 10)); 
+        const finalZipBlob = await qrZip.generateAsync({type: "blob", compression: "STORE"});
+        saveFile(finalZipBlob, `AIRGAP_${file.name}.zip`);
+        showLoading(false);
+        alert(`✅ Xong! Đã tạo ${totalFrags} mã QR (Mật độ: ${CHUNK_SIZE} ký tự/mã).`);
+    } catch (e) { alert("Lỗi: " + e.message); showLoading(false); }
+    input.value = ""; 
+}
 
     // --- BƯỚC 2: PHÁT TỪ FILE ZIP ---
     async function playQRSlideshowFromZip(input) {
@@ -792,42 +808,58 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
 
     // --- BƯỚC 3: TẠO VÀ PHÁT TRỰC TIẾP (PRE-RENDER 100% PNG) ---
     async function packAndPlayAirGap(input) {
-        const file = input.files[0];
-        if (!file) return;
-        showLoading(true, "Đang mã hóa văn bản và tạo ảnh...");
-        airgapFrames = [];
-        currentAirGapFileName = file.name;
-        isDirectPlayMode = true; 
-        
+    let file = input.files[0]; // Đổi từ const sang let để có thể ghi đè
+    if (!file) return;
+
+    showLoading(true, "Đang chuẩn bị dữ liệu...");
+
+    // BỔ SUNG: Kiểm tra và ép kiểu Excel sang CSV
+    const fileNameLower = file.name.toLowerCase();
+    if (fileNameLower.endsWith('.xlsx') || fileNameLower.endsWith('.xls')) {
+        document.getElementById('loading-text').innerText = "Đang bóc tách dữ liệu Excel sang CSV...";
         try {
-            const zipCompress = new JSZip();
-            zipCompress.file(file.name, file);
-            const base64Data = await zipCompress.generateAsync({type: "base64", compression: "DEFLATE"});
-            
-            const CHUNK_SIZE = getChunkSize(); 
-            const totalFrags = Math.ceil(base64Data.length / CHUNK_SIZE);
-            const dummyDiv = document.createElement('div');
-            
-            for (let i = 0; i < totalFrags; i++) {
-                if (i % 10 === 0 || i === totalFrags - 1) {
-                    document.getElementById('loading-text').innerText = `Đang nạp đạn: ${i + 1} / ${totalFrags} ảnh...`;
-                    await new Promise(r => setTimeout(r, 0));
-                }
-                let chunkData = base64Data.substring(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-                let rawText = `[FZ]|${file.name}|${i + 1}|${totalFrags}|${chunkData}`;
-                let qrText = safeUtf8ForQrjs(rawText);
-                
-                dummyDiv.innerHTML = "";
-                new QRCode(dummyDiv, { text: qrText, width: 550, height: 550, correctLevel: QRCode.CorrectLevel.L });
-                let canvas = dummyDiv.querySelector('canvas');
-                // ÉP RENDER THÀNH MẢNG ẢNH PNG TĨNH LƯU VÀO RAM
-                airgapFrames.push(canvas.toDataURL("image/png")); 
-            }
+            file = await convertExcelToCSV(file); // Ghi đè file gốc
+        } catch (e) {
+            alert("Lỗi ép kiểu Excel: " + e);
             showLoading(false);
-            openTheater();
-        } catch (e) { alert("Lỗi nạp ảnh: " + e.message); showLoading(false); }
-        input.value = ""; 
+            return;
+        }
     }
+
+    document.getElementById('loading-text').innerText = "Đang nén văn bản và tạo ảnh...";
+    airgapFrames = [];
+    currentAirGapFileName = file.name; // Tên file lúc này đã là .csv
+    isDirectPlayMode = true; 
+    
+    try {
+        const zipCompress = new JSZip();
+        zipCompress.file(file.name, file);
+        const base64Data = await zipCompress.generateAsync({type: "base64", compression: "DEFLATE", compressionOptions: { level: 9 }});
+        
+        const CHUNK_SIZE = getChunkSize(); 
+        const totalFrags = Math.ceil(base64Data.length / CHUNK_SIZE);
+        const dummyDiv = document.createElement('div');
+        
+        for (let i = 0; i < totalFrags; i++) {
+            if (i % 10 === 0 || i === totalFrags - 1) {
+                document.getElementById('loading-text').innerText = `Đang nạp đạn: ${i + 1} / ${totalFrags} ảnh...`;
+                await new Promise(r => setTimeout(r, 0));
+            }
+            let chunkData = base64Data.substring(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+            let rawText = `[FZ]|${file.name}|${i + 1}|${totalFrags}|${chunkData}`;
+            let qrText = safeUtf8ForQrjs(rawText);
+            
+            dummyDiv.innerHTML = "";
+            new QRCode(dummyDiv, { text: qrText, width: 550, height: 550, correctLevel: QRCode.CorrectLevel.L });
+            let canvas = dummyDiv.querySelector('canvas');
+            // ÉP RENDER THÀNH MẢNG ẢNH PNG TĨNH LƯU VÀO RAM
+            airgapFrames.push(canvas.toDataURL("image/png")); 
+        }
+        showLoading(false);
+        openTheater();
+    } catch (e) { alert("Lỗi nạp ảnh: " + e.message); showLoading(false); }
+    input.value = ""; 
+}
 
     // --- CÁC HÀM ĐIỀU KHIỂN RẠP CHIẾU ---
     function openTheater() {
@@ -1069,6 +1101,44 @@ function stopCam() {
         const camBox = document.getElementById('camera-box');
         if (camBox) camBox.style.display = 'none';
     }
+}
+// Hàm chuyển đổi Excel sang CSV (Hỗ trợ Tiếng Việt)
+function convertExcelToCSV(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            try {
+                // 1. Đọc dữ liệu nhị phân của file Excel
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                // 2. Lấy Sheet đầu tiên trong bảng tính
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // 3. Ép toàn bộ dữ liệu thành chuỗi CSV thô
+                const csvString = XLSX.utils.sheet_to_csv(worksheet);
+                
+                // 4. Đổi đuôi tên file từ .xlsx thành .csv
+                const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".csv";
+                
+                // 5. Thêm BOM (\uFEFF) để bảo toàn Font Tiếng Việt và đóng gói lại thành File object
+                const csvBlob = new Blob(["\ufeff" + csvString], { type: 'text/csv;charset=utf-8;' });
+                const newFile = new File([csvBlob], newFileName, { type: 'text/csv' });
+                
+                console.log(`Đã ép file Excel thành công! Dung lượng giảm còn: ${Math.round(newFile.size/1024)} KB`);
+                resolve(newFile);
+            } catch (error) {
+                reject("Lỗi khi đọc file Excel: " + error);
+            }
+        };
+        
+        reader.onerror = (err) => reject("Không thể đọc file: " + err);
+        
+        // Bắt đầu đọc file dưới dạng ArrayBuffer
+        reader.readAsArrayBuffer(file);
+    });
 }
 
     let currentReceivingFile = ""; 
