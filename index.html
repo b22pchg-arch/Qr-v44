@@ -982,32 +982,61 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
         document.getElementById('camera-box').style.display = 'block'; 
         if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader"); 
         
-        if (!isCamRunning) {
+        // Nếu Camera đang chạy, ép buộc tắt hẳn trước khi bật lại (dùng cho nút Đảo Cam)
+        if (html5QrCodeCam.getState() === 2) { 
+            html5QrCodeCam.stop().then(() => {
+                html5QrCodeCam.clear();
+                isCamRunning = false;
+                setTimeout(runCamParams, 300); // Trễ 300ms để nhả phần cứng
+            }).catch(() => { runCamParams(); });
+        } else {
             runCamParams();
         }
     }
 
     function runCamParams() {
         const scanConfig = { 
-            facingMode: currentFacingMode,
-			fps: 15
+            fps: 15, 
+            videoConstraints: { 
+                width: { ideal: 1280 }, 
+                height: { ideal: 720 },
+                focusMode: "continuous" 
+            } 
         };
 
+        // ÉP BUỘC DÙNG CAMERA SAU BẰNG "exact"
         html5QrCodeCam.start( 
-            { facingMode: currentFacingMode }, 
-            { fps: 20, qrbox: { width: 250, height: 250 } }, 
+            { facingMode: { exact: currentFacingMode } }, 
+            scanConfig, 
             (rawDecodedText) => { 
                 let decodedText = rawDecodedText;
                 try { decodedText = decodeURIComponent(escape(rawDecodedText)); } catch(e) {}
                 if (typeof interceptAirGapData === "function" && interceptAirGapData(decodedText)) return;
-                appendScanResult("Camera", decodedText); 
+                if (typeof appendScanResult === "function") appendScanResult("Camera", decodedText); 
             }, 
             (err) => {} // Bỏ qua lỗi bắt nét
         ).then(() => {
             isCamRunning = true;
         }).catch(e => {
-            alert("Lỗi khởi tạo Camera: " + e);
+            console.warn("Máy không hỗ trợ thuộc tính exact, đang hạ cấp...");
+            // CHẾ ĐỘ DỰ PHÒNG NẾU MÁY BÁO LỖI
+            html5QrCodeCam.start(
+                { facingMode: currentFacingMode }, 
+                scanConfig, 
+                (rawDecodedText) => { 
+                    let decodedText = rawDecodedText;
+                    try { decodedText = decodeURIComponent(escape(rawDecodedText)); } catch(e) {}
+                    if (typeof interceptAirGapData === "function" && interceptAirGapData(decodedText)) return;
+                    if (typeof appendScanResult === "function") appendScanResult("Camera", decodedText); 
+                }, 
+                (err) => {}
+            ).then(() => { isCamRunning = true; }).catch(err2 => alert("Lỗi Camera: " + err2));
         }); 
+    }
+
+    function flipCamera() {
+        currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+        startCam();
     }
 
     function stopCam() {
@@ -1021,26 +1050,6 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
         } else {
             document.getElementById('camera-box').style.display = 'none';
         }
-    }
-
-    function flipCamera() {
-        if (!html5QrCodeCam) return;
-        
-        // Đảo trạng thái
-        currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
-        
-        // QUY TRÌNH BUỘC TẮT (FORCE STOP)
-        html5QrCodeCam.stop().then(() => {
-            console.log("Đã dừng Camera cũ, đang khởi động Camera mới...");
-            isCamRunning = false;
-            // Đợi 300ms để phần cứng điện thoại kịp nghỉ
-            setTimeout(() => {
-                runCamParams();
-            }, 300);
-        }).catch(() => {
-            // Trường hợp lỗi hoặc chưa chạy, vẫn cố gắng bật Cam mới
-            runCamParams();
-        });
     }
 
     let currentReceivingFile = ""; 
@@ -1058,33 +1067,39 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
             
             const fileName = parts[1];
             const index = parseInt(parts[2]) - 1;
+            const total = parseInt(parts[3]);
 
-            if (currentReceivingFile !== fileName) {
+            // KÍCH HOẠT RADAR VÀ TẠO DANH SÁCH MẢNH SÓT
+            if (expectedTotal === 0 || currentReceivingFile !== fileName) {
+                expectedTotal = total;
                 currentReceivingFile = fileName;
-                airgapBuffer.clear(); 
-                expectedTotal = parseInt(parts[3]);
-                missingFramesSet = new Set(Array.from({length: expectedTotal}, (_, i) => i + 1));
+                airgapBuffer.clear();
+                // Tạo một cái rổ chứa số từ 1 đến Total
+                missingFramesSet = new Set(Array.from({length: total}, (_, i) => i + 1));
             }
 
             if (!airgapBuffer.has(index)) {
                 airgapBuffer.set(index, parts[4]);
-                missingFramesSet.delete(index + 1); 
+                missingFramesSet.delete(index + 1); // Ăn được mảnh nào thì gạch tên mảnh đó
 
                 let percent = (airgapBuffer.size / expectedTotal) * 100;
                 let bar = document.getElementById('airgap-receive-bar');
                 let st = document.getElementById('airgap-receive-status');
                 if(bar) bar.style.width = percent + '%';
-                if(st) st.innerText = `Đã thu thập: ${airgapBuffer.size} / ${expectedTotal} mảnh`;
+                if(st) st.innerText = `Đã thu: ${airgapBuffer.size} / ${expectedTotal} mảnh`;
 
+                // CẬP NHẬT GIAO DIỆN HIỂN THỊ MẢNH SÓT
                 let missingListEl = document.getElementById('airgap-missing-list');
                 if (missingListEl) {
                     let missingArr = Array.from(missingFramesSet);
-                    missingListEl.innerText = missingArr.length > 0 ? missingArr.join(", ") : "Đã nhận đủ toàn bộ mảnh!";
+                    missingListEl.innerHTML = missingArr.length > 0 ? 
+                        `<span style="color:red; font-weight:bold;">Thiếu (${missingArr.length}):</span> ` + missingArr.join(", ") : 
+                        `<span style="color:green; font-weight:bold;">Đã quét đủ 100%!</span>`;
                 }
 
                 if (airgapBuffer.size === expectedTotal) {
                     stopCam(); 
-                    if(st) st.innerText = "✅ THU THẬP XONG! Đang giải nén...";
+                    if(st) st.innerText = "✅ ĐANG GHÉP FILE...";
                     assembleAndDownloadFile(fileName);
                 }
             }
@@ -1100,17 +1115,31 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
             const firstFileName = Object.keys(zip.files)[0];
             const blob = await zip.file(firstFileName).async("blob");
             saveFile(blob, fileName); 
-            alert("🎉 ĐÃ NHẬN FILE AIR-GAP THÀNH CÔNG!");
             
+            // Xóa lỗi innerText bằng cách kiểm tra biến tồn tại trước khi ghi
+            let st = document.getElementById('airgap-receive-status');
+            if(st) st.innerHTML = "<span style='color:green; font-weight:bold;'>🎉 GHÉP VÀ TẢI FILE THÀNH CÔNG!</span>";
+            
+            alert("Đã nhận file thành công! Kiểm tra thư mục Tải xuống.");
+            
+            // Dọn dẹp Radar
             airgapBuffer.clear();
             expectedTotal = 0;
-            missingFramesSet.clear();
             currentReceivingFile = "";
-            document.getElementById('airgap-receiver-ui').style.display = 'none';
-            document.getElementById('airgap-receive-bar').style.width = '0%';
-            document.getElementById('airgap-missing-list').innerText = "Đang chờ bắt tín hiệu đầu tiên...";
-        } catch(e) { alert("Lỗi ráp file! " + e.message); }
+            missingFramesSet.clear();
+        } catch(e) { 
+            alert("Lỗi ráp file! " + e.message); 
+        }
     }
+	// Ép buộc giấu rạp chiếu mỗi khi tải lại trang web (F5)
+    window.addEventListener('load', function() {
+        const theater = document.getElementById('airgap-theater');
+        if (theater) {
+            theater.style.setProperty('display', 'none', 'important');
+        }
+        isAirGapPaused = false;
+        if (typeof airgapInterval !== 'undefined') clearInterval(airgapInterval);
+    });
 </script>
 <div id="airgap-theater" style="display:none !important; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:10000; display:none !important; align-items:stretch;">
     <button onclick="stopAirGap()" style="position:absolute; top:15px; right:15px; background:rgba(255,255,255,0.2); color:#fff; border:none; border-radius:50%; width:40px; height:40px; font-size:20px; cursor:pointer; z-index:10010;">&times;</button>
