@@ -239,7 +239,30 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
                 <input type="file" id="qr-folder-input" hidden webkitdirectory directory multiple accept="image/*" onchange="runBatchScanner(this)">
             </label>
         </div>
-        
+        <div class="card bg-dark border-secondary mb-3">
+    <div class="card-header text-warning fw-bold py-1" style="font-size: 0.9rem;">
+        ⚙️ TÙY CHỈNH CAMERA
+    </div>
+    <div class="card-body py-2">
+        <div class="row g-2 align-items-center">
+            <div class="col-4">
+                <label class="small text-light mb-1">FPS:</label>
+                <input type="number" id="cam-fps" class="form-control form-control-sm bg-dark text-warning border-secondary text-center" value="20" min="5" max="120">
+            </div>
+            <div class="col-4">
+                <label class="small text-light mb-1">Rộng (px):</label>
+                <input type="number" id="cam-width" class="form-control form-control-sm bg-dark text-warning border-secondary text-center" value="250" min="100" max="800">
+            </div>
+            <div class="col-4">
+                <label class="small text-light mb-1">Cao (px):</label>
+                <input type="number" id="cam-height" class="form-control form-control-sm bg-dark text-warning border-secondary text-center" value="250" min="100" max="800">
+            </div>
+        </div>
+        <button class="btn btn-outline-warning btn-sm w-100 mt-2 fw-bold" onclick="applyCameraSettings()">
+            🔄 ÁP DỤNG THÔNG SỐ
+        </button>
+    </div>
+</div>
         <div id="camera-box" style="display:none; margin-bottom:10px;">
             <div id="camera-reader"></div>
             <div class="d-flex justify-content-between mt-1 gap-1">
@@ -1041,33 +1064,35 @@ function startCam() {
 }
 
 // 3. Lõi khởi động luồng Video
+// 3. Lõi khởi động luồng Video với thông số động
 function launchCam(mode) {
-    // Truyền trực tiếp facingMode, tuyệt đối KHÔNG dùng "exact" để máy tự do chọn ống kính chính xác nhất
-    const camConfig = { facingMode: mode }; 
-    
+    // Đọc thông số từ giao diện (nếu ô bị trống thì dùng giá trị mặc định)
+    const fpsVal = parseInt(document.getElementById('cam-fps')?.value) || 20;
+    const boxWidth = parseInt(document.getElementById('cam-width')?.value) || 250;
+    const boxHeight = parseInt(document.getElementById('cam-height')?.value) || 250;
+
+    // Đóng gói cấu hình quét
     const scanConfig = { 
-        fps: 20, 
-        videoConstraints: { 
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 },
-            focusMode: "continuous"
-        } 
+        fps: fpsVal, 
+        qrbox: { width: boxWidth, height: boxHeight } 
     };
 
     html5QrCodeCam.start(
         { facingMode: mode }, 
-        { fps: 20, qrbox: { width: 250, height: 250 } }, 
+        scanConfig, // Truyền biến cấu hình động vào đây
         (txt) => {
             let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
             if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
             if (typeof appendScanResult === "function") appendScanResult("Camera", d);
         }, 
-        (err) => {} // Giấu các lỗi dò nét để máy không bị giật
+        (err) => {} // Giấu các lỗi dò nét
     ).then(() => { 
         isCamRunning = true; 
     }).catch(e => {
-        console.warn("Máy không hỗ trợ HD, đang hạ cấp...", e);
-        // Chế độ dự phòng: Nếu điện thoại quá cũ hoặc báo lỗi, chạy với cấu hình thấp nhất
+        console.warn("Máy không hỗ trợ cấu hình hiện tại, đang hạ cấp...", e);
+        
+        // Chế độ dự phòng: Nếu cấu hình do người dùng nhập gây lỗi (ví dụ khung to hơn màn hình)
+        // Hệ thống tự lùi về cấu hình an toàn nhất (FPS 15, không ép khung)
         html5QrCodeCam.start({ facingMode: mode }, { fps: 15 }, (txt) => {
             let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
             if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
@@ -1077,6 +1102,20 @@ function launchCam(mode) {
     });
 }
 
+// Hàm khởi động lại Camera để áp dụng ngay cấu hình mới
+function applyCameraSettings() {
+    if (isCamRunning && html5QrCodeCam) {
+        html5QrCodeCam.stop().then(() => {
+            html5QrCodeCam.clear();
+            isCamRunning = false;
+            // Chờ một nhịp ngắn để xả RAM rồi bật lại
+            setTimeout(() => { launchCam(currentFacingMode); }, 300);
+        }).catch(e => console.warn("Lỗi dừng Camera:", e));
+    } else {
+        // Nếu Camera đang tắt thì chỉ cần bật lên
+        startCam();
+    }
+}
 // 4. Lệnh đảo Cam mượt mà (CÓ ĐỘ TRỄ 300ms)
 function flipCamera() {
     // Đổi trạng thái biến
