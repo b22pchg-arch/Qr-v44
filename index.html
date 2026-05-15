@@ -989,8 +989,8 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
 
     function runCamParams() {
         const scanConfig = { 
-            {facingMode: currentFacingMode},
-			{fps: 15,videoConstraints: {width: { ideal: 1280 }, height: { ideal: 720 }, focusMode: "continuous"}} 
+            facingMode: currentFacingMode,
+			fps: 15,videoConstraints: {width: { ideal: 1280 }, height: { ideal: 720 }, focusMode: "continuous"}
         };
 
         html5QrCodeCam.start( 
