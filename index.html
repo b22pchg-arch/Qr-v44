@@ -995,7 +995,7 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
 
         html5QrCodeCam.start( 
             { facingMode: "environment" }, 
-            { fps: 15, videoConstraints: { width: { ideal: 1280 }, height: { ideal: 720 } } }, 
+            { fps: 15 }, 
             (rawDecodedText) => { 
                 let decodedText = rawDecodedText;
                 try { decodedText = decodeURIComponent(escape(rawDecodedText)); } catch(e) {}
