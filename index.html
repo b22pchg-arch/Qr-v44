@@ -982,20 +982,6 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
 let currentFacingMode = "environment"; // "environment" là cam sau, "user" là cam trước
 let isCamRunning = false;
 
-// 1. Hàm chuyển Tab (Tích hợp bật/tắt Cam tự động)
-function setSide(m) { 
-    document.getElementById('side-gen').style.display = m==='gen'?'block':'none'; 
-    document.getElementById('side-scan').style.display = m==='scan'?'block':'none'; 
-    document.getElementById('btn-q-gen').classList.toggle('active',m==='gen'); 
-    document.getElementById('btn-q-scan').classList.toggle('active',m==='scan'); 
-
-    if (m === 'scan') {
-        startCam();
-    } else {
-        stopCam();
-    }
-}
-
 // 2. Hàm gọi Camera
 function startCam() {
     const camBox = document.getElementById('camera-box');
