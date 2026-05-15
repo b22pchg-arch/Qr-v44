@@ -287,8 +287,14 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
 
     <div id="airgap-receiver-ui" style="display:none;" class="mb-2 p-2 border border-success rounded bg-light">
         <div class="small fw-bold text-success mb-1" id="airgap-receive-status">Đang thu thập dữ liệu...</div>
-        <div class="progress" style="height: 10px;">
+        
+        <div class="progress mb-2" style="height: 10px;">
             <div id="airgap-receive-bar" class="progress-bar progress-bar-animated progress-bar-striped bg-success" style="width: 0%"></div>
+        </div>
+        
+        <div class="small fw-bold text-danger border-top pt-1 mt-2">Trạng thái mảnh quét:</div>
+        <div id="airgap-missing-list" class="small text-muted p-1 border bg-white rounded" style="max-height: 100px; overflow-y: auto; word-break: break-word; font-family: monospace;">
+            Đang chờ bắt tín hiệu đầu tiên...
         </div>
     </div>
 
@@ -975,68 +981,80 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
    // ==========================================
     // CẬP NHẬT MÁY THU: ĐIỀU KHIỂN CAMERA THÔNG MINH
     // ==========================================
+    let html5QrCodeCam = null;
+    let currentCameraId = null;
+    let allCameras = [];
     let isCamRunning = false;
-    let currentFacingMode = "environment"; // Mặc định mở Camera Sau
 
-    function startCam() { 
-        document.getElementById('camera-box').style.display = 'block'; 
-        if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader"); 
-        
-        // Nếu Camera đang chạy, ép buộc tắt hẳn trước khi bật lại (dùng cho nút Đảo Cam)
-        if (html5QrCodeCam.getState() === 2) { 
-            html5QrCodeCam.stop().then(() => {
-                html5QrCodeCam.clear();
-                isCamRunning = false;
-                setTimeout(runCamParams, 300); // Trễ 300ms để nhả phần cứng
-            }).catch(() => { runCamParams(); });
-        } else {
-            runCamParams();
+    // 1. Hàm khởi tạo và tìm Camera Sau
+    async function startCam() {
+        const camBox = document.getElementById('camera-box');
+        if (camBox) camBox.style.display = 'block';
+
+        try {
+            if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader");
+
+            // Lấy danh sách camera thực tế của thiết bị
+            allCameras = await Html5Qrcode.getCameras();
+            if (allCameras && allCameras.length > 0) {
+                // Ưu tiên tìm camera có chữ "back" hoặc "rear" (Camera sau)
+                let backCam = allCameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('rear'));
+                
+                // Nếu không tìm thấy theo tên, lấy camera cuối cùng trong danh sách (thường là cam sau)
+                currentCameraId = backCam ? backCam.id : allCameras[allCameras.length - 1].id;
+                
+                runCamWithId(currentCameraId);
+            } else {
+                alert("Không tìm thấy Camera nào trên thiết bị!");
+            }
+        } catch (e) {
+            alert("Lỗi truy cập Camera: " + e);
         }
     }
 
-    function runCamParams() {
-        const scanConfig = { 
-            fps: 15, 
-            videoConstraints: { 
-                width: { ideal: 1280 }, 
-                height: { ideal: 720 },
-                focusMode: "continuous" 
-            } 
-        };
-
-        // ÉP BUỘC DÙNG CAMERA SAU BẰNG "exact"
-        html5QrCodeCam.start( 
-            { facingMode: { exact: currentFacingMode } }, 
-            scanConfig, 
-            (rawDecodedText) => { 
-                let decodedText = rawDecodedText;
-                try { decodedText = decodeURIComponent(escape(rawDecodedText)); } catch(e) {}
-                if (typeof interceptAirGapData === "function" && interceptAirGapData(decodedText)) return;
-                if (typeof appendScanResult === "function") appendScanResult("Camera", decodedText); 
-            }, 
-            (err) => {} // Bỏ qua lỗi bắt nét
-        ).then(() => {
-            isCamRunning = true;
-        }).catch(e => {
-            console.warn("Máy không hỗ trợ thuộc tính exact, đang hạ cấp...");
-            // CHẾ ĐỘ DỰ PHÒNG NẾU MÁY BÁO LỖI
-            html5QrCodeCam.start(
-                { facingMode: currentFacingMode }, 
-                scanConfig, 
-                (rawDecodedText) => { 
-                    let decodedText = rawDecodedText;
-                    try { decodedText = decodeURIComponent(escape(rawDecodedText)); } catch(e) {}
-                    if (typeof interceptAirGapData === "function" && interceptAirGapData(decodedText)) return;
-                    if (typeof appendScanResult === "function") appendScanResult("Camera", decodedText); 
-                }, 
-                (err) => {}
-            ).then(() => { isCamRunning = true; }).catch(err2 => alert("Lỗi Camera: " + err2));
-        }); 
+    function runCamWithId(cameraId) {
+        if (isCamRunning) {
+            html5QrCodeCam.stop().then(() => {
+                isCamRunning = false;
+                launchBinary(cameraId);
+            }).catch(() => launchBinary(cameraId));
+        } else {
+            launchBinary(cameraId);
+        }
     }
 
+    function launchBinary(cameraId) {
+        const config = { 
+            fps: 20, 
+            qrbox: (viewWidth, viewHeight) => {
+                return { width: viewWidth * 0.8, height: viewHeight * 0.8 }; // Quét vùng rộng
+            },
+            videoConstraints: { width: { ideal: 1280 }, height: { ideal: 720 } }
+        };
+
+        html5QrCodeCam.start(
+            cameraId, 
+            config,
+            (txt) => {
+                let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
+                if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
+                appendScanResult("Cam", d);
+            },
+            (err) => {}
+        ).then(() => { isCamRunning = true; })
+        .catch(err => alert("Lỗi khởi động luồng: " + err));
+    }
+
+    // 2. Hàm đảo Camera (Xoay vòng danh sách thiết bị)
     function flipCamera() {
-        currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
-        startCam();
+        if (allCameras.length < 2) return alert("Thiết bị chỉ có 1 Camera!");
+        
+        // Tìm vị trí camera hiện tại và chuyển sang camera tiếp theo
+        let currentIndex = allCameras.findIndex(c => c.id === currentCameraId);
+        let nextIndex = (currentIndex + 1) % allCameras.length;
+        currentCameraId = allCameras[nextIndex].id;
+
+        runCamWithId(currentCameraId);
     }
 
     function stopCam() {
@@ -1059,52 +1077,59 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
 
     function interceptAirGapData(decodedText) {
         if (!decodedText.startsWith("[FZ]|")) return false;
-
         const parts = decodedText.split("|");
-        if (parts.length >= 5) {
-            const ui = document.getElementById('airgap-receiver-ui');
-            if(ui) ui.style.display = 'block';
-            
-            const fileName = parts[1];
-            const index = parseInt(parts[2]) - 1;
-            const total = parseInt(parts[3]);
+        const fileName = parts[1];
+        const index = parseInt(parts[2]);
+        const total = parseInt(parts[3]);
+        const data = parts[4];
 
-            // KÍCH HOẠT RADAR VÀ TẠO DANH SÁCH MẢNH SÓT
-            if (expectedTotal === 0 || currentReceivingFile !== fileName) {
-                expectedTotal = total;
-                currentReceivingFile = fileName;
-                airgapBuffer.clear();
-                // Tạo một cái rổ chứa số từ 1 đến Total
-                missingFramesSet = new Set(Array.from({length: total}, (_, i) => i + 1));
+        // --- KHỞI TẠO HOẶC RESET KHI CÓ FILE MỚI ---
+        if (expectedTotal === 0 || currentReceivingFile !== fileName) {
+            expectedTotal = total;
+            currentReceivingFile = fileName;
+            airgapBuffer.clear();
+            missingFramesSet = new Set(Array.from({length: total}, (_, i) => i + 1));
+
+            // RESET THANH TIẾN ĐỘ VỀ 0% NGAY LẬP TỨC
+            let bar = document.getElementById('airgap-receive-bar');
+            if (bar) {
+                bar.style.width = '0%';
+                bar.classList.add('progress-bar-animated'); // Chạy hiệu ứng sóng
+            }
+            
+            let st = document.getElementById('airgap-receive-status');
+            if (st) st.innerText = `Bắt đầu nhận file: ${fileName}...`;
+        }
+
+        if (!airgapBuffer.has(index - 1)) {
+            airgapBuffer.set(index - 1, data);
+            missingFramesSet.delete(index); 
+
+            // Cập nhật thanh tiến độ theo thực tế
+            let percent = (airgapBuffer.size / expectedTotal) * 100;
+            let bar = document.getElementById('airgap-receive-bar');
+            if (bar) bar.style.width = percent + '%';
+
+            // Cập nhật danh sách mảnh sót
+            const listEl = document.getElementById('airgap-missing-list');
+            if (listEl) {
+                const arr = Array.from(missingFramesSet);
+                listEl.innerHTML = arr.length > 0 ? 
+                    `<b class="text-danger">Còn thiếu:</b> ${arr.join(", ")}` : 
+                    `<b class="text-success">Đã nhận đủ toàn bộ!</b>`;
             }
 
-            if (!airgapBuffer.has(index)) {
-                airgapBuffer.set(index, parts[4]);
-                missingFramesSet.delete(index + 1); // Ăn được mảnh nào thì gạch tên mảnh đó
+            const st = document.getElementById('airgap-receive-status');
+            if (st) st.innerText = `Tiến độ: ${airgapBuffer.size} / ${expectedTotal} mảnh (${Math.round(percent)}%)`;
 
-                let percent = (airgapBuffer.size / expectedTotal) * 100;
-                let bar = document.getElementById('airgap-receive-bar');
-                let st = document.getElementById('airgap-receive-status');
-                if(bar) bar.style.width = percent + '%';
-                if(st) st.innerText = `Đã thu: ${airgapBuffer.size} / ${expectedTotal} mảnh`;
-
-                // CẬP NHẬT GIAO DIỆN HIỂN THỊ MẢNH SÓT
-                let missingListEl = document.getElementById('airgap-missing-list');
-                if (missingListEl) {
-                    let missingArr = Array.from(missingFramesSet);
-                    missingListEl.innerHTML = missingArr.length > 0 ? 
-                        `<span style="color:red; font-weight:bold;">Thiếu (${missingArr.length}):</span> ` + missingArr.join(", ") : 
-                        `<span style="color:green; font-weight:bold;">Đã quét đủ 100%!</span>`;
-                }
-
-                if (airgapBuffer.size === expectedTotal) {
-                    stopCam(); 
-                    if(st) st.innerText = "✅ ĐANG GHÉP FILE...";
-                    assembleAndDownloadFile(fileName);
-                }
+            // Khi hoàn thành 100%
+            if (airgapBuffer.size === expectedTotal) {
+                if (bar) bar.classList.remove('progress-bar-animated'); // Dừng hiệu ứng sóng khi xong
+                if (st) st.innerHTML = "<span class='text-success fw-bold'>✅ ĐANG GHÉP FILE...</span>";
+                assembleAndDownloadFile(fileName);
             }
         }
-        return true; 
+        return true;
     }
 
     async function assembleAndDownloadFile(fileName) {
@@ -1127,6 +1152,11 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
             expectedTotal = 0;
             currentReceivingFile = "";
             missingFramesSet.clear();
+			// Thêm vào cuối hàm assembleAndDownloadFile sau khi tải xong
+    expectedTotal = 0;
+    currentReceivingFile = "";
+    airgapBuffer.clear();
+    missingFramesSet.clear();
         } catch(e) { 
             alert("Lỗi ráp file! " + e.message); 
         }
@@ -1185,6 +1215,7 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
             <input type="text" id="missing-frames-input" class="form-control form-control-sm mb-2 text-center" placeholder="Ví dụ: 5, 12, 15-20">
             <button onclick="playSpecificFrames()" class="btn btn-danger btn-sm w-100 fw-bold">PHÁT LẠI MẢNH LỖI</button>
             <div id="theater-missing-status" class="small text-success mt-2 text-center"></div>
+			
         </div>
     </div>
 </div>
