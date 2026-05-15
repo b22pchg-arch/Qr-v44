@@ -1022,8 +1022,8 @@ function launchCam(mode) {
     };
 
     html5QrCodeCam.start(
-        camConfig, 
-        scanConfig, 
+        { facingMode: mode }, 
+        { fps: 20, qrbox: { width: 250, height: 250 } }, 
         (txt) => {
             let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
             if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
