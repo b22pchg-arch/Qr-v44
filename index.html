@@ -310,28 +310,32 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
 <hr class="my-3">
     <div class="fw-bold text-danger mb-2"><i class="fas fa-wifi"></i> TRUYỀN FILE BẢO MẬT</div>
 <div class="card bg-dark border-info mb-3">
-    <div class="card-header text-info fw-bold py-1" style="font-size: 0.9rem;">
+    <div class="card-header text-info fw-bold py-1" style="font-size: 0.9rem; border-bottom: 1px solid var(--bs-info);">
         📊 TỐI ƯU MẬT ĐỘ DỮ LIỆU
     </div>
     <div class="card-body py-2">
         <div class="row g-2">
             <div class="col-6">
-                <label class="small text-light mb-1">Kích thước QR (px):</label>
-                <input type="number" id="qr-size" class="form-control form-control-sm bg-dark text-info border-info text-center" value="600">
+                <label class="small text-info mb-1 fw-bold">Kích thước QR (px):</label>
+                <input type="number" id="qr-size" class="form-control form-control-sm bg-dark text-info border-info text-center" value="600" min="200" max="1000">
             </div>
+            
             <div class="col-6">
-                <span class="input-group-text fw-bold text-danger border-danger bg-white" title="Số ký tự nhồi vào 1 mã QR. Càng cao càng ít hình, nhưng camera cần xịn hơn.">
-            Mật độ (Ký tự/QR)
-        </span>
-        <input type="number" id="airgap-chunk-size" class="form-control fw-bold text-center border-danger" value="700" min="100" max="2800">
+                <label class="small text-info mb-1 fw-bold">Mật độ (Ký tự/QR):</label>
+                <input type="number" id="airgap-chunk-size" class="form-control form-control-sm bg-dark text-info border-info text-center fw-bold" value="700" min="100" max="2800">
             </div>
+
             <div class="col-12">
-                <label class="small text-light mb-1">Mức sửa lỗi (Error Correction):</label>
-                <select id="qr-error-level" class="form-select form-select-sm bg-dark text-info border-info">
-                    <option value="L" selected>Level L (7% - Chứa được nhiều nhất)</option>
-                    <option value="M">Level M (15% - Cân bằng)</option>
-                    <option value="Q">Level Q (25% - Quét cực nhạy)</option>
+                <label class="small text-info mb-1 fw-bold">Mức sửa lỗi (Error Correction):</label>
+                <select id="qr-error-level" class="form-select form-select-sm bg-dark text-info border-info" onchange="validateChunkSize()">
+                    <option value="L" selected>Level L (7% - Max: 2800 ký tự)</option>
+                    <option value="M">Level M (15% - Max: 2200 ký tự)</option>
+                    <option value="Q">Level Q (25% - Max: 1500 ký tự)</option>
+                    <option value="H">Level H (30% - Max: 1100 ký tự)</option>
                 </select>
+                <div id="density-warning" class="text-warning small mt-1" style="display:none; font-size: 0.75rem;">
+                    ⚠️ Mật độ đã được điều chỉnh về mức an toàn.
+                </div>
             </div>
         </div>
     </div>
@@ -818,11 +822,20 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     const file = input.files[0]; 
     if (!file) return;
 
-    // --- LẤY THÔNG SỐ TÙY BIẾN MẬT ĐỘ ---
+    // --- LẤY THÔNG SỐ VÀ ÁP DỤNG BỘ LỌC THÔNG MINH ---
     const qrSize = parseInt(document.getElementById('qr-size').value) || 600;
-    const chunkSize = parseInt(document.getElementById('airgap-chunk-size').value) || 700;
+    let chunkSize = parseInt(document.getElementById('airgap-chunk-size').value) || 700;
     const errorLevelStr = document.getElementById('qr-error-level').value || "L";
     const errorLevel = QRCode.CorrectLevel[errorLevelStr];
+
+    // Bảng giới hạn vật lý an toàn của QR Version 40
+    const safeLimits = { "L": 2800, "M": 2200, "Q": 1500, "H": 1100 };
+
+    if (chunkSize > safeLimits[errorLevelStr]) {
+        alert(`⚠️ Mật độ ${chunkSize} vượt giới hạn của Level ${errorLevelStr}.\nHệ thống tự động điều chỉnh về mức an toàn: ${safeLimits[errorLevelStr]} ký tự/mã.`);
+        chunkSize = safeLimits[errorLevelStr];
+        document.getElementById('airgap-chunk-size').value = chunkSize; // Cập nhật lại giao diện
+    }
     
     const compMode = document.getElementById('compression-choice')?.value || "ZIP";
     const isPreCompressed = document.getElementById('pre-compressed-mode')?.checked || false;
@@ -863,7 +876,6 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             });
         }
 
-        // --- SỬ DỤNG CHUNK_SIZE TÙY BIẾN ---
         const totalFrags = Math.ceil(finalBase64Data.length / chunkSize);
         const qrZip = new JSZip(); 
         const dummyDiv = document.createElement('div');
@@ -878,14 +890,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             let qrText = safeUtf8ForQrjs(rawText);
             
             dummyDiv.innerHTML = "";
-            // ÁP DỤNG KÍCH THƯỚC VÀ MỨC SỬA LỖI TÙY BIẾN
-            new QRCode(dummyDiv, { 
-                text: qrText, 
-                width: qrSize, 
-                height: qrSize, 
-                correctLevel: errorLevel 
-            });
-            
+            new QRCode(dummyDiv, { text: qrText, width: qrSize, height: qrSize, correctLevel: errorLevel });
             let blob = await new Promise(res => dummyDiv.querySelector('canvas').toBlob(res, "image/png"));
             let numStr = String(i + 1).padStart(4, '0');
             qrZip.file(`AirGap_Manh_${numStr}.png`, blob);
@@ -896,11 +901,8 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         const finalZipBlob = await qrZip.generateAsync({type: "blob", compression: "STORE"});
         saveFile(finalZipBlob, `AIRGAP_${compMode}_M${chunkSize}_${file.name}.zip`);
         showLoading(false);
-        alert(`✅ Xong! Đã tạo ${totalFrags} mã QR (Kích thước: ${qrSize}px, Mật độ: ${chunkSize}).`);
-    } catch (e) { 
-        alert("Lỗi hệ thống: " + (e.message || e)); 
-        showLoading(false); 
-    }
+        alert(`✅ Xong! Đã tạo ${totalFrags} mã QR.`);
+    } catch (e) { alert("Lỗi hệ thống: " + (e.message || e)); showLoading(false); }
     input.value = ""; 
 }
 
@@ -935,11 +937,19 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     const file = input.files[0]; 
     if (!file) return;
 
-    // --- LẤY THÔNG SỐ TÙY BIẾN MẬT ĐỘ ---
+    // --- LẤY THÔNG SỐ VÀ ÁP DỤNG BỘ LỌC THÔNG MINH ---
     const qrSize = parseInt(document.getElementById('qr-size').value) || 600;
-    const chunkSize = parseInt(document.getElementById('airgap-chunk-size').value) || 700;
+    let chunkSize = parseInt(document.getElementById('airgap-chunk-size').value) || 700;
     const errorLevelStr = document.getElementById('qr-error-level').value || "L";
     const errorLevel = QRCode.CorrectLevel[errorLevelStr];
+
+    const safeLimits = { "L": 2800, "M": 2200, "Q": 1500, "H": 1100 };
+
+    if (chunkSize > safeLimits[errorLevelStr]) {
+        alert(`⚠️ Mật độ ${chunkSize} vượt giới hạn cho Level ${errorLevelStr}.\nĐã điều chỉnh về ngưỡng an toàn: ${safeLimits[errorLevelStr]}`);
+        chunkSize = safeLimits[errorLevelStr];
+        document.getElementById('airgap-chunk-size').value = chunkSize;
+    }
 
     const compMode = document.getElementById('compression-choice')?.value || "ZIP";
     const isPreCompressed = document.getElementById('pre-compressed-mode')?.checked || false;
@@ -983,7 +993,6 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             });
         }
         
-        // --- SỬ DỤNG CHUNK_SIZE TÙY BIẾN ---
         const totalFrags = Math.ceil(finalBase64Data.length / chunkSize);
         const dummyDiv = document.createElement('div');
         
@@ -998,23 +1007,13 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             let qrText = safeUtf8ForQrjs(rawText);
             
             dummyDiv.innerHTML = "";
-            // ÁP DỤNG THÔNG SỐ TÙY BIẾN VÀO KHÂU RENDER
-            new QRCode(dummyDiv, { 
-                text: qrText, 
-                width: qrSize, 
-                height: qrSize, 
-                correctLevel: errorLevel 
-            });
-            
+            new QRCode(dummyDiv, { text: qrText, width: qrSize, height: qrSize, correctLevel: errorLevel });
             let canvas = dummyDiv.querySelector('canvas');
             airgapFrames.push(canvas.toDataURL("image/png")); 
         }
         showLoading(false);
-        openTheater(); // Hàm này sẽ tự co giãn theo logic "Rạp chiếu" chúng ta đã bàn ở bước trước
-    } catch (e) { 
-        alert("Lỗi hệ thống: " + (e.message || e)); 
-        showLoading(false); 
-    }
+        openTheater();
+    } catch (e) { alert("Lỗi hệ thống: " + (e.message || e)); showLoading(false); }
     input.value = ""; 
 }
 
@@ -1532,15 +1531,64 @@ function extractExcelSheetsToZip(file, zipCompress) {
         alert("Lỗi bung file: " + e.message);
     }
 }
-	// Ép buộc giấu rạp chiếu mỗi khi tải lại trang web (F5)
-    window.addEventListener('load', function() {
-        const theater = document.getElementById('airgap-theater');
-        if (theater) {
-            theater.style.setProperty('display', 'none', 'important');
+	// kiểm soát lựa chọn chất lượng mật độ Qr
+	function validateChunkSize() {
+    const chunkSizeInput = document.getElementById('airgap-chunk-size');
+    const errorLevel = document.getElementById('qr-error-level').value;
+    const warningEl = document.getElementById('density-warning');
+
+    // Bảng giới hạn vật lý an toàn cho QR Version 40
+    const limits = {
+        "L": 2800,
+        "M": 2200,
+        "Q": 1500,
+        "H": 1100
+    };
+
+    let currentVal = parseInt(chunkSizeInput.value) || 0;
+    const maxAllowed = limits[errorLevel];
+
+    // Kiểm tra nếu vượt ngưỡng
+    if (currentVal > maxAllowed) {
+        chunkSizeInput.value = maxAllowed; // Tự động đưa về mức tối đa
+        chunkSizeInput.classList.add('border-warning');
+        if (warningEl) {
+            warningEl.innerText = `⚠️ Level ${errorLevel} chỉ chứa tối đa ${maxAllowed} ký tự.`;
+            warningEl.style.display = 'block';
         }
-        isAirGapPaused = false;
-        if (typeof airgapInterval !== 'undefined') clearInterval(airgapInterval);
-    });
+        
+        // Hiệu ứng nháy đỏ nhẹ để cảnh báo người dùng
+        chunkSizeInput.style.backgroundColor = '#4d3d00'; 
+        setTimeout(() => { 
+            chunkSizeInput.style.backgroundColor = ''; 
+        }, 500);
+    } else {
+        chunkSizeInput.classList.remove('border-warning');
+        if (warningEl) warningEl.style.display = 'none';
+    }
+}
+	
+	
+	// Ép buộc giấu rạp chiếu mỗi khi tải lại trang web (F5)
+    document.addEventListener('DOMContentLoaded', function() {
+    // 1. Logic ẩn rạp chiếu và dọn dẹp interval
+    const theater = document.getElementById('airgap-theater');
+    if (theater) {
+        theater.style.setProperty('display', 'none', 'important');
+    }
+    isAirGapPaused = false;
+    if (typeof airgapInterval !== 'undefined') clearInterval(airgapInterval);
+
+    // 2. Logic kiểm soát giới hạn mật độ QR
+    const chunkSizeInput = document.getElementById('airgap-chunk-size');
+    const errorLevelSelect = document.getElementById('qr-error-level');
+
+    if (chunkSizeInput && errorLevelSelect) {
+        validateChunkSize(); // Kiểm tra lần đầu
+        chunkSizeInput.addEventListener('input', validateChunkSize);
+        errorLevelSelect.addEventListener('change', validateChunkSize);
+    }
+});
 </script>
 <div id="airgap-theater" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:10000; align-items:stretch;">
     
