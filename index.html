@@ -996,6 +996,11 @@ var e=function(t,n){return(e=Object.setPrototypeOf||{__proto__:[]}instanceof Arr
         html5QrCodeCam.start( 
             { facingMode: currentFacingMode }, 
             { fps: 20, qrbox: { width: 250, height: 250 } }, 
+			{videoConstraints: { 
+                width: { ideal: 1280 }, 
+                height: { ideal: 720 },
+                focusMode: "continuous"}
+				}
             (rawDecodedText) => { 
                 let decodedText = rawDecodedText;
                 try { decodedText = decodeURIComponent(escape(rawDecodedText)); } catch(e) {}
