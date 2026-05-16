@@ -1006,9 +1006,8 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         // PHÂN LUỒNG 1: VỪA TẠO VỪA PHÁT (REAL-TIME STREAMING)
         // ========================================================
         if (playStrategy === "realtime") {
-            showLoading(false); // Đóng ngay màn hình chờ
+            showLoading(false); 
 
-            // 1. Kích hoạt và đo đạc kích thước Rạp chiếu theo qr-size tùy biến
             const theater = document.getElementById('airgap-theater');
             const qrImg = document.getElementById('theater-img');
             if (theater) {
@@ -1017,17 +1016,20 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             }
 
             const maxHeight = window.innerHeight * 0.9;
-            const maxWidth = window.innerWidth * 0.7; // Tương ứng cột trái chiếm 75%
+            const maxWidth = window.innerWidth * 0.7; 
             const finalDisplaySize = Math.min(qrSize, maxHeight, maxWidth);
             if (qrImg) {
                 qrImg.style.width = finalDisplaySize + "px";
                 qrImg.style.height = finalDisplaySize + "px";
             }
 
-            // 2. Khởi tạo trạng thái giao thức Rạp chiếu vòng đầu
+            // --- KHẮC PHỤC LỖI TẠI ĐÂY: RESET BỘ ĐẾM VỀ 0 CỦA FILE MỚI ĐỂ XÓA DẤU VẾT FILE CŨ ---
+            document.getElementById('theater-counter').innerText = `0 / ${totalFrags}`;
+            // ----------------------------------------------------------------------------------
+
             document.getElementById('theater-missing-ui').style.display = 'none';
             document.getElementById('theater-missing-status').innerText = "";
-            document.getElementById('theater-filename').innerText = "Đang truyền trực tiếp: " + file.name;
+            document.getElementById('theater-filename').innerText = file.name;
             document.getElementById('theater-pause-btn').innerText = "TẠM DỪNG";
 
             framesSequence = Array.from({length: totalFrags}, (_, i) => i);
@@ -1175,23 +1177,30 @@ function updateTheaterDisplay() {
     const counterEl = document.getElementById('theater-counter');
     const nameEl = document.getElementById('theater-filename');
     
-    // Lấy tốc độ tùy chỉnh
     let speedInput = document.getElementById('airgap-speed-custom');
     let speedMs = speedInput ? parseInt(speedInput.value) : 1000;
     if (speedMs < 50) speedMs = 50; 
     
     clearInterval(airgapInterval);
-    
-    // Hiển thị tên file đang truyền (Loại bỏ các đường dẫn nếu có)
-    const displayFileName = currentAirGapFileName.split('/').pop();
-    nameEl.innerText = displayFileName;
+    nameEl.innerText = currentAirGapFileName.split('/').pop();
+
+    // =========================================================
+    // KHẮC PHỤC LỖI HIỂN THỊ FILE CŨ: ĐỒNG BỘ NGAY LẬP TỨC FRAME ĐẦU
+    // =========================================================
+    let firstFrameIndex = framesSequence[currentSequenceIndex];
+    if (imgEl && airgapFrames[firstFrameIndex]) {
+        imgEl.src = airgapFrames[firstFrameIndex];
+    }
+    if (counterEl) {
+        counterEl.innerText = `${firstFrameIndex + 1} / ${airgapFrames.length}`;
+    }
+    // =========================================================
 
     airgapInterval = setInterval(() => {
         if (isAirGapPaused) return; 
 
         let actualFrameIndex = framesSequence[currentSequenceIndex];
         
-        // Cập nhật ảnh QR và bộ đếm
         imgEl.src = airgapFrames[actualFrameIndex];
         counterEl.innerText = `${actualFrameIndex + 1} / ${airgapFrames.length}`;
         
