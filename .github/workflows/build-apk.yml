@@ -45,7 +45,8 @@ jobs:
         cd temp_app
         cordova plugin add cordova-plugin-camera
         cordova plugin add cordova-plugin-file
-
+        cordova plugin add cordova-plugin-x-socialsharing
+        
     - name: Xay dung nen tang Android va Bien dich APK
       run: |
         cd temp_app
