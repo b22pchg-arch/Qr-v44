@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.pctuyenquang.airgap" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>AirGap SCADA PC Tuyen Quang</name>
+    
+    <description>Hệ thống nhận dữ liệu Air-Gap an toàn qua luồng mã QR</description>
+    <author email="it.pctuyenquang@evn.com.vn">PC Tuyen Quang</author>
+    
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    
+    <platform name="android">
+        <preference name="android-minSdkVersion" value="24" />
+        
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-feature android:name="android.hardware.camera" android:required="true" />
+        </config-file>
+    </platform>
+</widget>
