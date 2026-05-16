@@ -497,8 +497,6 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     function showLoading(s, t="ĐANG XỬ LÝ...") { document.getElementById('loading-screen').style.display = s?'flex':'none'; document.getElementById('loading-text').innerText = t; }
     function copyToClipboard(txt) { navigator.clipboard && window.isSecureContext ? navigator.clipboard.writeText(txt).then(() => alert("Đã Copy!")).catch(e => fallbackCopyTextToClipboard(txt)) : fallbackCopyTextToClipboard(txt); }
     function fallbackCopyTextToClipboard(text) { var textArea = document.createElement("textarea"); textArea.value = text; textArea.style.position = "fixed"; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { document.execCommand('copy'); alert("Đã Copy!"); } catch (err) { alert("Trình duyệt chặn copy!"); } document.body.removeChild(textArea); }
-    function saveFile(b, n) { const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download=n; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
-
     // ==========================================
     // KHỐI 2: ĐỊNH TUYẾN FILE & CHỌN Ô TUẦN TỰ
     // ==========================================
@@ -1855,7 +1853,50 @@ function extractExcelSheetsToZip(file, zipCompress) {
     return true;
 }
 
-    async function assembleAndDownloadFile(fileName) {
+    // =========================================================
+// HÀM XỬ LÝ LƯU/CHIA SẺ FILE ĐA NỀN TẢNG (APK & WEB/PWA)
+// =========================================================
+function saveFile(blob, fileName) {
+    // Kiểm tra xem có đang chạy trên App APK (Cordova) và có Plugin SocialSharing không
+    if (window.cordova && window.plugins && window.plugins.socialsharing) {
+        let reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = function() {
+            let base64data = reader.result;
+            // Gọi hộp thoại hệ thống của Android để người dùng chọn Lưu vào máy hoặc Gửi Zalo
+            window.plugins.socialsharing.shareWithOptions({
+                message: 'Dữ liệu SCADA - PC Tuyên Quang (' + fileName + ')',
+                files: [base64data],
+                chooserTitle: 'Lưu hoặc Chia sẻ tệp tin SCADA'
+            }, function(success) {
+                console.log("Thao tác file thành công!");
+            }, function(err) {
+                console.error("Lỗi khi mở hộp thoại thao tác file: " + err);
+                alert("Lỗi thao tác file trên Android: " + err);
+            });
+        };
+    } else {
+        // Nếu là môi trường Web thông thường hoặc PWA (Tải thẳng vào thư mục Downloads)
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Dọn dẹp bộ nhớ sau khi tải xong
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+            a.remove();
+        }, 100);
+    }
+}
+
+// =========================================================
+// HÀM GHÉP MẢNH VÀ XỬ LÝ DỮ LIỆU AIR-GAP
+// =========================================================
+async function assembleAndDownloadFile(fileName) {
     let fullBase64 = "";
     for (let i = 0; i < expectedTotal; i++) { fullBase64 += airgapBuffer.get(i); }
 
@@ -1890,7 +1931,7 @@ function extractExcelSheetsToZip(file, zipCompress) {
         const originalExtension = fileName.toLowerCase();
         const isExcelOriginal = originalExtension.endsWith('.xlsx') || originalExtension.endsWith('.xls');
 
-        // 3. PHÂN LUỒNG XỬ LÝ
+        // 3. PHÂN LUỒNG XỬ LÝ (SỬ DỤNG HÀM LƯU ĐA NỀN TẢNG BÊN TRÊN)
         if (isExcelOriginal && fileNames.length > 1) {
             // Đóng gói lại thành 1 file ZIP để người dùng tải 1 lần được nhiều Sheet
             const zipBlob = await zip.generateAsync({type: "blob"});
@@ -1907,7 +1948,12 @@ function extractExcelSheetsToZip(file, zipCompress) {
         const st = document.getElementById('airgap-receive-status');
         if (st) st.innerHTML = "<span style='color:green; font-weight:bold;'>🎉 GHÉP VÀ BUNG FILE THÀNH CÔNG!</span>";
         
-        alert("Đã nhận file thành công! Kiểm tra thư mục Tải xuống.");
+        // Thay vì chỉ báo nhận thành công, thêm nhắc nhở cho từng nền tảng
+        if (window.cordova) {
+            alert("Đã nhận file thành công! Vui lòng chọn Lưu vào máy hoặc Chia sẻ ở hộp thoại tiếp theo.");
+        } else {
+            alert("Đã nhận file thành công! Kiểm tra thư mục Tải xuống.");
+        }
 
         // 5. DỌN DẸP BỘ NHỚ
         airgapBuffer.clear();
