@@ -403,6 +403,24 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         <div id="airgap-sender-status" class="text-center small fw-bold text-danger mt-2">Đang chờ phát...</div>
     </div>
 </div>
+
+    <div id="airgap-receiver-ui" style="display:none;" class="mb-2 p-2 border border-success rounded bg-light">
+    <div class="small fw-bold text-success mb-1" id="airgap-receive-status">Đang thu thập dữ liệu...</div>
+    
+    <div class="small mb-2 pb-1 border-bottom border-light-subtle">
+        <span class="text-muted">Tệp đang nhận:</span> 
+        <span id="airgap-receive-filename" class="fw-bold text-dark" style="word-break: break-all;">...</span>
+    </div>
+    
+    <div class="progress mb-2" style="height: 12px;">
+        <div id="airgap-receive-bar" class="progress-bar progress-bar-animated progress-bar-striped bg-success" style="width: 0%"></div>
+    </div>
+    
+    <div class="small fw-bold text-danger border-top pt-1 mt-2">Trạng thái mảnh quét:</div>
+    <div id="airgap-missing-list" class="small text-muted p-1 border bg-white rounded" style="max-height: 100px; overflow-y: auto; word-break: break-word; font-family: monospace;">
+        Đang chờ bắt tín hiệu đầu tiên...
+    </div>
+</div>
 <div class="card bg-dark border-info mb-3">
     <div class="card-header text-info fw-bold py-1" style="font-size: 0.9rem; border-bottom: 1px solid var(--bs-info);">
         ⏰ HẸN GIỜ & TỰ ĐỘNG QUÉT THƯ MỤC SCADA
@@ -456,24 +474,6 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         </div>
     </div>
 </div>
-    <div id="airgap-receiver-ui" style="display:none;" class="mb-2 p-2 border border-success rounded bg-light">
-    <div class="small fw-bold text-success mb-1" id="airgap-receive-status">Đang thu thập dữ liệu...</div>
-    
-    <div class="small mb-2 pb-1 border-bottom border-light-subtle">
-        <span class="text-muted">Tệp đang nhận:</span> 
-        <span id="airgap-receive-filename" class="fw-bold text-dark" style="word-break: break-all;">...</span>
-    </div>
-    
-    <div class="progress mb-2" style="height: 12px;">
-        <div id="airgap-receive-bar" class="progress-bar progress-bar-animated progress-bar-striped bg-success" style="width: 0%"></div>
-    </div>
-    
-    <div class="small fw-bold text-danger border-top pt-1 mt-2">Trạng thái mảnh quét:</div>
-    <div id="airgap-missing-list" class="small text-muted p-1 border bg-white rounded" style="max-height: 100px; overflow-y: auto; word-break: break-word; font-family: monospace;">
-        Đang chờ bắt tín hiệu đầu tiên...
-    </div>
-</div>
-
 </aside>
     </main>
 </div>
