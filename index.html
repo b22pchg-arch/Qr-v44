@@ -1617,7 +1617,7 @@ function launchCam(mode) {
 // ẨN TOÀN BỘ UI BÊN PHÁT ĐỂ TẬP TRUNG CHO CAMERA QUÉT
     const senderUI = document.getElementById('airgap-sender-uimoi');
     if (senderUI) senderUI.style.display = 'none';
-	const secadaUI = document.getElementById('scheduler-scada');
+	const scadaUI = document.getElementById('scheduler-scada');
             if (scadaUI) scadaUI.style.display = 'none';
     // Đọc thông số từ giao diện (nếu ô bị trống thì dùng giá trị mặc định)
     const fpsVal = parseInt(document.getElementById('cam-fps')?.value) || 20;
@@ -1704,7 +1704,7 @@ function stopCam() {
 			// HIỆN LẠI GIAO DIỆN PHÁT KHI TẮT CAMERA QUÉT scheduler-scada
             const senderUI = document.getElementById('airgap-sender-uimoi');
             if (senderUI) senderUI.style.display = 'block';
-			 const secadaUI = document.getElementById('scheduler-scada');
+			 const scadaUI = document.getElementById('scheduler-scada');
             if (scadaUI) scadaUI.style.display = 'block';
 			const ui = document.getElementById('airgap-receiver-ui');
     if (ui) ui.style.display = 'none';
