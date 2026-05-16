@@ -389,7 +389,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
 </div>
 <div class="card bg-dark border-info mb-3">
     <div class="card-header text-info fw-bold py-1" style="font-size: 0.9rem; border-bottom: 1px solid var(--bs-info);">
-        ⏰ HẸN GIỜ & ĐƯỜNG DẪN SCADA TỰ ĐỘNG
+        ⏰ HẸN GIỜ & TỰ ĐỘNG QUÉT THƯ MỤC SCADA
     </div>
     <div class="card-body py-2">
         <div class="row g-2">
@@ -412,20 +412,22 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             </div>
 
             <div class="col-12">
-                <label class="small text-info mb-1 fw-bold">Đường dẫn gốc (Local URL Prefix):</label>
-                <input type="text" id="scada-url-prefix" class="form-control form-control-sm bg-dark text-info border-info" 
-                       value="http://localhost:8080/Data_SCADA_">
+                <label class="small text-info mb-1 fw-bold">Thư mục nguồn dữ liệu:</label>
+                <div class="d-flex gap-2">
+                    <button type="button" onclick="requestScadaDirectory()" class="btn btn-sm btn-info fw-bold text-dark flex-shrink-0">
+                        📁 CHỌN THƯ MỤC SCADA
+                    </button>
+                    <input type="text" id="scada-dir-status" class="form-control form-control-sm bg-dark text-secondary small" 
+                           readonly value="Chưa cấp quyền thư mục..." style="border: 1px dashed #0dcaf0 !important;">
+                </div>
             </div>
 
             <div class="col-12">
-    <label class="small text-info mb-1 fw-bold">Đường dẫn thực tế sau khi tính toán độ trễ (yyyyMMddhhmm):</label>
-    
-    <input type="text" id="scada-full-path-display" 
-           class="form-control form-control-sm text-center small" 
-           readonly 
-           value="Chờ kích hoạt..." 
-           style="color: #ffc107 !important; background-color: #161b22 !important; font-weight: bold; border: 1px solid #0dcaf0 !important;">
-</div>
+                <label class="small text-info mb-1 fw-bold">Tên tệp tin hệ thống sẽ quét (yyyyMMddhhmm):</label>
+                <input type="text" id="scada-full-path-display" class="form-control form-control-sm text-center small" 
+                       readonly value="Chờ kích hoạt lịch..." 
+                       style="color: #ffc107 !important; background-color: #161b22 !important; font-weight: bold; border: 1px solid #0dcaf0 !important;">
+            </div>
 
             <div class="col-12 mt-2">
                 <button id="scheduler-btn" onclick="toggleScheduler()" class="btn btn-outline-info btn-sm w-100 fw-bold">
@@ -1164,13 +1166,34 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
 }
 
 // =========================================================================
-// HỆ THỐNG ĐIỀU KHIỂN HẸN GIỜ TRUYỀN TIN TỰ ĐỘNG (AIR-GAP SCHEDULER)
+// HỆ THỐNG ĐIỀU KHIỂN HẸN GIỜ & QUÉT THƯ MỤC TRỰC TIẾP (FILE SYSTEM ACCESS)
 // =========================================================================
 let schedulerInterval = null;
 let isSchedulerActive = false;
-let lastTriggeredMinute = ""; // Chống trùng lệnh trong cùng một phút
+let lastTriggeredMinute = ""; 
+let scadaDirectoryHandle = null; // Biến toàn cục lưu quyền truy cập thư mục
 
-// 1. Hàm bật/tắt trạng thái trực lịch hẹn giờ
+// 1. Hàm yêu cầu người dùng cấp quyền chọn thư mục SCADA (Bấm vào đầu ca)
+async function requestScadaDirectory() {
+    try {
+        // Mở hộp thoại chọn thư mục của hệ điều hành
+        scadaDirectoryHandle = await window.showDirectoryPicker();
+        
+        // Hiển thị tên thư mục đã chọn lên màn hình để kiểm tra
+        const dirStatusInput = document.getElementById('scada-dir-status');
+        if (dirStatusInput) {
+            dirStatusInput.value = `▶ Đã kết nối: Folder [ ${scadaDirectoryHandle.name} ]`;
+            dirStatusInput.classList.replace('text-secondary', 'text-success');
+            dirStatusInput.style.border = "1px solid #198754 !important";
+        }
+        console.log("📁 Đã nhận quyền kiểm soát thư mục:", scadaDirectoryHandle.name);
+    } catch (err) {
+        console.warn("Người dùng hủy hoặc trình duyệt không hỗ trợ File System Access API:", err);
+        alert("Không thể cấp quyền thư mục. Đảm bảo bạn đang dùng Chrome/Edge phiên bản mới.");
+    }
+}
+
+// 2. Hàm bật/tắt trạng thái trực lịch hẹn giờ
 function toggleScheduler() {
     const btn = document.getElementById('scheduler-btn');
     const statusEl = document.getElementById('scheduler-status');
@@ -1181,6 +1204,14 @@ function toggleScheduler() {
         return;
     }
 
+    const taskType = document.getElementById('scheduler-task').value;
+    
+    // Nếu chọn phát file tự động mà chưa chọn thư mục thì chặn lại
+    if (taskType === "PHAT" && !scadaDirectoryHandle) {
+        alert("⚠️ CHƯA CÓ NGUỒN DỮ LIỆU!\nVui lòng bấm nút 'CHỌN THƯ MỤC SCADA' để cấp quyền quét file trước khi kích hoạt lịch.");
+        return;
+    }
+
     if (!isSchedulerActive) {
         isSchedulerActive = true;
         btn.innerText = "🔕 HỦY HẸN GIỜ";
@@ -1188,7 +1219,6 @@ function toggleScheduler() {
         statusEl.style.display = 'block';
         lastTriggeredMinute = ""; 
 
-        const taskType = document.getElementById('scheduler-task').value;
         const taskName = taskType === "PHAT" ? "Tự động Phát File SCADA" : "Tự động Mở Cam Thu";
         statusEl.innerHTML = `⏳ Đang trực lịch: <b class="text-info">${taskName}</b> vào lúc <b class="text-white">${targetTimeInput}</b>`;
 
@@ -1201,7 +1231,6 @@ function toggleScheduler() {
     }
 }
 
-// 2. Hàm quét thời gian liên tục kiểm tra mốc kích hoạt
 function checkScheduler(targetTime, taskType) {
     const now = new Date();
     const currentHour = String(now.getHours()).padStart(2, '0');
@@ -1209,7 +1238,7 @@ function checkScheduler(targetTime, taskType) {
     const currentTimeStr = `${currentHour}:${currentMinute}`;
 
     if (currentTimeStr === targetTime && lastTriggeredMinute !== currentTimeStr) {
-        lastTriggeredMinute = currentTimeStr; // Khóa ngay lập tức
+        lastTriggeredMinute = currentTimeStr; 
         
         if (taskType === "PHAT") {
             triggerAutoBroadcast();
@@ -1217,17 +1246,15 @@ function checkScheduler(targetTime, taskType) {
             triggerAutoReceive();
         }
 
-        cancelScheduler(); // Thực hiện xong thì tự giải phóng lịch
+        cancelScheduler(); 
     }
 }
 
-// 3. Hàm xử lý tính toán chuỗi thời gian lùi (yyyyMMddhhmm)
+// 3. Hàm sinh hậu tố thời gian lùi yyyyMMddhhmm
 function getScadaTimeSuffix() {
     const now = new Date();
-    const offsetInput = document.getElementById('scada-time-offset');
-    const offsetMinutes = offsetInput ? parseInt(offsetInput.value) || 0 : 0;
+    const offsetMinutes = parseInt(document.getElementById('scada-time-offset').value) || 0;
 
-    // Trực tiếp trừ phút trên đối tượng hệ thống (Tự động nhảy ngày/giờ nếu vượt ngưỡng)
     if (offsetMinutes > 0) {
         now.setMinutes(now.getMinutes() - offsetMinutes);
     }
@@ -1241,61 +1268,63 @@ function getScadaTimeSuffix() {
     return `${yyyy}${MM}${dd}${hh}${mm}`;
 }
 
-// 4. Kịch bản TỰ ĐỘNG PHÁT: Thực hiện kết nối mạng nội bộ nhặt file
+// 4. LÀM MỚI TỐI ƯU: Tự động trích xuất file trực tiếp từ thư mục đã cấp quyền
 async function triggerAutoBroadcast() {
-    const urlPrefix = document.getElementById('scada-url-prefix').value;
-    const timeSuffix = getScadaTimeSuffix(); 
-    const extension = ".xlsx"; 
-    
-    const finalFileUrl = `${urlPrefix}${timeSuffix}${extension}`;
-    const fileName = `SCADA_${timeSuffix}${extension}`;
+    if (!scadaDirectoryHandle) return;
 
-    document.getElementById('scada-full-path-display').value = finalFileUrl;
+    const timeSuffix = getScadaTimeSuffix();
+    // Khớp chính xác tên file SCADA xuất ra (Ví dụ: Data_SCADA_202605161000.xlsx)
+    // Bạn có thể sửa chữ "Data_SCADA_" thành tiền tố cố định thực tế của trạm bạn
+    const targetFileName = `Data_SCADA_${timeSuffix}.xlsx`; 
+
+    document.getElementById('scada-full-path-display').value = targetFileName;
 
     let statusEl = document.getElementById('scheduler-status');
     if (statusEl) {
-        statusEl.innerHTML = `<span class="text-info">🔄 Đang tự động kéo tệp: ${fileName}...</span>`;
+        statusEl.innerHTML = `<span class="text-info">🔍 Đang quét thư mục tìm tệp: ${targetFileName}...</span>`;
     }
 
     try {
-        // Fetch dữ liệu nhị phân từ Local Server
-        const response = await fetch(finalFileUrl);
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status} - Không tìm thấy file. Vui lòng kiểm tra lại độ trễ file.`);
-        }
+        // Lấy tay cầm của chính file đó trong thư mục
+        const fileHandle = await scadaDirectoryHandle.getFileHandle(targetFileName);
+        
+        // Đọc dữ liệu thô của tệp tin biến thành đối tượng File của Javascript
+        const scadaFile = await fileHandle.getFile();
 
-        const blob = await response.blob();
-        const autoScadaFile = new File([blob], fileName, { type: blob.type });
-        const simulatedInput = { files: [autoScadaFile], value: "" };
+        // Giả lập cấu trúc input đầu vào hợp lệ
+        const simulatedInput = {
+            files: [scadaFile],
+            value: ""
+        };
 
-        // Đẩy thẳng vào dây chuyền pre-render và mở rạp chiếu phát luôn
+        // Bỏ màn hình loading và ném thẳng vào rạp chiếu phát luôn
         await packAndPlayAirGap(simulatedInput);
 
     } catch (error) {
         console.error(error);
-        alert(`❌ LỖI HẸN GIỜ PHÁT:\n${error.message}`);
+        // Phân tách loại lỗi để thông báo trực quan cho kỹ sư ca trực
+        let errorMsg = error.name === "NotFoundError" 
+            ? `Không tìm thấy tệp [ ${targetFileName} ] trong thư mục. Hãy kiểm tra xem hệ thống SCADA đã xuất file chưa hoặc cấu hình lại 'Độ trễ file'.`
+            : `Lỗi bảo mật hoặc tệp đang bị một ứng dụng khác (Excel) khóa mở. (${error.message})`;
+            
+        alert(`❌ LỖI QUET TỆP TỰ ĐỘNG:\n${errorMsg}`);
         cancelScheduler();
     }
 }
 
-// 5. Kịch bản TỰ ĐỘNG THU: Chủ động kích hoạt camera Máy B
 function triggerAutoReceive() {
     if (typeof launchCam === "function") {
-        console.log("📥 Kích hoạt camera nhận tự động.");
         launchCam("environment");
     } else {
         alert("⏰ ĐẾN GIỜ THU DỮ LIỆU! Vui lòng bật Camera để hứng.");
     }
 }
 
-// 6. Hàm dọn dẹp, tắt đồng hồ quét nền
 function cancelScheduler() {
     isSchedulerActive = false;
     clearInterval(schedulerInterval);
-    
     const btn = document.getElementById('scheduler-btn');
     const statusEl = document.getElementById('scheduler-status');
-    
     if (btn) {
         btn.innerText = "🔔 KÍCH HOẠT LỊCH TỰ ĐỘNG";
         btn.classList.replace('btn-danger', 'btn-outline-info');
@@ -1305,7 +1334,6 @@ function cancelScheduler() {
         statusEl.innerText = "";
     }
 }
-
     // --- CÁC HÀM ĐIỀU KHIỂN RẠP CHIẾU ---
     function openTheater() {
     const theater = document.getElementById('airgap-theater');
