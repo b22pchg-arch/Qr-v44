@@ -388,17 +388,22 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     </div>
 </div>
     <div id="airgap-receiver-ui" style="display:none;" class="mb-2 p-2 border border-success rounded bg-light">
-        <div class="small fw-bold text-success mb-1" id="airgap-receive-status">Đang thu thập dữ liệu...</div>
-        
-        <div class="progress mb-2" style="height: 10px;">
-            <div id="airgap-receive-bar" class="progress-bar progress-bar-animated progress-bar-striped bg-success" style="width: 0%"></div>
-        </div>
-        
-        <div class="small fw-bold text-danger border-top pt-1 mt-2">Trạng thái mảnh quét:</div>
-        <div id="airgap-missing-list" class="small text-muted p-1 border bg-white rounded" style="max-height: 100px; overflow-y: auto; word-break: break-word; font-family: monospace;">
-            Đang chờ bắt tín hiệu đầu tiên...
-        </div>
+    <div class="small fw-bold text-success mb-1" id="airgap-receive-status">Đang thu thập dữ liệu...</div>
+    
+    <div class="small mb-2 pb-1 border-bottom border-light-subtle">
+        <span class="text-muted">Tệp đang nhận:</span> 
+        <span id="airgap-receive-filename" class="fw-bold text-dark" style="word-break: break-all;">...</span>
     </div>
+    
+    <div class="progress mb-2" style="height: 12px;">
+        <div id="airgap-receive-bar" class="progress-bar progress-bar-animated progress-bar-striped bg-success" style="width: 0%"></div>
+    </div>
+    
+    <div class="small fw-bold text-danger border-top pt-1 mt-2">Trạng thái mảnh quét:</div>
+    <div id="airgap-missing-list" class="small text-muted p-1 border bg-white rounded" style="max-height: 100px; overflow-y: auto; word-break: break-word; font-family: monospace;">
+        Đang chờ bắt tín hiệu đầu tiên...
+    </div>
+</div>
 
 </aside>
     </main>
@@ -1531,12 +1536,13 @@ function extractExcelSheetsToZip(file, zipCompress) {
     // 1. CHẤP NHẬN CẢ HAI CHUẨN NÉN (ZIP: [FZ], LZMA: [LZ])
     if (!decodedText.startsWith("[FZ]|") && !decodedText.startsWith("[LZ]|")) return false;
     
-    // ẨN LUÔN UI BÊN PHÁT KHI MÁY B ĐANG TRONG TIẾN TRÌNH NHẬN DỮ LIỆU
-    const senderUI = document.getElementById('airgap-sender-uimoi');
-    if (senderUI) senderUI.style.display = 'none';
-	// --- LỆNH QUAN TRỌNG: ĐÁNH THỨC GIAO DIỆN HIỂN THỊ ---
+    // --- ĐÁNH THỨC GIAO DIỆN HIỂN THỊ ---
     const ui = document.getElementById('airgap-receiver-ui');
     if (ui) ui.style.display = 'block';
+
+    // Ẩn UI bên Phát để nhường không gian cho camera quét
+    const senderUI = document.getElementById('airgap-sender-ui');
+    if (senderUI) senderUI.style.display = 'none';
 
     const parts = decodedText.split("|");
     const headerPrefix = parts[0]; 
@@ -1545,63 +1551,59 @@ function extractExcelSheetsToZip(file, zipCompress) {
     const total = parseInt(parts[3]);
     const data = parts[4];
 
-    // Lưu lại chuẩn nén để phục vụ khâu bung file
     window.lastCapturedHeader = headerPrefix;
 
     // ========================================================
     // KHỞI TẠO HOẶC RESET TOÀN DIỆN KHI CÓ LUỒNG FILE MỚI ĐẾN
     // ========================================================
     if (expectedTotal === 0 || currentReceivingFile !== fileName) {
-        // A. Reset biến logic trong RAM
         expectedTotal = total;
         currentReceivingFile = fileName;
         airgapBuffer.clear();
         missingFramesSet = new Set(Array.from({length: total}, (_, i) => i + 1));
 
-        // B. Reset thanh tiến độ về 0% và bật hiệu ứng chạy sọc animation
+        // ĐẨY TÊN FILE VÀ CHUẨN NÉN VÀO Ô RIÊNG (Không lo bị ghi đè)
+        const rxFileNameEl = document.getElementById('airgap-receive-filename');
+        if (rxFileNameEl) {
+            let compName = headerPrefix === "[LZ]" ? "LZMA" : "ZIP";
+            // Hiển thị tên file và kèm theo một nhãn chuẩn nén nhỏ phía sau
+            rxFileNameEl.innerHTML = `${fileName.split('/').pop()} <span class="badge bg-info text-dark ms-1" style="font-size:0.75rem;">${compName}</span>`;
+        }
+
+        // Reset thanh tiến độ về 0%
         let bar = document.getElementById('airgap-receive-bar');
         if (bar) {
             bar.style.width = '0%';
             bar.classList.add('progress-bar-animated', 'progress-bar-striped'); 
         }
-        
-        // C. Làm sạch dòng trạng thái thành công cũ, ghi đè thông tin file mới
-        let st = document.getElementById('airgap-receive-status');
-        let compName = headerPrefix === "[LZ]" ? "LZMA" : "ZIP";
-        if (st) {
-            st.innerHTML = `⏳ Đang nạp tệp mới (<b class="text-info">${compName}</b>): <span class="text-warning">${fileName}</span>...`;
-        }
-
-        // D. Reset danh sách mảnh sót về trạng thái chờ khởi tạo đầy đủ
-        const listEl = document.getElementById('airgap-missing-list');
-        if (listEl) {
-            listEl.innerHTML = `<b class="text-warning">Khởi tạo:</b> Đang đồng bộ hóa toàn bộ ${total} mảnh dữ liệu...`;
-        }
     }
 
     // ========================================================
-    // TIẾN HÀNH GHI ĐÈ DỮ LIỆU VÀO BỘ ĐỆM NHƯ CŨ
+    // TIẾN HÀNH GHI ĐÈ DỮ LIỆU VÀ CẬP NHẬT TIẾN ĐỘ CHUẨN XÁC
     // ========================================================
     if (!airgapBuffer.has(index - 1)) {
         airgapBuffer.set(index - 1, data);
         missingFramesSet.delete(index); 
 
-        // Cập nhật thanh tiến độ theo thực tế mảnh vừa nhận
+        // Cập nhật thanh tiến độ
         let percent = (airgapBuffer.size / expectedTotal) * 100;
         let bar = document.getElementById('airgap-receive-bar');
         if (bar) bar.style.width = percent + '%';
 
-        // Cập nhật danh sách mảnh sót thực tế lên màn hình
+        // Cập nhật danh sách mảnh sót
         const listEl = document.getElementById('airgap-missing-list');
         if (listEl) {
             const arr = Array.from(missingFramesSet);
             listEl.innerHTML = arr.length > 0 ? 
                 `<b class="text-danger">Còn thiếu (${arr.length} mảnh):</b> ${arr.join(", ")}` : 
-                `<b class="text-success">Đã nhận đủ toàn bộ! Thao tác ghép file đang chạy...</b>`;
+                `<b class="text-success">Đã hứng trọn vẹn 100%!</b>`;
         }
 
+        // CẬP NHẬT TIẾN ĐỘ VÀO STATUS (An toàn, rõ ràng)
         const st = document.getElementById('airgap-receive-status');
-        if (st) st.innerText = `Tiến độ: ${airgapBuffer.size} / ${expectedTotal} mảnh (${Math.round(percent)}%)`;
+        if (st) {
+            st.innerText = `⏳ Đang thu thập dữ liệu... Tiến độ: ${airgapBuffer.size} / ${expectedTotal} mảnh (${Math.round(percent)}%)`;
+        }
 
         // KHI HOÀN THÀNH ĐỦ 100% GÓI TIN
         if (airgapBuffer.size === expectedTotal) {
