@@ -1,0 +1,18 @@
+{
+  "name": "Hệ Thống Dữ Liệu Tổng Hợp - PC Tuyên Quang",
+  "short_name": "AirGap SCADA",
+  "description": "Hệ thống truyền tải dữ liệu Air-Gap an toàn qua luồng mã QR",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#212529",
+  "theme_color": "#0dcaf0",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/241/241517.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
