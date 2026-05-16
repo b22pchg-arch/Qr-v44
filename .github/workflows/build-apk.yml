@@ -1,0 +1,52 @@
+name: Tu Dong Build APK Cordova
+on:
+  push:
+    branches: [ "main", "master" ] # Tự động chạy mỗi khi bạn cập nhật code
+  workflow_dispatch: # Cho phép bạn bấm nút tự chạy thủ công bất cứ lúc nào
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Ma Nguon
+      uses: actions/checkout@v3
+
+    - name: Cai dat Java JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'zulu'
+
+    - name: Cai dat Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+
+    - name: Cai dat Apache Cordova CLI
+      run: npm install -g cordova
+
+    - name: Khoi tao du an va nap day du 3 file co san
+      run: |
+        cordova create temp_app com.pctuyenquang.airgap "AirGapSCADA"
+        # Xóa các file mẫu mặc định của Cordova đi
+        rm -rf temp_app/www/*
+        
+        # Chép toàn bộ bộ ba file cốt lõi của bạn vào lõi ứng dụng APK
+        cp index.html temp_app/www/index.html
+        cp manifest.json temp_app/www/manifest.json
+        cp sw.js temp_app/www/sw.js
+        
+        # Ghi đè file cấu hình quyền phần cứng vào hệ thống build
+        cp config.xml temp_app/config.xml
+
+    - name: Xay dung nen tang Android va Bien dich APK
+      run: |
+        cd temp_app
+        cordova platform add android@10.1.2
+        cordova build android --device
+
+    - name: Xuat file APK thanh pham de tai ve
+      uses: actions/upload-artifact@v3
+      with:
+        name: AirGap_Receiver_PC_TuyenQuang
+        path: temp_app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
