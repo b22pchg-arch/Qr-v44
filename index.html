@@ -3,7 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Hệ Thống Dữ Liệu Tổng Hợp V40.0 - PC Tuyên Quang</title>
+<link rel="manifest" href="manifest.json">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AirGap SCADA">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/241/241517.png">
 
+    <script>
+        // Tự động kích hoạt đăng ký bộ nhớ nền PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('✅ Đăng ký Service Worker thành công:', reg.scope))
+                    .catch(err => console.error('❌ Lỗi đăng ký Service Worker:', err));
+            });
+        }
+    </script>
     
     <style>
         @charset "UTF-8";/*!
