@@ -317,7 +317,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         <div class="row g-2">
             <div class="col-6">
                 <label class="small text-info mb-1 fw-bold">Kích thước QR (px):</label>
-                <input type="number" id="qr-size" class="form-control form-control-sm bg-dark text-info border-info text-center" value="600" min="200" max="1000">
+                <input type="number" id="qr-size" class="form-control form-control-sm bg-dark text-info border-info text-center" value="550" min="200" max="1000">
             </div>
             
             <div class="col-6">
@@ -352,6 +352,13 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     Tôi đã tự nén file (Bỏ qua xử lý Excel/CSV)
 </label>
     </div>
+	<div class="mb-3">
+    <label class="small text-info fw-bold d-block mb-2">CHIẾN LƯỢC TRÌNH CHIẾU LUỒNG:</label>
+    <select id="airgap-play-strategy" class="form-select form-select-sm bg-dark text-info border-info">
+        <option value="realtime" selected>⚡ Vừa tạo vừa phát (Tốc độ cao, không cần chờ)</option>
+        <option value="prerender">🎬 Tạo xong mới phát (Truyền thống, ổn định RAM)</option>
+    </select>
+</div>
 </div>
     <div class="d-grid gap-2 mb-2">
         <label class="btn btn-outline-danger btn-sm fw-bold mb-0">
@@ -937,16 +944,15 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     const file = input.files[0]; 
     if (!file) return;
 
-    // --- LẤY THÔNG SỐ VÀ ÁP DỤNG BỘ LỌC THÔNG MINH ---
+    // --- LẤY THÔNG SỐ TÙY BIẾN MẬT ĐỘ VÀ CHIẾN LƯỢC ---
     const qrSize = parseInt(document.getElementById('qr-size').value) || 600;
     let chunkSize = parseInt(document.getElementById('airgap-chunk-size').value) || 700;
     const errorLevelStr = document.getElementById('qr-error-level').value || "L";
     const errorLevel = QRCode.CorrectLevel[errorLevelStr];
+    const playStrategy = document.getElementById('airgap-play-strategy')?.value || "realtime";
 
     const safeLimits = { "L": 2800, "M": 2200, "Q": 1500, "H": 1100 };
-
     if (chunkSize > safeLimits[errorLevelStr]) {
-        alert(`⚠️ Mật độ ${chunkSize} vượt giới hạn cho Level ${errorLevelStr}.\nĐã điều chỉnh về ngưỡng an toàn: ${safeLimits[errorLevelStr]}`);
         chunkSize = safeLimits[errorLevelStr];
         document.getElementById('airgap-chunk-size').value = chunkSize;
     }
@@ -995,25 +1001,105 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         
         const totalFrags = Math.ceil(finalBase64Data.length / chunkSize);
         const dummyDiv = document.createElement('div');
-        
-        document.getElementById('loading-text').innerText = "Đang tạo ảnh QR...";
-        for (let i = 0; i < totalFrags; i++) {
-            if (i % 10 === 0 || i === totalFrags - 1) {
-                document.getElementById('loading-text').innerText = `Đang vẽ mật độ ${chunkSize}: ${i + 1} / ${totalFrags} ảnh...`;
-                await new Promise(r => setTimeout(r, 0));
+
+        // ========================================================
+        // PHÂN LUỒNG 1: VỪA TẠO VỪA PHÁT (REAL-TIME STREAMING)
+        // ========================================================
+        if (playStrategy === "realtime") {
+            showLoading(false); // Đóng ngay màn hình chờ
+
+            // 1. Kích hoạt và đo đạc kích thước Rạp chiếu theo qr-size tùy biến
+            const theater = document.getElementById('airgap-theater');
+            const qrImg = document.getElementById('theater-img');
+            if (theater) {
+                theater.style.setProperty('display', 'flex', 'important');
+                if (theater.requestFullscreen) theater.requestFullscreen();
             }
-            let chunkData = finalBase64Data.substring(i * chunkSize, (i + 1) * chunkSize);
-            let rawText = `${headerPrefix}|${file.name}|${i + 1}|${totalFrags}|${chunkData}`;
-            let qrText = safeUtf8ForQrjs(rawText);
-            
-            dummyDiv.innerHTML = "";
-            new QRCode(dummyDiv, { text: qrText, width: qrSize, height: qrSize, correctLevel: errorLevel });
-            let canvas = dummyDiv.querySelector('canvas');
-            airgapFrames.push(canvas.toDataURL("image/png")); 
+
+            const maxHeight = window.innerHeight * 0.9;
+            const maxWidth = window.innerWidth * 0.7; // Tương ứng cột trái chiếm 75%
+            const finalDisplaySize = Math.min(qrSize, maxHeight, maxWidth);
+            if (qrImg) {
+                qrImg.style.width = finalDisplaySize + "px";
+                qrImg.style.height = finalDisplaySize + "px";
+            }
+
+            // 2. Khởi tạo trạng thái giao thức Rạp chiếu vòng đầu
+            document.getElementById('theater-missing-ui').style.display = 'none';
+            document.getElementById('theater-missing-status').innerText = "";
+            document.getElementById('theater-filename').innerText = "Đang truyền trực tiếp: " + file.name;
+            document.getElementById('theater-pause-btn').innerText = "TẠM DỪNG";
+
+            framesSequence = Array.from({length: totalFrags}, (_, i) => i);
+            currentSequenceIndex = 0;
+            loopCount = 0;
+            isAirGapPaused = false;
+
+            // 3. Vòng lặp dựng hình và chiếu trực diện dứt điểm vòng 1
+            for (let i = 0; i < totalFrags; i++) {
+                // Kiểm soát cơ chế Tạm dừng nếu người dùng bấm nút lúc đang phát real-time
+                while (isAirGapPaused) {
+                    await new Promise(r => setTimeout(r, 100));
+                }
+
+                let chunkData = finalBase64Data.substring(i * chunkSize, (i + 1) * chunkSize);
+                let rawText = `${headerPrefix}|${file.name}|${i + 1}|${totalFrags}|${chunkData}`;
+                let qrText = safeUtf8ForQrjs(rawText);
+                
+                dummyDiv.innerHTML = "";
+                new QRCode(dummyDiv, { text: qrText, width: qrSize, height: qrSize, correctLevel: errorLevel });
+                
+                let canvas = dummyDiv.querySelector('canvas');
+                let imgDataURL = canvas.toDataURL("image/png");
+                
+                // LƯU VÀO KHO ĐỂ LẶP LẠI CHO CÁC VÒNG SAU
+                airgapFrames.push(imgDataURL);
+
+                // PHÁT LUÔN RA MÀN HÌNH KHÔNG CHỜ ĐỢI
+                if (qrImg) qrImg.src = imgDataURL;
+                document.getElementById('theater-counter').innerText = `${i + 1} / ${totalFrags}`;
+
+                // Trích xuất tốc độ đồng bộ thời gian thực từ input điều khiển
+                let speedInput = document.getElementById('airgap-speed-custom');
+                let speedMs = speedInput ? parseInt(speedInput.value) : 1000;
+                if (speedMs < 50) speedMs = 50;
+                
+                await new Promise(r => setTimeout(r, speedMs));
+            }
+
+            // 4. Kết thúc vòng 1: Bật giao diện mảnh sót và tạo ZIP nền nếu cần
+            onFirstLoopComplete();
+
+            // 5. Chuyển giao mượt mà sang cơ chế setInterval tuần hoàn từ kho dữ liệu đã tích lũy
+            currentSequenceIndex = 0;
+            playAirGap();
+
+        // ========================================================
+        // PHÂN LUỒNG 2: TẠO XONG MỚI PHÁT (PRE-RENDER TRUYỀN THỐNG)
+        // ========================================================
+        } else {
+            document.getElementById('loading-text').innerText = "Đang tạo toàn bộ ảnh QR...";
+            for (let i = 0; i < totalFrags; i++) {
+                if (i % 10 === 0 || i === totalFrags - 1) {
+                    document.getElementById('loading-text').innerText = `Đang vẽ mật độ ${chunkSize}: ${i + 1} / ${totalFrags} ảnh...`;
+                    await new Promise(r => setTimeout(r, 0));
+                }
+                let chunkData = finalBase64Data.substring(i * chunkSize, (i + 1) * chunkSize);
+                let rawText = `${headerPrefix}|${file.name}|${i + 1}|${totalFrags}|${chunkData}`;
+                let qrText = safeUtf8ForQrjs(rawText);
+                
+                dummyDiv.innerHTML = "";
+                new QRCode(dummyDiv, { text: qrText, width: qrSize, height: qrSize, correctLevel: errorLevel });
+                let canvas = dummyDiv.querySelector('canvas');
+                airgapFrames.push(canvas.toDataURL("image/png")); 
+            }
+            showLoading(false);
+            openTheater();
         }
-        showLoading(false);
-        openTheater();
-    } catch (e) { alert("Lỗi hệ thống: " + (e.message || e)); showLoading(false); }
+    } catch (e) { 
+        alert("Lỗi hệ thống: " + (e.message || e)); 
+        showLoading(false); 
+    }
     input.value = ""; 
 }
 
