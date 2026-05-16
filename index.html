@@ -1608,8 +1608,9 @@ function resetToFullLoop() {
 let currentFacingMode = "environment"; // "environment" là cam sau, "user" là cam trước
 let isCamRunning = false;
 
+
 // =========================================================
-// 🌟 THÊM MỚI: HÀM KHỞI TẠO VÀ ĐIỀU KHIỂN ZOOM PHẦN CỨNG
+// HÀM KHỞI TẠO ZOOM (PHIÊN BẢN CHỜ PHẦN CỨNG VÀ BẮT TRỰC TIẾP)
 // =========================================================
 function initCameraZoom() {
     const container = document.getElementById('zoom-control-container');
@@ -1617,46 +1618,70 @@ function initCameraZoom() {
     const display = document.getElementById('zoom-value-display');
     
     if (!container || !slider) return;
-    
-    // Mặc định ẩn container trước khi kiểm tra thiết bị
-    container.style.display = 'none';
 
-    // Kiểm tra tính hợp lệ của thư viện và luồng camera đang chạy
-    if (!html5QrCodeCam || typeof html5QrCodeCam.getRunningTrack !== 'function') return;
-
-    try {
-        const track = html5QrCodeCam.getRunningTrack();
-        if (!track) return;
-
-        const capabilities = track.getCapabilities();
-        const settings = track.getSettings();
-
-        // Kiểm tra xem cụm camera phần cứng của điện thoại có hỗ trợ tính năng Zoom không
-        if ('zoom' in capabilities) {
-            container.style.display = 'block'; // Hiện thanh trượt nếu thiết bị hỗ trợ
-            
-            // Thiết lập các thông số động dựa trên cấu hình thật của camera máy
-            slider.min = capabilities.zoom.min;
-            slider.max = capabilities.zoom.max;
-            slider.step = capabilities.zoom.step || 0.1;
-            slider.value = settings.zoom || capabilities.zoom.min;
-            
-            // Hiển thị chỉ số thu phóng ban đầu
-            if (display) display.innerText = parseFloat(slider.value).toFixed(1) + "x";
-
-            // Sự kiện kéo trượt cấu hình tiêu cự ống kính trực tiếp
-            slider.oninput = function(e) {
-                const targetZoom = parseFloat(e.target.value);
-                if (display) display.innerText = targetZoom.toFixed(1) + "x";
-                
-                track.applyConstraints({
-                    advanced: [{ zoom: targetZoom }]
-                }).catch(err => console.warn("Không thể áp dụng mức Zoom hiện tại:", err));
-            };
+    // Thiết lập vòng lặp quét tìm Camera: Mỗi 0.5 giây thử quét 1 lần, quét tối đa 10 lần (5 giây)
+    let retries = 0;
+    const findTrackInterval = setInterval(() => {
+        retries++;
+        if (retries > 10) {
+            clearInterval(findTrackInterval);
+            console.warn("Quá thời gian chờ khởi động Camera hoặc thiết bị không hỗ trợ Zoom.");
+            return;
         }
-    } catch (error) {
-        console.warn("Trình duyệt không cho phép truy xuất thuộc tính cấu hình Camera:", error);
-    }
+
+        try {
+            let track = null;
+
+            // Cách 1: Lấy qua thư viện Html5Qrcode
+            if (typeof html5QrCodeCam !== 'undefined' && typeof html5QrCodeCam.getRunningTrack === 'function') {
+                track = html5QrCodeCam.getRunningTrack();
+            }
+            
+            // Cách 2: (Mạnh nhất) Chọc thẳng vào DOM để lấy luồng video thô đang phát
+            if (!track) {
+                const videoEl = document.querySelector('#camera-reader video');
+                if (videoEl && videoEl.srcObject) {
+                    track = videoEl.srcObject.getVideoTracks()[0];
+                }
+            }
+
+            if (track) {
+                const capabilities = track.getCapabilities();
+                const settings = track.getSettings();
+
+                // Nếu ống kính đã khởi động xong và trả về thông số Zoom
+                if ('zoom' in capabilities) {
+                    clearInterval(findTrackInterval); // Dừng vòng lặp quét
+                    container.style.display = 'block'; // Hiển thị thanh trượt
+                    
+                    slider.min = capabilities.zoom.min;
+                    slider.max = capabilities.zoom.max;
+                    slider.step = capabilities.zoom.step || 0.1;
+                    slider.value = settings.zoom || capabilities.zoom.min;
+                    
+                    if (display) display.innerText = parseFloat(slider.value).toFixed(1) + "x";
+
+                    // Bắt sự kiện kéo thanh trượt
+                    slider.oninput = function(e) {
+                        const targetZoom = parseFloat(e.target.value);
+                        if (display) display.innerText = targetZoom.toFixed(1) + "x";
+                        
+                        track.applyConstraints({
+                            advanced: [{ zoom: targetZoom }]
+                        }).catch(err => console.error("Lệnh thu phóng bị từ chối:", err));
+                    };
+                    console.log("Kích hoạt điều khiển Zoom thành công!");
+                } else {
+                    // Nếu track đã sẵn sàng nhưng điện thoại kiên quyết không hỗ trợ Zoom
+                    if (track.readyState === 'live') {
+                        clearInterval(findTrackInterval);
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn("Đang chờ camera khởi tạo...", error);
+        }
+    }, 500);
 }
 
 // 2. Hàm gọi Camera (Giữ nguyên)
