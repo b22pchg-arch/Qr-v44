@@ -1315,11 +1315,38 @@ function resetToFullLoop() {
     playAirGap();
 }
 
-    function stopAirGap() {
-        clearInterval(airgapInterval);
-        document.getElementById('airgap-theater').style.display = 'none';
-        if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen();
-    }
+   function stopAirGap() {
+    // 1. DƯNG NGAY LẬP TỨC VÒNG LẶP INTERVAL PHÁT MÃ
+    clearInterval(airgapInterval);
+    
+    // 2. ẨN RẠP CHIẾU VÀ THOÁT KHỎI CHẾ ĐỘ TOÀN MÀN HÌNH
+    document.getElementById('airgap-theater').style.display = 'none';
+    if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen();
+    
+    // =========================================================
+    // 3. TÍCH HỢP RESET TOÀN DIỆN - XÓA SẠCH DẤU VẾT TRÊN GIAO DIỆN
+    // =========================================================
+    const imgEl = document.getElementById('theater-img');
+    const counterEl = document.getElementById('theater-counter');
+    const nameEl = document.getElementById('theater-filename');
+    const missingInput = document.getElementById('missing-frames-input');
+    const missingUi = document.getElementById('theater-missing-ui');
+
+    if (imgEl) imgEl.src = "";              // Xóa ảnh QR cuối cùng (tránh lóa hình khi mở lại)
+    if (counterEl) counterEl.innerText = "0 / 0";  // Đưa bộ đếm về trạng thái rỗng
+    if (nameEl) nameEl.innerText = "...";      // Xóa tên file cũ
+    if (missingInput) missingInput.value = ""; // Xóa nội dung ô nhập mảnh sót
+    if (missingUi) missingUi.style.display = 'none'; // Ẩn phân vùng nhập mảnh sót đi
+
+    // 4. GIẢI PHÓNG RAM NGAY LẬP TỨC (Rất quan trọng với file SCADA lớn)
+    airgapFrames = []; 
+    framesSequence = [];
+    currentSequenceIndex = 0;
+    loopCount = 0;
+    isAirGapPaused = false;
+    
+    console.log("🧼 Đã dọn dẹp sạch sẽ bộ nhớ và giao diện Rạp chiếu.");
+}
 
     // ==========================================
     // CẬP NHẬT MÁY THU: RADAR QUÉT TOÀN MÀN HÌNH HD & DÒ MẢNH
@@ -1501,59 +1528,74 @@ function extractExcelSheetsToZip(file, zipCompress) {
     if (ui) ui.style.display = 'block';
 
     const parts = decodedText.split("|");
-    const headerPrefix = parts[0]; // Trích xuất header: [FZ] hoặc [LZ]
+    const headerPrefix = parts[0]; 
     const fileName = parts[1];
     const index = parseInt(parts[2]);
     const total = parseInt(parts[3]);
     const data = parts[4];
 
-    // 2. LƯU LẠI CHUẨN NÉN ĐỂ MÁY B BIẾT ĐƯỜNG BUNG FILE
+    // Lưu lại chuẩn nén để phục vụ khâu bung file
     window.lastCapturedHeader = headerPrefix;
 
-    // --- KHỞI TẠO HOẶC RESET KHI CÓ FILE MỚI ---
+    // ========================================================
+    // KHỞI TẠO HOẶC RESET TOÀN DIỆN KHI CÓ LUỒNG FILE MỚI ĐẾN
+    // ========================================================
     if (expectedTotal === 0 || currentReceivingFile !== fileName) {
+        // A. Reset biến logic trong RAM
         expectedTotal = total;
         currentReceivingFile = fileName;
         airgapBuffer.clear();
         missingFramesSet = new Set(Array.from({length: total}, (_, i) => i + 1));
 
-        // RESET THANH TIẾN ĐỘ VỀ 0% NGAY LẬP TỨC
+        // B. Reset thanh tiến độ về 0% và bật hiệu ứng chạy sọc animation
         let bar = document.getElementById('airgap-receive-bar');
         if (bar) {
             bar.style.width = '0%';
-            bar.classList.add('progress-bar-animated'); 
+            bar.classList.add('progress-bar-animated', 'progress-bar-striped'); 
         }
         
+        // C. Làm sạch dòng trạng thái thành công cũ, ghi đè thông tin file mới
         let st = document.getElementById('airgap-receive-status');
         let compName = headerPrefix === "[LZ]" ? "LZMA" : "ZIP";
-        if (st) st.innerText = `Đang nạp file (${compName}): ${fileName}...`;
+        if (st) {
+            st.innerHTML = `⏳ Đang nạp tệp mới (<b class="text-info">${compName}</b>): <span class="text-warning">${fileName}</span>...`;
+        }
+
+        // D. Reset danh sách mảnh sót về trạng thái chờ khởi tạo đầy đủ
+        const listEl = document.getElementById('airgap-missing-list');
+        if (listEl) {
+            listEl.innerHTML = `<b class="text-warning">Khởi tạo:</b> Đang đồng bộ hóa toàn bộ ${total} mảnh dữ liệu...`;
+        }
     }
 
+    // ========================================================
+    // TIẾN HÀNH GHI ĐÈ DỮ LIỆU VÀO BỘ ĐỆM NHƯ CŨ
+    // ========================================================
     if (!airgapBuffer.has(index - 1)) {
         airgapBuffer.set(index - 1, data);
         missingFramesSet.delete(index); 
 
-        // CẬP NHẬT THANH TIẾN ĐỘ THEO THỰC TẾ
+        // Cập nhật thanh tiến độ theo thực tế mảnh vừa nhận
         let percent = (airgapBuffer.size / expectedTotal) * 100;
         let bar = document.getElementById('airgap-receive-bar');
         if (bar) bar.style.width = percent + '%';
 
-        // CẬP NHẬT DANH SÁCH MẢNH SÓT LÊN MÀN HÌNH
+        // Cập nhật danh sách mảnh sót thực tế lên màn hình
         const listEl = document.getElementById('airgap-missing-list');
         if (listEl) {
             const arr = Array.from(missingFramesSet);
             listEl.innerHTML = arr.length > 0 ? 
-                `<b class="text-danger">Còn thiếu:</b> ${arr.join(", ")}` : 
-                `<b class="text-success">Đã nhận đủ toàn bộ!</b>`;
+                `<b class="text-danger">Còn thiếu (${arr.length} mảnh):</b> ${arr.join(", ")}` : 
+                `<b class="text-success">Đã nhận đủ toàn bộ! Thao tác ghép file đang chạy...</b>`;
         }
 
         const st = document.getElementById('airgap-receive-status');
         if (st) st.innerText = `Tiến độ: ${airgapBuffer.size} / ${expectedTotal} mảnh (${Math.round(percent)}%)`;
 
-        // KHI HOÀN THÀNH 100%
+        // KHI HOÀN THÀNH ĐỦ 100% GÓI TIN
         if (airgapBuffer.size === expectedTotal) {
-            if (bar) bar.classList.remove('progress-bar-animated'); 
-            if (st) st.innerHTML = "<span class='text-success fw-bold'>✅ ĐANG GHÉP FILE...</span>";
+            if (bar) bar.classList.remove('progress-bar-animated', 'progress-bar-striped'); 
+            if (st) st.innerHTML = "<span class='text-success fw-bold'>⚙️ ĐANG GHÉP VÀ BUNG FILE... VUI LÒNG CHỜ</span>";
             assembleAndDownloadFile(fileName);
         }
     }
