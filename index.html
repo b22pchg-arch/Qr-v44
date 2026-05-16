@@ -313,12 +313,21 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     </div>
 </div>
         <div id="camera-box" style="display:none; margin-bottom:10px;">
-            <div id="camera-reader"></div>
-            <div class="d-flex justify-content-between mt-1 gap-1">
-                <button class="btn btn-sm btn-primary w-50 fw-bold" onclick="flipCamera()"><i class="fas fa-sync-alt"></i> ĐẢO CAM</button>
-                <button class="btn btn-sm btn-danger w-50 fw-bold" onclick="stopCam()">TẮT CAM</button>
-            </div>
+    <div id="camera-reader"></div>
+    
+    <div id="zoom-control-container" style="display: none; margin: 12px 0; text-align: center; padding: 0 5px;">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-info fw-bold">🔍 THU PHÓNG CAMERA</span>
+            <span id="zoom-value-display" class="badge bg-secondary text-info fw-bold">1x</span>
         </div>
+        <input type="range" id="camera-zoom-slider" class="form-range" style="accent-color: #0dcaf0;">
+    </div>
+
+    <div class="d-flex justify-content-between mt-1 gap-1">
+        <button class="btn btn-sm btn-primary w-50 fw-bold" onclick="flipCamera()"><i class="fas fa-sync-alt"></i> ĐẢO CAM</button>
+        <button class="btn btn-sm btn-danger w-50 fw-bold" onclick="stopCam()">TẮT CAM</button>
+    </div>
+</div>
 
         <div id="batch-log" class="small overflow-auto border p-2 mb-2 bg-white rounded" style="max-height: 400px;"></div>
         <div id="qr-hidden-engine" style="display:none"></div>
@@ -1599,7 +1608,58 @@ function resetToFullLoop() {
 let currentFacingMode = "environment"; // "environment" là cam sau, "user" là cam trước
 let isCamRunning = false;
 
-// 2. Hàm gọi Camera
+// =========================================================
+// 🌟 THÊM MỚI: HÀM KHỞI TẠO VÀ ĐIỀU KHIỂN ZOOM PHẦN CỨNG
+// =========================================================
+function initCameraZoom() {
+    const container = document.getElementById('zoom-control-container');
+    const slider = document.getElementById('camera-zoom-slider');
+    const display = document.getElementById('zoom-value-display');
+    
+    if (!container || !slider) return;
+    
+    // Mặc định ẩn container trước khi kiểm tra thiết bị
+    container.style.display = 'none';
+
+    // Kiểm tra tính hợp lệ của thư viện và luồng camera đang chạy
+    if (!html5QrCodeCam || typeof html5QrCodeCam.getRunningTrack !== 'function') return;
+
+    try {
+        const track = html5QrCodeCam.getRunningTrack();
+        if (!track) return;
+
+        const capabilities = track.getCapabilities();
+        const settings = track.getSettings();
+
+        // Kiểm tra xem cụm camera phần cứng của điện thoại có hỗ trợ tính năng Zoom không
+        if ('zoom' in capabilities) {
+            container.style.display = 'block'; // Hiện thanh trượt nếu thiết bị hỗ trợ
+            
+            // Thiết lập các thông số động dựa trên cấu hình thật của camera máy
+            slider.min = capabilities.zoom.min;
+            slider.max = capabilities.zoom.max;
+            slider.step = capabilities.zoom.step || 0.1;
+            slider.value = settings.zoom || capabilities.zoom.min;
+            
+            // Hiển thị chỉ số thu phóng ban đầu
+            if (display) display.innerText = parseFloat(slider.value).toFixed(1) + "x";
+
+            // Sự kiện kéo trượt cấu hình tiêu cự ống kính trực tiếp
+            slider.oninput = function(e) {
+                const targetZoom = parseFloat(e.target.value);
+                if (display) display.innerText = targetZoom.toFixed(1) + "x";
+                
+                track.applyConstraints({
+                    advanced: [{ zoom: targetZoom }]
+                }).catch(err => console.warn("Không thể áp dụng mức Zoom hiện tại:", err));
+            };
+        }
+    } catch (error) {
+        console.warn("Trình duyệt không cho phép truy xuất thuộc tính cấu hình Camera:", error);
+    }
+}
+
+// 2. Hàm gọi Camera (Giữ nguyên)
 function startCam() {
     const camBox = document.getElementById('camera-box');
     if (camBox) camBox.style.display = 'block';
@@ -1611,14 +1671,14 @@ function startCam() {
     }
 }
 
-// 3. Lõi khởi động luồng Video
-// 3. Lõi khởi động luồng Video với thông số động
+// 3. Lõi khởi động luồng Video với thông số động (Đã tích hợp luồng kích hoạt Zoom)
 function launchCam(mode) {
-// ẨN TOÀN BỘ UI BÊN PHÁT ĐỂ TẬP TRUNG CHO CAMERA QUÉT
+    // Ẩn toàn bộ UI bên phát để tập trung cho camera quét
     const senderUI = document.getElementById('airgap-sender-uimoi');
     if (senderUI) senderUI.style.display = 'none';
-	const scadaUI = document.getElementById('scheduler-scada');
-            if (scadaUI) scadaUI.style.display = 'none';
+    const scadaUI = document.getElementById('scheduler-scada');
+    if (scadaUI) scadaUI.style.display = 'none';
+    
     // Đọc thông số từ giao diện (nếu ô bị trống thì dùng giá trị mặc định)
     const fpsVal = parseInt(document.getElementById('cam-fps')?.value) || 20;
     const boxWidth = parseInt(document.getElementById('cam-width')?.value) || 250;
@@ -1632,7 +1692,7 @@ function launchCam(mode) {
 
     html5QrCodeCam.start(
         { facingMode: mode }, 
-        scanConfig, // Truyền biến cấu hình động vào đây
+        scanConfig, 
         (txt) => {
             let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
             if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
@@ -1641,31 +1701,42 @@ function launchCam(mode) {
         (err) => {} // Giấu các lỗi dò nét
     ).then(() => { 
         isCamRunning = true; 
+        initCameraZoom(); // 🌟 KÍCH HOẠT ZOOM KHI LUỒNG CHÍNH CHẠY THÀNH CÔNG
     }).catch(e => {
         console.warn("Máy không hỗ trợ cấu hình hiện tại, đang hạ cấp...", e);
         
-        // Chế độ dự phòng: Nếu cấu hình do người dùng nhập gây lỗi (ví dụ khung to hơn màn hình)
-        // Hệ thống tự lùi về cấu hình an toàn nhất (FPS 15, không ép khung)
-        html5QrCodeCam.start({ facingMode: mode }, { fps: 15 }, (txt) => {
-            let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
-            if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
-            if (typeof appendScanResult === "function") appendScanResult("Camera", d);
-        }, (err) => {}).then(() => { isCamRunning = true; })
-        .catch(err2 => alert("Không thể mở Camera: " + err2));
+        // Chế độ dự phòng: Nếu cấu hình do người dùng nhập gây lỗi
+        html5QrCodeCam.start(
+            { facingMode: mode }, 
+            { fps: 15 }, 
+            (txt) => {
+                let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
+                if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
+                if (typeof appendScanResult === "function") appendScanResult("Camera", d);
+            }, 
+            (err) => {}
+        ).then(() => { 
+            isCamRunning = true; 
+            initCameraZoom(); // 🌟 KÍCH HOẠT ZOOM KHI LUỒNG DỰ PHÒNG CHẠY THÀNH CÔNG
+        }).catch(err2 => alert("Không thể mở Camera: " + err2));
     });
 }
 
-// Hàm khởi động lại Camera để áp dụng ngay cấu hình mới
+// Hàm khởi động lại Camera để áp dụng ngay cấu hình mới (Giữ nguyên)
 function applyCameraSettings() {
     if (isCamRunning && html5QrCodeCam) {
         html5QrCodeCam.stop().then(() => {
             html5QrCodeCam.clear();
             isCamRunning = false;
+            
+            // Ẩn thanh điều khiển zoom cũ đi trong lúc chờ khởi động lại
+            const container = document.getElementById('zoom-control-container');
+            if (container) container.style.display = 'none';
+
             // Chờ một nhịp ngắn để xả RAM rồi bật lại
             setTimeout(() => { launchCam(currentFacingMode); }, 300);
         }).catch(e => console.warn("Lỗi dừng Camera:", e));
     } else {
-        // Nếu Camera đang tắt thì chỉ cần bật lên
         startCam();
     }
 }
