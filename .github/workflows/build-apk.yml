@@ -4,9 +4,12 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
-    runs-on: ubuntu-22.04 # 🌟 GIẢI PHÁP CỐT LÕI: Ép chạy trên Ubuntu 22.04 ổn định để dập tắt lỗi xung đột Android SDK
+    runs-on: ubuntu-22.04 # Giữ nguyên Ubuntu 22.04 siêu ổn định
     steps:
     - name: Checkout Ma Nguon
       uses: actions/checkout@v4
@@ -20,12 +23,12 @@ jobs:
     - name: Cai dat Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20' # Cứ dùng Node 20 (Cảnh báo vàng kệ nó, không làm sập hệ thống)
+        node-version: '20' 
 
     - name: Cai dat Apache Cordova CLI
       run: |
         npm install -g cordova
-        cordova telemetry off
+        # ĐÃ XÓA LỆNH TELEMETRY Ở ĐÂY ĐỂ TRÁNH SẬP LỖI
 
     - name: Khoi tao du an va nap du lieu
       run: |
@@ -40,17 +43,14 @@ jobs:
     - name: Cai dat Plugin ho tro Camera va Tai File an toan
       run: |
         cd temp_app
-        # Tự động nạp Plugin Camera và File để ứng dụng nhận quyền mượt mà không lo báo lỗi
         cordova plugin add cordova-plugin-camera
         cordova plugin add cordova-plugin-file
 
     - name: Xay dung nen tang Android va Bien dich APK
       run: |
         cd temp_app
-        # Dùng nền tảng Android 13 mới nhất tương thích tốt với Java 17
         cordova platform add android@13.0.0
-        # Thêm biến --verbose để hệ thống báo cáo chi tiết nếu có bất kỳ cảnh báo nào
-        cordova build android --debug --verbose 
+        cordova build android --debug
 
     - name: Xuat file APK thanh pham de tai ve
       uses: actions/upload-artifact@v4
