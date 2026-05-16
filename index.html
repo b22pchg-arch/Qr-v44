@@ -1465,6 +1465,8 @@ function stopCam() {
 			// HIỆN LẠI GIAO DIỆN PHÁT KHI TẮT CAMERA QUÉT
             const senderUI = document.getElementById('airgap-sender-uimoi');
             if (senderUI) senderUI.style.display = 'block';
+			const ui = document.getElementById('airgap-receiver-ui');
+    if (ui) ui.style.display = 'none';
         }).catch(() => {});
     } else {
         const camBox = document.getElementById('camera-box');
@@ -1541,7 +1543,7 @@ function extractExcelSheetsToZip(file, zipCompress) {
     if (ui) ui.style.display = 'block';
 
     // Ẩn UI bên Phát để nhường không gian cho camera quét
-    const senderUI = document.getElementById('airgap-sender-ui');
+    const senderUI = document.getElementById('airgap-sender-uimoi');
     if (senderUI) senderUI.style.display = 'none';
 
     const parts = decodedText.split("|");
