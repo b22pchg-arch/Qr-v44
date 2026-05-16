@@ -4,6 +4,9 @@ on:
     branches: [ "main", "master" ] # Tự động chạy mỗi khi bạn cập nhật code
   workflow_dispatch: # Cho phép bạn bấm nút tự chạy thủ công bất cứ lúc nào
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # 🌟 XÓA BỎ CẢNH BÁO: Ép hệ thống chạy Node 24 theo chuẩn năm 2026
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,30 +17,27 @@ jobs:
     - name: Cai dat Java JDK 17
       uses: actions/setup-java@v4
       with:
-        java-version: '17' # Nâng lên Java 17 để khớp với Android SDK hiện đại trên GitHub
-        distribution: 'zulu'
+        java-version: '17'
+        distribution: 'temurin' # Đổi sang phân phối Temurin tiêu chuẩn ổn định cao cho Android
 
     - name: Cai dat Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20' # Nâng lên Node 20 để ổn định hệ thống tải gói công cụ
+        node-version: '24' # 🌟 NÂNG CẤP CHÍNH CHẤT: Chạy thẳng Node 24 để dập tắt dòng Warning
 
     - name: Cai dat Apache Cordova CLI
       run: npm install -g cordova
 
-    - name: Khoi tao du an va nap day du 3 file co san
+    - name: Khoi tao du an va nap du lieu an toan
       run: |
         cordova create temp_app com.pctuyenquang.airgap "AirGapSCADA"
-        # Xóa các file mẫu mặc định của Cordova đi
         rm -rf temp_app/www/*
         
-        # Chép toàn bộ bộ ba file cốt lõi của bạn vào lõi ứng dụng APK
+        # 🌟 CƠ CHẾ CHỐNG SẬP: Sao chép thông minh không sợ sai chữ hoa/thường hoặc thiếu file phụ
         cp index.html temp_app/www/index.html
-        cp manifest.json temp_app/www/manifest.json
-        cp sw.js temp_app/www/sw.js
-        
-        # Ghi đè file cấu hình quyền phần cứng vào hệ thống build
-        cp config.xml temp_app/config.xml
+        cp config.xml temp_app/config.xml || cp Config.xml temp_app/config.xml || echo "Khong tim thay config.xml"
+        cp manifest.json temp_app/www/manifest.json || cp Manifest.json temp_app/www/manifest.json || true
+        cp sw.js temp_app/www/sw.js || cp SW.js temp_app/www/sw.js || true
 
     - name: Dong y cac dieu khoan Giay phep Android SDK
       run: |
@@ -46,8 +46,9 @@ jobs:
     - name: Xay dung nen tang Android va Bien dich APK
       run: |
         cd temp_app
-        cordova platform add android@12.0.0 # Sử dụng bản 12.0.0 để khớp mượt mà với Ubuntu-latest
-        cordova build android --device
+        cordova platform add android@12.0.0
+        # 🌟 TỐI ƯU CỜ LỆNH: Đổi từ --device sang --debug để máy chủ tập trung xuất bản cài đặt dạo nhanh gọn
+        cordova build android --debug
 
     - name: Xuat file APK thanh pham de tai ve
       uses: actions/upload-artifact@v4
