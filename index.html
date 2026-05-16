@@ -1861,27 +1861,51 @@ function extractExcelSheetsToZip(file, zipCompress) {
     // =========================================================
 // HÀM XỬ LÝ LƯU/CHIA SẺ FILE ĐA NỀN TẢNG (APK & WEB/PWA)
 // =========================================================
+// =========================================================
+// HÀM XỬ LÝ LƯU/CHIA SẺ FILE ĐA NỀN TẢNG (PHIÊN BẢN GIỮ TÊN FILE)
+// =========================================================
 function saveFile(blob, fileName) {
-    // Kiểm tra xem có đang chạy trên App APK (Cordova) và có Plugin SocialSharing không
-    if (window.cordova && window.plugins && window.plugins.socialsharing) {
-        let reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = function() {
-            let base64data = reader.result;
-            // Gọi hộp thoại hệ thống của Android để người dùng chọn Lưu vào máy hoặc Gửi Zalo
-            window.plugins.socialsharing.shareWithOptions({
-                message: 'Dữ liệu SCADA - PC Tuyên Quang (' + fileName + ')',
-                files: [base64data],
-                chooserTitle: 'Lưu hoặc Chia sẻ tệp tin SCADA'
-            }, function(success) {
-                console.log("Thao tác file thành công!");
-            }, function(err) {
-                console.error("Lỗi khi mở hộp thoại thao tác file: " + err);
-                alert("Lỗi thao tác file trên Android: " + err);
-            });
-        };
+    // Kiểm tra xem có đang chạy trên môi trường App APK (Cordova) không
+    if (window.cordova && window.cordova.file) {
+        
+        // Bước 1: Truy cập vào vùng nhớ tạm (Cache) an toàn của điện thoại
+        const tempDir = window.cordova.file.externalCacheDirectory || window.cordova.file.cacheDirectory;
+        
+        window.resolveLocalFileSystemURL(tempDir, function (dirEntry) {
+            // Bước 2: Tạo một tệp tin vật lý rỗng có tên và đuôi định dạng CHÍNH XÁC như file SCADA
+            dirEntry.getFile(fileName, { create: true, exclusive: false }, function (fileEntry) {
+                
+                fileEntry.createWriter(function (fileWriter) {
+                    
+                    fileWriter.onwriteend = function () {
+                        // Bước 3: Sau khi dữ liệu đã ghi xong vào bộ nhớ, mới gọi cửa sổ Chia sẻ
+                        if (window.plugins && window.plugins.socialsharing) {
+                            window.plugins.socialsharing.shareWithOptions({
+                                message: 'Dữ liệu SCADA - ' + fileName,
+                                files: [fileEntry.nativeURL], // Gửi đường dẫn file vật lý thực thụ
+                                chooserTitle: 'Lưu file vào máy hoặc Chia sẻ'
+                            }, function() {
+                                console.log("Hộp thoại xử lý file đã bật!");
+                            }, function(err) {
+                                console.error("Lỗi hộp thoại: " + err);
+                            });
+                        }
+                    };
+                    
+                    fileWriter.onerror = function (e) {
+                        console.error("Lỗi ghi dữ liệu: ", e);
+                        alert("Ghi file vật lý thất bại mã lỗi: " + e.code);
+                    };
+                    
+                    // Tiến hành đổ cục dữ liệu (Blob) vào tệp tin rỗng vừa tạo
+                    fileWriter.write(blob);
+                });
+                
+            }, function(err) { console.error("Lỗi tạo file tạm: " + err.code); });
+        }, function(err) { console.error("Lỗi truy cập thư mục: " + err.code); });
+        
     } else {
-        // Nếu là môi trường Web thông thường hoặc PWA (Tải thẳng vào thư mục Downloads)
+        // Môi trường Web/PWA: Tải thẳng vào thư mục Downloads của hệ điều hành
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -1890,7 +1914,7 @@ function saveFile(blob, fileName) {
         document.body.appendChild(a);
         a.click();
         
-        // Dọn dẹp bộ nhớ sau khi tải xong
+        // Dọn dẹp bộ nhớ chống tràn RAM
         setTimeout(() => {
             URL.revokeObjectURL(url);
             a.remove();
