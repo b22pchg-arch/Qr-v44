@@ -375,7 +375,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
 
         <label class="btn btn-danger btn-sm fw-bold mb-0 shadow-sm">
             <i class="fas fa-bolt"></i> 3. TẠO VÀ PHÁT LUÔN (TRỰC TIẾP)
-            <input type="file" hidden onchange="packAndPlayAirGap(this)">
+            <input type="file" id="airgap-main-input" hidden onchange="packAndPlayAirGap(this)">
         </label>
     </div>
     <div id="airgap-sender-ui" style="display:none;" class="mb-3 p-2 border border-danger rounded bg-light">
@@ -385,6 +385,52 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             <button class="btn btn-sm btn-dark w-100 ms-1 fw-bold" onclick="stopAirGap()"><i class="fas fa-stop"></i> DỪNG</button>
         </div>
         <div id="airgap-sender-status" class="text-center small fw-bold text-danger mt-2">Đang chờ phát...</div>
+    </div>
+</div>
+<div class="card bg-dark border-info mb-3">
+    <div class="card-header text-info fw-bold py-1" style="font-size: 0.9rem; border-bottom: 1px solid var(--bs-info);">
+        ⏰ HẸN GIỜ & ĐƯỜNG DẪN SCADA TỰ ĐỘNG
+    </div>
+    <div class="card-body py-2">
+        <div class="row g-2">
+            <div class="col-md-4 col-12">
+                <label class="small text-info mb-1 fw-bold">Hành động:</label>
+                <select id="scheduler-task" class="form-select form-select-sm bg-dark text-info border-info">
+                    <option value="PHAT" selected>⚡ Tự động Phát File SCADA</option>
+                    <option value="THU">📥 Tự động Bật Cam Thu</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4 col-6">
+                <label class="small text-info mb-1 fw-bold">Giờ kích hoạt:</label>
+                <input type="time" id="scheduler-time" class="form-control form-control-sm bg-dark text-info border-info text-center fw-bold">
+            </div>
+
+            <div class="col-md-4 col-6">
+                <label class="small text-info mb-1 fw-bold" title="Số phút lùi lại của thời gian file so với giờ kích hoạt">Độ trễ file (Phút):</label>
+                <input type="number" id="scada-time-offset" class="form-control form-control-sm bg-dark text-info border-info text-center fw-bold" value="5" min="0" max="1440">
+            </div>
+
+            <div class="col-12">
+                <label class="small text-info mb-1 fw-bold">Đường dẫn gốc (Local URL Prefix):</label>
+                <input type="text" id="scada-url-prefix" class="form-control form-control-sm bg-dark text-info border-info" 
+                       value="http://localhost:8080/Data_SCADA_">
+            </div>
+
+            <div class="col-12">
+                <label class="small text-muted mb-1">Đường dẫn thực tế sau khi tính toán độ trễ (yyyyMMddhhmm):</label>
+                <input type="text" id="scada-full-path-display" class="form-control form-control-sm bg-dark text-warning border-secondary text-center small" readonly value="Chờ kích hoạt...">
+            </div>
+
+            <div class="col-12 mt-2">
+                <button id="scheduler-btn" onclick="toggleScheduler()" class="btn btn-outline-info btn-sm w-100 fw-bold">
+                    🔔 KÍCH HOẠT LỊCH TỰ ĐỘNG
+                </button>
+                <div id="scheduler-status" class="text-warning small mt-1 text-center" style="display: none; font-size: 0.8rem;">
+                    ⏳ Đang chờ đến giờ chỉ định...
+                </div>
+            </div>
+        </div>
     </div>
 </div>
     <div id="airgap-receiver-ui" style="display:none;" class="mb-2 p-2 border border-success rounded bg-light">
@@ -1110,6 +1156,149 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         showLoading(false); 
     }
     input.value = ""; 
+}
+
+// =========================================================================
+// HỆ THỐNG ĐIỀU KHIỂN HẸN GIỜ TRUYỀN TIN TỰ ĐỘNG (AIR-GAP SCHEDULER)
+// =========================================================================
+let schedulerInterval = null;
+let isSchedulerActive = false;
+let lastTriggeredMinute = ""; // Chống trùng lệnh trong cùng một phút
+
+// 1. Hàm bật/tắt trạng thái trực lịch hẹn giờ
+function toggleScheduler() {
+    const btn = document.getElementById('scheduler-btn');
+    const statusEl = document.getElementById('scheduler-status');
+    const targetTimeInput = document.getElementById('scheduler-time').value;
+
+    if (!targetTimeInput) {
+        alert("Vui lòng cấu hình Giờ kích hoạt trước!");
+        return;
+    }
+
+    if (!isSchedulerActive) {
+        isSchedulerActive = true;
+        btn.innerText = "🔕 HỦY HẸN GIỜ";
+        btn.classList.replace('btn-outline-info', 'btn-danger');
+        statusEl.style.display = 'block';
+        lastTriggeredMinute = ""; 
+
+        const taskType = document.getElementById('scheduler-task').value;
+        const taskName = taskType === "PHAT" ? "Tự động Phát File SCADA" : "Tự động Mở Cam Thu";
+        statusEl.innerHTML = `⏳ Đang trực lịch: <b class="text-info">${taskName}</b> vào lúc <b class="text-white">${targetTimeInput}</b>`;
+
+        // Kích hoạt đồng hồ quét nền tần suất 1 giây/lần
+        schedulerInterval = setInterval(() => {
+            checkScheduler(targetTimeInput, taskType);
+        }, 1000);
+    } else {
+        cancelScheduler();
+    }
+}
+
+// 2. Hàm quét thời gian liên tục kiểm tra mốc kích hoạt
+function checkScheduler(targetTime, taskType) {
+    const now = new Date();
+    const currentHour = String(now.getHours()).padStart(2, '0');
+    const currentMinute = String(now.getMinutes()).padStart(2, '0');
+    const currentTimeStr = `${currentHour}:${currentMinute}`;
+
+    if (currentTimeStr === targetTime && lastTriggeredMinute !== currentTimeStr) {
+        lastTriggeredMinute = currentTimeStr; // Khóa ngay lập tức
+        
+        if (taskType === "PHAT") {
+            triggerAutoBroadcast();
+        } else if (taskType === "THU") {
+            triggerAutoReceive();
+        }
+
+        cancelScheduler(); // Thực hiện xong thì tự giải phóng lịch
+    }
+}
+
+// 3. Hàm xử lý tính toán chuỗi thời gian lùi (yyyyMMddhhmm)
+function getScadaTimeSuffix() {
+    const now = new Date();
+    const offsetInput = document.getElementById('scada-time-offset');
+    const offsetMinutes = offsetInput ? parseInt(offsetInput.value) || 0 : 0;
+
+    // Trực tiếp trừ phút trên đối tượng hệ thống (Tự động nhảy ngày/giờ nếu vượt ngưỡng)
+    if (offsetMinutes > 0) {
+        now.setMinutes(now.getMinutes() - offsetMinutes);
+    }
+
+    const yyyy = now.getFullYear();
+    const MM = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    
+    return `${yyyy}${MM}${dd}${hh}${mm}`;
+}
+
+// 4. Kịch bản TỰ ĐỘNG PHÁT: Thực hiện kết nối mạng nội bộ nhặt file
+async function triggerAutoBroadcast() {
+    const urlPrefix = document.getElementById('scada-url-prefix').value;
+    const timeSuffix = getScadaTimeSuffix(); 
+    const extension = ".xlsx"; 
+    
+    const finalFileUrl = `${urlPrefix}${timeSuffix}${extension}`;
+    const fileName = `SCADA_${timeSuffix}${extension}`;
+
+    document.getElementById('scada-full-path-display').value = finalFileUrl;
+
+    let statusEl = document.getElementById('scheduler-status');
+    if (statusEl) {
+        statusEl.innerHTML = `<span class="text-info">🔄 Đang tự động kéo tệp: ${fileName}...</span>`;
+    }
+
+    try {
+        // Fetch dữ liệu nhị phân từ Local Server
+        const response = await fetch(finalFileUrl);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} - Không tìm thấy file. Vui lòng kiểm tra lại độ trễ file.`);
+        }
+
+        const blob = await response.blob();
+        const autoScadaFile = new File([blob], fileName, { type: blob.type });
+        const simulatedInput = { files: [autoScadaFile], value: "" };
+
+        // Đẩy thẳng vào dây chuyền pre-render và mở rạp chiếu phát luôn
+        await packAndPlayAirGap(simulatedInput);
+
+    } catch (error) {
+        console.error(error);
+        alert(`❌ LỖI HẸN GIỜ PHÁT:\n${error.message}`);
+        cancelScheduler();
+    }
+}
+
+// 5. Kịch bản TỰ ĐỘNG THU: Chủ động kích hoạt camera Máy B
+function triggerAutoReceive() {
+    if (typeof launchCam === "function") {
+        console.log("📥 Kích hoạt camera nhận tự động.");
+        launchCam("environment");
+    } else {
+        alert("⏰ ĐẾN GIỜ THU DỮ LIỆU! Vui lòng bật Camera để hứng.");
+    }
+}
+
+// 6. Hàm dọn dẹp, tắt đồng hồ quét nền
+function cancelScheduler() {
+    isSchedulerActive = false;
+    clearInterval(schedulerInterval);
+    
+    const btn = document.getElementById('scheduler-btn');
+    const statusEl = document.getElementById('scheduler-status');
+    
+    if (btn) {
+        btn.innerText = "🔔 KÍCH HOẠT LỊCH TỰ ĐỘNG";
+        btn.classList.replace('btn-danger', 'btn-outline-info');
+    }
+    if (statusEl) {
+        statusEl.style.display = 'none';
+        statusEl.innerText = "";
+    }
 }
 
     // --- CÁC HÀM ĐIỀU KHIỂN RẠP CHIẾU ---
