@@ -5,7 +5,8 @@ on:
   workflow_dispatch: # Cho phép bạn bấm nút tự chạy thủ công bất cứ lúc nào
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # 🌟 XÓA BỎ CẢNH BÁO: Ép hệ thống chạy Node 24 theo chuẩn năm 2026
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Ép hệ thống chạy Node 24 theo chuẩn mới nhất
+  ANDROID_HOME: /usr/local/lib/android/sdk # Định vị thư mục gốc Android SDK trên GitHub
 
 jobs:
   build:
@@ -18,36 +19,49 @@ jobs:
       uses: actions/setup-java@v4
       with:
         java-version: '17'
-        distribution: 'temurin' # Đổi sang phân phối Temurin tiêu chuẩn ổn định cao cho Android
+        distribution: 'temurin'
 
     - name: Cai dat Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '24' # 🌟 NÂNG CẤP CHÍNH CHẤT: Chạy thẳng Node 24 để dập tắt dòng Warning
+        node-version: '24'
 
-    - name: Cai dat Apache Cordova CLI
-      run: npm install -g cordova
+    - name: Thiet lap bien moi truong he thong Android
+      run: |
+        # Ép đưa các công cụ ẩn của Android SDK vào danh sách lệnh chạy toàn cục
+        echo "${ANDROID_HOME}/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "${ANDROID_HOME}/platform-tools" >> $GITHUB_PATH
+        echo "${ANDROID_HOME}/tools/bin" >> $GITHUB_PATH
+
+    - name: Cai dat Apache Cordova CLI va TAY CHAY HOI THOAI
+      run: |
+        npm install -g cordova
+        # 🌟 BÍ KÍP QUAN TRỌNG: Tắt hoàn toàn hộp thoại hỏi ý kiến ngầm để chống sập tiến trình tự động
+        cordova telemetry off
 
     - name: Khoi tao du an va nap du lieu an toan
       run: |
         cordova create temp_app com.pctuyenquang.airgap "AirGapSCADA"
         rm -rf temp_app/www/*
         
-        # 🌟 CƠ CHẾ CHỐNG SẬP: Sao chép thông minh không sợ sai chữ hoa/thường hoặc thiếu file phụ
+        # Sao chép bộ ba file chữ thường của bạn vào lõi ứng dụng APK
         cp index.html temp_app/www/index.html
-        cp config.xml temp_app/config.xml || cp Config.xml temp_app/config.xml || echo "Khong tim thay config.xml"
-        cp manifest.json temp_app/www/manifest.json || cp Manifest.json temp_app/www/manifest.json || true
-        cp sw.js temp_app/www/sw.js || cp SW.js temp_app/www/sw.js || true
+        cp manifest.json temp_app/www/manifest.json
+        cp sw.js temp_app/www/sw.js
+        
+        # Sao chép file cấu hình quyền nếu có (nếu chưa tạo cũng không gây sập)
+        cp config.xml temp_app/config.xml || echo "Sử dụng config.xml mặc định của hệ thống"
 
-    - name: Dong y cac dieu khoan Giay phep Android SDK
+    - name: Dong y cac dieu khoan Giay phep Android SDK tinh chinh
       run: |
-        yes | sdkmanager --licenses || true
+        # Gọi trực tiếp bằng đường dẫn tuyệt đối để đảm bảo chấp nhận mọi giấy phép biên dịch
+        yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
     - name: Xay dung nen tang Android va Bien dich APK
       run: |
         cd temp_app
         cordova platform add android@12.0.0
-        # 🌟 TỐI ƯU CỜ LỆNH: Đổi từ --device sang --debug để máy chủ tập trung xuất bản cài đặt dạo nhanh gọn
+        # Thực hiện biên dịch bản debug tiêu chuẩn cho trạm
         cordova build android --debug
 
     - name: Xuat file APK thanh pham de tai ve
