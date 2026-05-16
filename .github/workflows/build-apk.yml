@@ -9,18 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Ma Nguon
-      uses: actions/checkout@v4 # 🌟 Nâng cấp lên v4
+      uses: actions/checkout@v4
 
-    - name: Cai dat Java JDK 11
-      uses: actions/setup-java@v4 # 🌟 Nâng cấp lên v4
+    - name: Cai dat Java JDK 17
+      uses: actions/setup-java@v4
       with:
-        java-version: '11'
+        java-version: '17' # Nâng lên Java 17 để khớp với Android SDK hiện đại trên GitHub
         distribution: 'zulu'
 
     - name: Cai dat Node.js
-      uses: actions/setup-node@v4 # 🌟 Nâng cấp lên v4
+      uses: actions/setup-node@v4
       with:
-        node-version: '16'
+        node-version: '20' # Nâng lên Node 20 để ổn định hệ thống tải gói công cụ
 
     - name: Cai dat Apache Cordova CLI
       run: npm install -g cordova
@@ -39,14 +39,18 @@ jobs:
         # Ghi đè file cấu hình quyền phần cứng vào hệ thống build
         cp config.xml temp_app/config.xml
 
+    - name: Dong y cac dieu khoan Giay phep Android SDK
+      run: |
+        yes | sdkmanager --licenses || true
+
     - name: Xay dung nen tang Android va Bien dich APK
       run: |
         cd temp_app
-        cordova platform add android@10.1.2
+        cordova platform add android@12.0.0 # Sử dụng bản 12.0.0 để khớp mượt mà với Ubuntu-latest
         cordova build android --device
 
     - name: Xuat file APK thanh pham de tai ve
-      uses: actions/upload-artifact@v4 # 🌟 SỬA LỖI CHÍNH: Nâng cấp lên v4 để GitHub chấp nhận
+      uses: actions/upload-artifact@v4
       with:
         name: AirGap_Receiver_PC_TuyenQuang
         path: temp_app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
