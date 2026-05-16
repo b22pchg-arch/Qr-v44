@@ -1,16 +1,12 @@
 name: Tu Dong Build APK Cordova
 on:
   push:
-    branches: [ "main", "master" ] # Tự động chạy mỗi khi bạn cập nhật code
-  workflow_dispatch: # Cho phép bạn bấm nút tự chạy thủ công bất cứ lúc nào
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Ép hệ thống chạy Node 24 theo chuẩn mới nhất
-  ANDROID_HOME: /usr/local/lib/android/sdk # Định vị thư mục gốc Android SDK trên GitHub
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # 🌟 GIẢI PHÁP CỐT LÕI: Ép chạy trên Ubuntu 22.04 ổn định để dập tắt lỗi xung đột Android SDK
     steps:
     - name: Checkout Ma Nguon
       uses: actions/checkout@v4
@@ -24,45 +20,37 @@ jobs:
     - name: Cai dat Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '24'
+        node-version: '20' # Cứ dùng Node 20 (Cảnh báo vàng kệ nó, không làm sập hệ thống)
 
-    - name: Thiet lap bien moi truong he thong Android
-      run: |
-        # Ép đưa các công cụ ẩn của Android SDK vào danh sách lệnh chạy toàn cục
-        echo "${ANDROID_HOME}/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        echo "${ANDROID_HOME}/platform-tools" >> $GITHUB_PATH
-        echo "${ANDROID_HOME}/tools/bin" >> $GITHUB_PATH
-
-    - name: Cai dat Apache Cordova CLI va TAY CHAY HOI THOAI
+    - name: Cai dat Apache Cordova CLI
       run: |
         npm install -g cordova
-        # 🌟 BÍ KÍP QUAN TRỌNG: Tắt hoàn toàn hộp thoại hỏi ý kiến ngầm để chống sập tiến trình tự động
         cordova telemetry off
 
-    - name: Khoi tao du an va nap du lieu an toan
+    - name: Khoi tao du an va nap du lieu
       run: |
         cordova create temp_app com.pctuyenquang.airgap "AirGapSCADA"
         rm -rf temp_app/www/*
         
-        # Sao chép bộ ba file chữ thường của bạn vào lõi ứng dụng APK
         cp index.html temp_app/www/index.html
-        cp manifest.json temp_app/www/manifest.json
-        cp sw.js temp_app/www/sw.js
-        
-        # Sao chép file cấu hình quyền nếu có (nếu chưa tạo cũng không gây sập)
-        cp config.xml temp_app/config.xml || echo "Sử dụng config.xml mặc định của hệ thống"
+        cp manifest.json temp_app/www/manifest.json || true
+        cp sw.js temp_app/www/sw.js || true
+        cp config.xml temp_app/config.xml || true
 
-    - name: Dong y cac dieu khoan Giay phep Android SDK tinh chinh
+    - name: Cai dat Plugin ho tro Camera va Tai File an toan
       run: |
-        # Gọi trực tiếp bằng đường dẫn tuyệt đối để đảm bảo chấp nhận mọi giấy phép biên dịch
-        yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        cd temp_app
+        # Tự động nạp Plugin Camera và File để ứng dụng nhận quyền mượt mà không lo báo lỗi
+        cordova plugin add cordova-plugin-camera
+        cordova plugin add cordova-plugin-file
 
     - name: Xay dung nen tang Android va Bien dich APK
       run: |
         cd temp_app
-        cordova platform add android@12.0.0
-        # Thực hiện biên dịch bản debug tiêu chuẩn cho trạm
-        cordova build android --debug
+        # Dùng nền tảng Android 13 mới nhất tương thích tốt với Java 17
+        cordova platform add android@13.0.0
+        # Thêm biến --verbose để hệ thống báo cáo chi tiết nếu có bất kỳ cảnh báo nào
+        cordova build android --debug --verbose 
 
     - name: Xuat file APK thanh pham de tai ve
       uses: actions/upload-artifact@v4
