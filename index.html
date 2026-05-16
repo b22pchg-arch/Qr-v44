@@ -309,6 +309,8 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
 
 <hr class="my-3">
     <div class="fw-bold text-danger mb-2"><i class="fas fa-wifi"></i> TRUYỀN FILE BẢO MẬT</div>
+<div id="airgap-sender-uimoi"
+
 <div class="card bg-dark border-info mb-3">
     <div class="card-header text-info fw-bold py-1" style="font-size: 0.9rem; border-bottom: 1px solid var(--bs-info);">
         📊 TỐI ƯU MẬT ĐỘ DỮ LIỆU
@@ -384,7 +386,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         </div>
         <div id="airgap-sender-status" class="text-center small fw-bold text-danger mt-2">Đang chờ phát...</div>
     </div>
-
+</div>
     <div id="airgap-receiver-ui" style="display:none;" class="mb-2 p-2 border border-success rounded bg-light">
         <div class="small fw-bold text-success mb-1" id="airgap-receive-status">Đang thu thập dữ liệu...</div>
         
@@ -1370,6 +1372,9 @@ function startCam() {
 // 3. Lõi khởi động luồng Video
 // 3. Lõi khởi động luồng Video với thông số động
 function launchCam(mode) {
+// ẨN TOÀN BỘ UI BÊN PHÁT ĐỂ TẬP TRUNG CHO CAMERA QUÉT
+    const senderUI = document.getElementById('airgap-sender-uimoi');
+    if (senderUI) senderUI.style.display = 'none';
     // Đọc thông số từ giao diện (nếu ô bị trống thì dùng giá trị mặc định)
     const fpsVal = parseInt(document.getElementById('cam-fps')?.value) || 20;
     const boxWidth = parseInt(document.getElementById('cam-width')?.value) || 250;
@@ -1452,6 +1457,9 @@ function stopCam() {
             isCamRunning = false;
             const camBox = document.getElementById('camera-box');
             if (camBox) camBox.style.display = 'none';
+			// HIỆN LẠI GIAO DIỆN PHÁT KHI TẮT CAMERA QUÉT
+            const senderUI = document.getElementById('airgap-sender-uimoi');
+            if (senderUI) senderUI.style.display = 'block';
         }).catch(() => {});
     } else {
         const camBox = document.getElementById('camera-box');
@@ -1523,7 +1531,10 @@ function extractExcelSheetsToZip(file, zipCompress) {
     // 1. CHẤP NHẬN CẢ HAI CHUẨN NÉN (ZIP: [FZ], LZMA: [LZ])
     if (!decodedText.startsWith("[FZ]|") && !decodedText.startsWith("[LZ]|")) return false;
     
-    // --- LỆNH QUAN TRỌNG: ĐÁNH THỨC GIAO DIỆN HIỂN THỊ ---
+    // ẨN LUÔN UI BÊN PHÁT KHI MÁY B ĐANG TRONG TIẾN TRÌNH NHẬN DỮ LIỆU
+    const senderUI = document.getElementById('airgap-sender-uimoi');
+    if (senderUI) senderUI.style.display = 'none';
+	// --- LỆNH QUAN TRỌNG: ĐÁNH THỨC GIAO DIỆN HIỂN THỊ ---
     const ui = document.getElementById('airgap-receiver-ui');
     if (ui) ui.style.display = 'block';
 
