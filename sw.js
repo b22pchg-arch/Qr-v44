@@ -1,8 +1,10 @@
-const CACHE_NAME = 'airgap-scada-v40';
+const CACHE_NAME = 'airgap-scada-v44';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json'
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 // Cài đặt và kích hoạt chế độ lưu trữ Offline tài nguyên cốt lõi
