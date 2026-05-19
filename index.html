@@ -11,39 +11,39 @@
     <link rel="apple-touch-icon" href="241517.png">
 
     <script>
-        let newWorker;
+        // Khai báo biến toàn cục nhận diện luồng cài đặt
+    let newWorker;
 
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => {
-                        console.log('✅ Hệ thống AirGap SCADA PWA sẵn sàng.');
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => {
+                    console.log('✅ Hệ thống AirGap SCADA PWA sẵn sàng.');
 
-                        // Kiểm tra nếu có bản vá lỗi đang đợi kích hoạt
-                        if (reg.waiting) {
-                            newWorker = reg.waiting;
-                            showUpdateNotification();
-                        }
+                    if (reg.waiting) {
+                        newWorker = reg.waiting;
+                        if (typeof showUpdateNotification === 'function') showUpdateNotification();
+                    }
 
-                        reg.addEventListener('updatefound', () => {
-                            const installingWorker = reg.installing;
-                            installingWorker.addEventListener('statechange', () => {
-                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    newWorker = installingWorker;
-                                    showUpdateNotification();
-                                }
-                            });
+                    reg.addEventListener('updatefound', () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.addEventListener('statechange', () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                newWorker = installingWorker;
+                                if (typeof showUpdateNotification === 'function') showUpdateNotification();
+                            }
                         });
                     });
-
-                let refreshing = false;
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (refreshing) return;
-                    refreshing = true;
-                    window.location.reload(); // Làm mới màn hình ngay khi ứng dụng cập nhật xong
                 });
+
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
             });
-        }
+        });
+    }
 
         // Hiện Banner màu vàng thông báo có tính năng SCADA mới
         function showUpdateNotification() {
