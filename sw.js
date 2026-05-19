@@ -1,11 +1,11 @@
 // Nhật ký cập nhật AirGap SCADA: Tích hợp nút check thủ công - Ngày 19/05/2026tes
 const CACHE_NAME = 'AirGapSCADA-Static-Cache'; 
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
-  './icon-192.png',
-  './icon-512.png'
+  '',
+  'index.html',
+  'manifest.json',
+  'icon-192.png',
+  'icon-512.png'
 ];
 
 // Cài đặt và cưỡng bách tải tài nguyên mới bỏ qua HTTP Cache
