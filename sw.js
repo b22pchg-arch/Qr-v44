@@ -1,4 +1,5 @@
-const CACHE_NAME = 'airgap-scada-v44';
+// Nhật ký cập nhật AirGap SCADA: Tích hợp nút check thủ công - Ngày 19/05/2026
+const CACHE_NAME = 'AirGapSCADA-Static-Cache'; 
 const ASSETS = [
   './',
   './index.html',
@@ -7,35 +8,33 @@ const ASSETS = [
   './icon-512.png'
 ];
 
-// Cài đặt và kích hoạt chế độ lưu trữ Offline tài nguyên cốt lõi
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    }).then(() => self.skipWaiting())
-  );
+// Cài đặt và cưỡng bách tải tài nguyên mới bỏ qua HTTP Cache
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            // 🚀 BẺ GÃY BẪY HTTP CACHE: Ép điện thoại phi thẳng lên Server lấy file mới tinh
+            const refreshRequests = ASSETS.map(asset => new Request(asset, { cache: 'reload' }));
+            return cache.addAll(refreshRequests);
+        }).then(() => self.skipWaiting())
+    );
 });
 
-// Thu hồi bộ nhớ đệm cũ khi có phiên bản V40.0 nâng cấp mới
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+self.addEventListener('activate', (event) => {
+    event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.action === 'skipWaiting') {
+        self.skipWaiting();
+    }
+});
+
+// Chiến lược Offline tối thượng: Trả dữ liệu từ Cache lập tức trong 0.01 giây
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) return cachedResponse;
+            return fetch(event.request);
         })
-      );
-    }).then(() => self.clients.claim())
-  );
-});
-
-// Chiến lược phản hồi ưu tiên mạng (Network-First), nếu mất mạng thì lấy dữ liệu lưu kho Offline
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    fetch(e.request).catch(() => {
-      return caches.match(e.request);
-    })
-  );
+    );
 });
