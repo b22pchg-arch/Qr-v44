@@ -521,6 +521,35 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             <button class="btn btn-warning btn-sm fw-bold" onclick="buildFragsQRKhongDau()">TẠO QR KHÔNG DẤU</button>
             <button id="btn-dl-all-qr" class="btn btn-success btn-sm" style="display:none;" onclick="downloadAllQRs()">ĐÓNG GÓI TẤT CẢ (ZIP)</button>
         </div>
+
+        <div class="card bg-dark border-secondary mb-2 mt-2">
+            <div class="card-header text-secondary fw-bold py-1" style="font-size: 0.85rem; border-bottom: 1px solid var(--bs-secondary);">
+                📄 COPY FILE → .TXT
+            </div>
+            <div class="card-body py-2">
+                <p class="text-secondary small mb-2" style="font-size: 0.75rem; line-height: 1.35;">
+                    Chọn bất kỳ file nào để tạo bản sao <b>.txt</b> theo dạng <b>tênfile_phầnmởrộng.txt</b>. File gốc không bị thay đổi.
+                </p>
+                <label class="btn btn-outline-light btn-sm fw-bold w-100 mb-2">
+                    CHỌN FILE VÀ COPY THÀNH .TXT
+                    <input type="file" id="copy-as-txt-input" hidden multiple onchange="copyAnyFileAsTxt(this)">
+                </label>
+
+                <div class="border-top border-secondary pt-2 mt-2">
+                    <p class="text-secondary small mb-2" style="font-size: 0.75rem; line-height: 1.35;">
+                        Chọn file <b>.txt</b>. Nếu tên có dạng <b>tênfile_phầnmởrộng.txt</b> thì tự lấy đuôi sau dấu gạch dưới cuối; nếu không có thì dùng ô bên dưới.
+                    </p>
+                    <div class="input-group input-group-sm mb-2">
+                        <span class="input-group-text bg-dark text-secondary border-secondary">Đuôi</span>
+                        <input type="text" id="restore-ext-input" class="form-control bg-dark text-light border-secondary text-center fw-bold" value="xlsx" placeholder="xlsx">
+                    </div>
+                    <label class="btn btn-outline-warning btn-sm fw-bold w-100 mb-0">
+                        CHỌN FILE .TXT VÀ ĐỔI LẠI ĐUÔI
+                        <input type="file" id="restore-from-txt-input" hidden multiple accept=".txt,text/plain" onchange="restoreTxtFilesToExtension(this)">
+                    </label>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="side-scan" style="display:none;">
@@ -1917,6 +1946,137 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     function toggleReplace() { const p = document.getElementById('replace-ui'); p.style.display = p.style.display==='none'?'flex':'none'; }
     function goExPage(d) { exPageIdx = Math.max(1, Math.min(exPageIdx+d, Math.ceil(filteredEx.length/exPageSize))); renderExPage(); }
     async function dlZip(p) { const b = await activeZip.file(p).async("blob"); saveFile(b, p.split('/').pop()); }
+
+    // Copy bất kỳ file nào thành bản sao .txt theo dạng: tenfile_phanmorong.txt, không thay đổi nội dung file gốc.
+    function getTxtCopyName(originalName) {
+        const rawName = String(originalName || 'file');
+        const cleanName = rawName.split(/[\/]/).pop() || 'file';
+        const dotIndex = cleanName.lastIndexOf('.');
+        const hasExt = dotIndex > 0 && dotIndex < cleanName.length - 1;
+        const baseName = hasExt ? cleanName.slice(0, dotIndex) : cleanName;
+        const extNameRaw = hasExt ? cleanName.slice(dotIndex + 1) : 'noext';
+        const extName = String(extNameRaw || 'noext')
+            .trim()
+            .replace(/^\.+/, '')
+            .replace(/[^a-zA-Z0-9_-]/g, '_') || 'noext';
+
+        return (baseName || 'file') + '_' + extName + '.txt';
+    }
+
+    function copyAnyFileAsTxt(input) {
+        const files = Array.from(input?.files || []);
+        if (!files.length) return alert('Chưa chọn file nào để copy thành .txt!');
+
+        files.forEach((file, index) => {
+            const outName = getTxtCopyName(file.name);
+            const txtBlob = new Blob([file], { type: 'text/plain;charset=utf-8' });
+
+            // Khi chọn nhiều file, giãn nhẹ thời gian tải để trình duyệt không bỏ qua lệnh download.
+            setTimeout(() => downloadBlobSafe(txtBlob, outName), index * 350);
+        });
+
+        alert('Đã tạo bản sao .txt cho ' + files.length + ' file theo dạng tenfile_phanmorong.txt. Nội dung byte được giữ nguyên.');
+        input.value = '';
+    }
+
+    function downloadBlobSafe(blob, fileName) {
+        if (typeof saveFile === 'function') {
+            saveFile(blob, fileName);
+            return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function normalizeRestoreExtension(ext) {
+        let out = String(ext || '').trim().toLowerCase();
+        out = out.replace(/^\.+/, '');
+        out = out.replace(/[^a-z0-9_-]/g, '');
+        return out;
+    }
+
+    function getOriginalExtensionFromTxtName(originalName) {
+        const rawName = String(originalName || 'file.txt');
+        const cleanName = rawName.split(/[\/]/).pop() || 'file.txt';
+        const withoutTxt = cleanName.replace(/\.txt$/i, '');
+        const underscoreIndex = withoutTxt.lastIndexOf('_');
+
+        if (underscoreIndex <= 0 || underscoreIndex === withoutTxt.length - 1) {
+            return { baseName: withoutTxt || 'file', ext: '' };
+        }
+
+        const maybeExt = normalizeRestoreExtension(withoutTxt.slice(underscoreIndex + 1));
+        if (!maybeExt) return { baseName: withoutTxt || 'file', ext: '' };
+
+        return {
+            baseName: withoutTxt.slice(0, underscoreIndex) || 'file',
+            ext: maybeExt
+        };
+    }
+
+    function getRestoredFileName(originalName, fallbackExt) {
+        const parsed = getOriginalExtensionFromTxtName(originalName);
+        const finalExt = parsed.ext || normalizeRestoreExtension(fallbackExt || '');
+
+        // Trường hợp file gốc không có phần mở rộng: tenfile_noext.txt -> tenfile
+        if (finalExt === 'noext') return parsed.baseName || 'file';
+
+        if (!finalExt) return '';
+        return (parsed.baseName || 'file') + '.' + finalExt;
+    }
+
+    function restoreTxtFilesToExtension(input) {
+        const files = Array.from(input?.files || []);
+        if (!files.length) return alert('Chưa chọn file .txt nào để đổi phần mở rộng!');
+
+        const extInput = document.getElementById('restore-ext-input');
+        const fallbackExt = normalizeRestoreExtension(extInput?.value || '');
+
+        const notTxt = files.filter(file => !/\.txt$/i.test(file.name));
+        if (notTxt.length) {
+            const ok = confirm('Có ' + notTxt.length + ' file không phải .txt. Vẫn tiếp tục đổi đuôi cho tất cả file đã chọn?');
+            if (!ok) {
+                input.value = '';
+                return;
+            }
+        }
+
+        const missingExtFiles = files.filter(file => {
+            const parsed = getOriginalExtensionFromTxtName(file.name);
+            return !parsed.ext && !fallbackExt;
+        });
+
+        if (missingExtFiles.length) {
+            alert('Có ' + missingExtFiles.length + ' file không có dạng tenfile_phanmorong.txt. Anh hãy nhập phần mở rộng dự phòng, ví dụ: xlsx, zip, html, png...');
+            if (extInput) extInput.focus();
+            input.value = '';
+            return;
+        }
+
+        let autoCount = 0;
+        let fallbackCount = 0;
+
+        files.forEach((file, index) => {
+            const parsed = getOriginalExtensionFromTxtName(file.name);
+            const outName = getRestoredFileName(file.name, fallbackExt);
+            if (!outName) return;
+
+            if (parsed.ext) autoCount++; else fallbackCount++;
+
+            const restoredBlob = new Blob([file], { type: 'application/octet-stream' });
+            setTimeout(() => downloadBlobSafe(restoredBlob, outName), index * 350);
+        });
+
+        alert('Đã tạo bản sao đổi đuôi cho ' + files.length + ' file. Tự nhận đuôi từ tên file: ' + autoCount + ' file; dùng ô nhập dự phòng: ' + fallbackCount + ' file. Nội dung byte được giữ nguyên.');
+        input.value = '';
+    }
+
     function autoQR(t) { document.getElementById('qr-input').value = t; buildFragsQR(); }
     function setSide(m) { document.getElementById('side-gen').style.display = m==='gen'?'block':'none'; document.getElementById('side-scan').style.display = m==='scan'?'block':'none'; document.getElementById('btn-q-gen').classList.toggle('active',m==='gen'); document.getElementById('btn-q-scan').classList.toggle('active',m==='scan'); }
 
