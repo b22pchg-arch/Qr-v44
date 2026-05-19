@@ -510,9 +510,14 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             <button class="btn btn-xs btn-danger ms-auto py-0 px-2 fw-bold" onclick="clearSeqSelection()" style="display:none; font-size:10px;" id="btn-clear-seq">Xóa Chọn</button>
         </div>
         <textarea id="qr-input" class="form-control form-control-sm mb-2" rows="5" placeholder="Nhập liệu Tiếng Việt an toàn..."></textarea>
+        <div class="d-grid gap-2 mb-2">
+            <button class="btn btn-outline-info btn-sm fw-bold" onclick="readAllExcelSheetsToQrInput()">ĐỌC TOÀN BỘ EXCEL VÀO QR</button>
+            <button class="btn btn-outline-warning btn-sm fw-bold" onclick="normalizeQrInputToAscii(true)">CHUYỂN DỮ LIỆU THÀNH KHÔNG DẤU</button>
+        </div>
         <div id="qr-display" class="mb-2"></div>
-        <div class="d-grid gap-2">
+        <div class="d-grid gap-2" id="qr-action-buttons">
             <button class="btn btn-primary btn-sm fw-bold" onclick="buildFragsQR()">TẠO QR PHÂN MẢNH</button>
+            <button class="btn btn-warning btn-sm fw-bold" onclick="buildFragsQRKhongDau()">TẠO QR KHÔNG DẤU</button>
             <button id="btn-dl-all-qr" class="btn btn-success btn-sm" style="display:none;" onclick="downloadAllQRs()">ĐÓNG GÓI TẤT CẢ (ZIP)</button>
         </div>
     </div>
@@ -531,6 +536,14 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="fas fa-folder bi bi-folder-fill" viewBox="0 0 16 16"><path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.825a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/></svg> Thư Mục
                 <input type="file" id="qr-folder-input" hidden webkitdirectory directory multiple accept="image/*" onchange="runBatchScanner(this)">
             </label>
+        </div>
+        <div class="d-grid gap-2 mb-2">
+            <button id="btn-start-qrtext-scan" class="btn btn-success btn-sm fw-bold" onclick="startQrTextCameraScan()">
+                🎬 ĐỌC QRTEXT → TAB EXCEL
+            </button>
+            <button id="btn-stop-qrtext-scan" class="btn btn-outline-danger btn-sm fw-bold" style="display:none;" onclick="stopQrTextCameraScan()">
+                ⏹ DỪNG ĐỌC QRTEXT
+            </button>
         </div>
         <div class="card bg-dark border-secondary mb-3">
     <div class="card-header text-warning fw-bold py-1" style="font-size: 0.9rem;">
@@ -816,32 +829,332 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     function safeUtf8ForQrjs(str) { return str.replace(/[^\x00-\x7F]/g, function(c) { return '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4); }); }
     function decodeUnicodeEscapes(str) { return str.replace(/\\u([0-9a-fA-F]{4})/g, (match, grp) => { return String.fromCharCode(parseInt(grp, 16)); }); }
 
-    function buildFragsQR() {
-        let val = document.getElementById('qr-input').value;
-        if(document.getElementById('merge-ex-rows').checked) {
-            const chks = document.querySelectorAll('.ex-chk:checked');
-            val = Array.from(chks).map(c => exRowsRaw[c.dataset.idx].join(" | ")).join("\n");
-            document.getElementById('qr-input').value = val;
+    // Chuyển tiếng Việt có dấu sang không dấu để QR nhẹ hơn, dễ quét hơn và tương thích tốt hơn.
+    function removeVietnameseDiacritics(text) {
+        return (text || "")
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd')
+            .replace(/Đ/g, 'D');
+    }
+
+    function normalizeQrInputToAscii(showNotice = false) {
+        const input = document.getElementById('qr-input');
+        if (!input) return "";
+        const oldVal = input.value || "";
+        const newVal = removeVietnameseDiacritics(oldVal);
+        input.value = newVal;
+        if (showNotice) {
+            alert(oldVal === newVal ? "Dữ liệu đã ở dạng không dấu." : "Đã chuyển dữ liệu QR thành không dấu.");
         }
-        const box = document.getElementById('qr-display'); box.innerHTML = ""; if(!val) return;
-        
-        const QR_LIMIT_V44 = 40; 
-        const chars = Array.from(val); const frags = []; 
-        for (let i = 0; i < chars.length; i += QR_LIMIT_V44) { frags.push(chars.slice(i, i + QR_LIMIT_V44).join('')); }
-        
-        frags.forEach((chunk, i) => {
-            const d = document.createElement('div'); d.className = "qr-card text-center";
-            d.innerHTML = `<small class="text-muted fw-bold">Mảnh ${i+1}/${frags.length}</small><div id="qro-${i}" class="qr-render-box d-flex justify-content-center mt-2"></div>`;
-            box.appendChild(d);
-            new QRCode(document.getElementById(`qro-${i}`), { text: safeUtf8ForQrjs(chunk), width: 400, height: 400, correctLevel: QRCode.CorrectLevel.L });
-            setTimeout(() => { const img = document.querySelector(`#qro-${i} img`); if (img) img.title = chunk; }, 100);
+        return newVal;
+    }
+
+    // Đọc toàn bộ dữ liệu của tất cả sheet Excel đang mở, nối ô bằng |, hết dòng xuống dòng, giữa sheet chèn @_@, rồi đưa vào qr-input.
+    function readAllExcelSheetsToQrInput() {
+        if (!masterWB || !masterWB.SheetNames || masterWB.SheetNames.length === 0) {
+            alert("Chưa có file Excel nào được mở!");
+            return "";
+        }
+
+        // Lưu lại các chỉnh sửa đang có ở sheet hiện tại trước khi gom dữ liệu toàn workbook.
+        if (curSheet && exHeaderRaw && exRowsRaw && masterWB.Sheets[curSheet]) {
+            masterWB.Sheets[curSheet] = XLSX.utils.aoa_to_sheet([exHeaderRaw, ...exRowsRaw]);
+        }
+
+        const sheetBlocks = masterWB.SheetNames.map(sheetName => {
+            const sheet = masterWB.Sheets[sheetName];
+            if (!sheet || !sheet['!ref']) return "";
+
+            const range = XLSX.utils.decode_range(sheet['!ref']);
+            const lines = [];
+
+            for (let r = range.s.r; r <= range.e.r; r++) {
+                const cells = [];
+                for (let c = range.s.c; c <= range.e.c; c++) {
+                    const addr = XLSX.utils.encode_cell({ r, c });
+                    const cell = sheet[addr];
+                    let val = "";
+
+                    if (cell) {
+                        if (cell.w !== undefined) val = cell.w;
+                        else if (cell.v !== undefined) val = cell.v;
+                    }
+
+                    // Tránh phá định dạng phân tách khi trong ô có xuống dòng thật.
+                    val = String(val).replace(/\r?\n/g, " ").trim();
+                    cells.push(val);
+                }
+                lines.push(cells.join("|"));
+            }
+
+            return lines.join("\n");
         });
 
-        const btnBox = document.getElementById('btn-dl-all-qr').parentNode;
-        btnBox.innerHTML = `
+        const mergedText = sheetBlocks.join("\n@_@\n");
+        const input = document.getElementById('qr-input');
+        if (input) {
+            input.value = mergedText;
+            input.focus();
+        }
+
+        const totalChars = mergedText.length.toLocaleString('vi-VN');
+        alert(`Đã đưa toàn bộ dữ liệu Excel vào ô QR. Tổng độ dài: ${totalChars} ký tự.`);
+        return mergedText;
+    }
+
+    function getQrCorrectionLevel(level) {
+        const key = (level || 'L').toString().toUpperCase();
+        return QRCode.CorrectLevel[key] || QRCode.CorrectLevel.L;
+    }
+
+
+    // Lấy thông số QR từ khối "TỐI ƯU MẬT ĐỘ DỮ LIỆU" đang có sẵn trên giao diện.
+    // Dùng cho hàm QR không dấu để không sửa luồng buildFragsQR gốc.
+    function getFragsQrUiSettings(defaults = {}) {
+        const qrSizeEl = document.getElementById('qr-size');
+        const chunkSizeEl = document.getElementById('airgap-chunk-size');
+        const errorLevelEl = document.getElementById('qr-error-level');
+
+        const errorLevelStr = (errorLevelEl?.value || defaults.correctLevel || 'L').toString().toUpperCase();
+        const safeLimits = { L: 2800, M: 2200, Q: 1500, H: 1100 };
+        let chunkSize = parseInt(chunkSizeEl?.value, 10) || defaults.chunkSize || 40;
+        const maxChunk = safeLimits[errorLevelStr] || 2800;
+
+        if (chunkSize > maxChunk) {
+            chunkSize = maxChunk;
+            if (chunkSizeEl) chunkSizeEl.value = chunkSize;
+            const warning = document.getElementById('density-warning');
+            if (warning) warning.style.display = 'block';
+        }
+
+        const qrSize = parseInt(qrSizeEl?.value, 10) || defaults.width || 400;
+        return {
+            chunkSize,
+            width: qrSize,
+            height: qrSize,
+            correctLevel: errorLevelStr
+        };
+    }
+
+
+    // Tạo mã phiên chung cho toàn bộ loạt QR: DL_YYYYMMDDhhmm
+    function makeDlQrSessionId() {
+        const d = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        return `DL_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}`;
+    }
+
+    // Đóng gói từng mảnh theo chuẩn: [DL_YYYYMMDDhhmm],[tổng số mảnh],[mảnh thứ],[text]
+    // Hàm tự trừ phần header khỏi chunkSize để tổng ký tự trong một QR không vượt mật độ đã chọn.
+    function makeDlQrPayloadFragments(text, chunkSize, fixedSessionId) {
+        const sessionId = fixedSessionId || makeDlQrSessionId();
+        const sourceChars = Array.from(text || '');
+        const maxQrChars = Math.max(20, parseInt(chunkSize, 10) || 700);
+        let total = 1;
+        let bodySize = maxQrChars;
+
+        // Lặp vài vòng vì độ dài header phụ thuộc tổng số mảnh và số thứ tự mảnh.
+        for (let pass = 0; pass < 6; pass++) {
+            const headerLen = `[${sessionId}],[${total}],[${total}],`.length;
+            bodySize = Math.max(1, maxQrChars - headerLen);
+            const nextTotal = Math.max(1, Math.ceil(sourceChars.length / bodySize));
+            if (nextTotal === total) break;
+            total = nextTotal;
+        }
+
+        const payloads = [];
+        for (let i = 0; i < total; i++) {
+            const chunk = sourceChars.slice(i * bodySize, (i + 1) * bodySize).join('');
+            payloads.push({
+                sessionId,
+                total,
+                index: i + 1,
+                chunk,
+                payload: `[${sessionId}],[${total}],[${i + 1}],${chunk}`
+            });
+        }
+        return payloads;
+    }
+
+    function parseDlQrPayload(rawText) {
+        const text = decodeUnicodeEscapes(String(rawText || ''));
+        const match = text.match(/^\[(DL_\d{12})\],\[(\d+)\],\[(\d+)\],([\s\S]*)$/);
+        if (!match) return null;
+        return {
+            sessionId: match[1],
+            total: parseInt(match[2], 10),
+            index: parseInt(match[3], 10),
+            chunk: match[4]
+        };
+    }
+
+    const dlQrAutoDecoder = {
+        sessions: {},
+        add(rawText) {
+            const part = parseDlQrPayload(rawText);
+            if (!part || !part.total || !part.index || part.index < 1 || part.index > part.total) return null;
+            if (!this.sessions[part.sessionId]) {
+                this.sessions[part.sessionId] = { total: part.total, parts: {}, received: 0, completed: false };
+            }
+            const s = this.sessions[part.sessionId];
+            s.total = part.total;
+            if (!Object.prototype.hasOwnProperty.call(s.parts, part.index)) s.received++;
+            s.parts[part.index] = part.chunk;
+
+            const missing = [];
+            for (let i = 1; i <= s.total; i++) if (!Object.prototype.hasOwnProperty.call(s.parts, i)) missing.push(i);
+            const complete = missing.length === 0;
+            const text = complete ? Array.from({length: s.total}, (_, i) => s.parts[i + 1] || '').join('') : '';
+            s.completed = complete;
+            return { sessionId: part.sessionId, total: s.total, index: part.index, received: s.received, missing, complete, text };
+        },
+        reset(sessionId) {
+            if (sessionId) delete this.sessions[sessionId];
+            else this.sessions = {};
+        }
+    };
+
+    function handleDlQrDecodedText(sourceName, rawText) {
+        const pack = dlQrAutoDecoder.add(rawText);
+        if (!pack) return false;
+
+        const log = document.getElementById('batch-log');
+        if (log) {
+            const line = document.createElement('div');
+            line.className = 'border-bottom py-1 small text-info fw-bold';
+            line.innerText = `🎬 ${sourceName}: ${pack.sessionId} - nhận mảnh ${pack.index}/${pack.total} (${pack.received}/${pack.total})`;
+            log.appendChild(line);
+        }
+
+        if (pack.complete) {
+            window.lastCombinedScan = pack.text;
+            if (typeof shouldOfferImportQrTextToExcel === 'function' && shouldOfferImportQrTextToExcel(pack.text)) {
+                importQrTextPayloadToExcel(pack.text, { silent: true });
+            }
+            if (log) {
+                const safeText = (typeof escapeHtmlText === 'function') ? escapeHtmlText(pack.text) : pack.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const importBtn = (typeof shouldOfferImportQrTextToExcel === 'function' && shouldOfferImportQrTextToExcel(pack.text))
+                    ? `<button class="btn btn-sm btn-success w-100 fw-bold mb-1" onclick="importQrTextPayloadToExcel(window.lastCombinedScan)">ĐỔ DỮ LIỆU VÀO TAB EXCEL</button>`
+                    : '';
+                const ui = `<div class="mt-3 p-2 bg-light border rounded border-success">
+                    <div class="fw-bold text-success mb-1 small">✅ ĐÃ GHÉP ĐỦ ${pack.total} MẢNH - ${pack.sessionId}</div>
+                    <textarea class="form-control form-control-sm mb-2" rows="4" readonly>${safeText}</textarea>
+                    ${importBtn}
+                    <button class="btn btn-sm btn-primary w-100 fw-bold" onclick="copyToClipboard(window.lastCombinedScan)">COPY DỮ LIỆU ĐÃ GHÉP</button>
+                </div>`;
+                log.innerHTML += ui;
+            }
+        }
+        return true;
+    }
+
+    // Có thể gọi: buildFragsQR({ removeDiacritics:true, chunkSize:80, width:400, height:400, correctLevel:'M' })
+    function buildFragsQR(options = {}) {
+        const settings = Object.assign({
+            sourceId: 'qr-input',
+            displayId: 'qr-display',
+            chunkSize: 40,
+            width: 400,
+            height: 400,
+            correctLevel: 'L',
+            removeDiacritics: false,
+            updateInput: true,
+            sessionId: null
+        }, options || {});
+
+        const input = document.getElementById(settings.sourceId);
+        let val = input ? input.value : "";
+        if (document.getElementById('merge-ex-rows')?.checked) {
+            const chks = document.querySelectorAll('.ex-chk:checked');
+            val = Array.from(chks).map(c => exRowsRaw[c.dataset.idx].join(" | ")).join("\n");
+        }
+        if (settings.removeDiacritics) val = removeVietnameseDiacritics(val);
+        if (settings.updateInput && input) input.value = val;
+
+        const box = document.getElementById(settings.displayId);
+        if (!box) return;
+        box.innerHTML = "";
+        if (!val) return;
+
+        const ui = getFragsQrUiSettings({
+            chunkSize: settings.chunkSize,
+            width: settings.width,
+            correctLevel: settings.correctLevel
+        });
+        const qrPayloads = makeDlQrPayloadFragments(val, ui.chunkSize, settings.sessionId);
+
+        qrPayloads.forEach((item, i) => {
+            const d = document.createElement('div');
+            d.className = "qr-card text-center";
+            d.innerHTML = `<small class="text-muted fw-bold">${item.sessionId} - Mảnh ${item.index}/${item.total}</small><div id="qro-${i}" class="qr-render-box d-flex justify-content-center mt-2"></div>`;
+            box.appendChild(d);
+            new QRCode(document.getElementById(`qro-${i}`), {
+                text: safeUtf8ForQrjs(item.payload),
+                width: ui.width,
+                height: ui.height,
+                correctLevel: getQrCorrectionLevel(ui.correctLevel)
+            });
+            setTimeout(() => { const img = document.querySelector(`#qro-${i} img`); if (img) img.title = item.payload; }, 100);
+        });
+
+        const btnBox = document.getElementById('qr-action-buttons') || document.getElementById('btn-dl-all-qr')?.parentNode;
+        if (btnBox) btnBox.innerHTML = `
+            <button class="btn btn-primary btn-sm fw-bold w-100 mb-1" onclick="buildFragsQR()">TẠO LẠI QR PHÂN MẢNH</button>
+            <button class="btn btn-warning btn-sm fw-bold w-100 mb-1" onclick="buildFragsQRKhongDau()">TẠO QR KHÔNG DẤU</button>
             <button class="btn btn-success btn-sm fw-bold w-100 mb-1" onclick="downloadAllQRs()">TẢI ZIP MẢNH LẺ</button>
-            <button class="btn btn-dark btn-sm fw-bold w-100" onclick="downloadMegaSheet()">XUẤT MEGA SHEET (1 ẢNH)</button>
-        `;
+            <button class="btn btn-dark btn-sm fw-bold w-100" onclick="downloadMegaSheet()">XUẤT MEGA SHEET (1 ẢNH)</button>`;
+    }
+
+
+    // Phiên bản riêng: tạo QR từ dữ liệu không dấu, KHÔNG chỉnh sửa buildFragsQR gốc.
+    // Hàm này vẫn lấy Kích thước QR / Mật độ / Error Correction từ phần tùy chỉnh đang có.
+    function buildFragsQRKhongDau() {
+        const input = document.getElementById('qr-input');
+        let val = input ? input.value : "";
+
+        if (document.getElementById('merge-ex-rows')?.checked) {
+            const chks = document.querySelectorAll('.ex-chk:checked');
+            val = Array.from(chks).map(c => exRowsRaw[c.dataset.idx].join(" | ")).join("\n");
+        }
+
+        val = removeVietnameseDiacritics(val);
+        if (input) input.value = val;
+
+        const box = document.getElementById('qr-display');
+        if (!box) return;
+        box.innerHTML = "";
+        if (!val) return;
+
+        const ui = getFragsQrUiSettings({ chunkSize: 40, width: 400, correctLevel: 'L' });
+        const qrPayloads = makeDlQrPayloadFragments(val, ui.chunkSize);
+
+        qrPayloads.forEach((item, i) => {
+            const d = document.createElement('div');
+            d.className = "qr-card text-center";
+            d.innerHTML = `<small class="text-muted fw-bold">${item.sessionId} - Mảnh ${item.index}/${item.total}</small><div id="qro-${i}" class="qr-render-box d-flex justify-content-center mt-2"></div>`;
+            box.appendChild(d);
+            new QRCode(document.getElementById(`qro-${i}`), {
+                text: safeUtf8ForQrjs(item.payload),
+                width: ui.width,
+                height: ui.height,
+                correctLevel: getQrCorrectionLevel(ui.correctLevel)
+            });
+            setTimeout(() => {
+                const img = document.querySelector(`#qro-${i} img`);
+                if (img) img.title = item.payload;
+            }, 100);
+        });
+
+        const btnBox = document.getElementById('qr-action-buttons') || document.getElementById('btn-dl-all-qr')?.parentNode;
+        if (btnBox) {
+            btnBox.innerHTML = `
+                <button class="btn btn-primary btn-sm fw-bold w-100 mb-1" onclick="buildFragsQR()">TẠO LẠI QR PHÂN MẢNH</button>
+                <button class="btn btn-warning btn-sm fw-bold w-100 mb-1" onclick="buildFragsQRKhongDau()">TẠO QR KHÔNG DẤU</button>
+                <button class="btn btn-success btn-sm fw-bold w-100 mb-1" onclick="downloadAllQRs()">TẢI ZIP MẢNH LẺ</button>
+                <button class="btn btn-dark btn-sm fw-bold w-100" onclick="downloadMegaSheet()">XUẤT MEGA SHEET (1 ẢNH)</button>
+            `;
+        }
     }
 
     async function downloadAllQRs() {
@@ -927,8 +1240,9 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             }
 
             if (scanSuccess) {
+                const handledDl = handleDlQrDecodedText(f.name, resultText);
                 appendScanResult(f.name, resultText, true);
-                combinedText += resultText;
+                if (!handledDl) combinedText += resultText;
             } else {
                 appendScanResult(f.name, "KHÔNG ĐỌC ĐƯỢC", false);
                 combinedText += "[LỖI_MẢNH]"; 
@@ -993,15 +1307,210 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         });
     }
 
+
+    function escapeHtmlText(text) {
+        return String(text || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // Nhập ngược dữ liệu TEXT do TẠO QR PHÂN MẢNH / TẠO QR KHÔNG DẤU tạo ra vào tab Excel.
+    // Quy ước: ô cách nhau bằng |, hết dòng xuống dòng, giữa các sheet là @_@.
+    function importQrTextPayloadToExcel(text = window.lastCombinedScan, options = {}) {
+        const raw = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        if (!raw.trim()) {
+            if (!options.silent) alert('Chưa có dữ liệu text QR để đổ vào Excel!');
+            return false;
+        }
+
+        const sheetBlocks = raw
+            .split(/\n?@_@\n?/g)
+            .map(block => block.replace(/^\n+|\n+$/g, ''));
+
+        if (!sheetBlocks.length) {
+            if (!options.silent) alert('Không nhận diện được dữ liệu sheet từ text QR!');
+            return false;
+        }
+
+        if (curSheet && masterWB && masterWB.Sheets && masterWB.Sheets[curSheet] && Array.isArray(exHeaderRaw) && Array.isArray(exRowsRaw)) {
+            masterWB.Sheets[curSheet] = XLSX.utils.aoa_to_sheet([exHeaderRaw, ...exRowsRaw]);
+        }
+
+        masterWB = XLSX.utils.book_new();
+        masterWB.SheetNames = [];
+        masterWB.Sheets = {};
+
+        let totalRows = 0;
+        let totalCells = 0;
+
+        sheetBlocks.forEach((block, idx) => {
+            const normalizedBlock = block.replace(/^\n+|\n+$/g, '');
+            const lines = normalizedBlock.length ? normalizedBlock.split('\n') : [''];
+            let aoa = lines.map(line => {
+                // Hỗ trợ cả chuẩn mới "a|b|c" và dữ liệu cũ từng dùng "a | b | c".
+                const cells = String(line).split('|').map(v => v.trim());
+                totalCells += cells.length;
+                return cells;
+            });
+
+            const maxCols = Math.max(1, ...aoa.map(r => r.length));
+            aoa = aoa.map(r => {
+                while (r.length < maxCols) r.push('');
+                return r;
+            });
+
+            const sheetName = `QR_Sheet_${idx + 1}`;
+            masterWB.SheetNames.push(sheetName);
+            masterWB.Sheets[sheetName] = XLSX.utils.aoa_to_sheet(aoa);
+            totalRows += aoa.length;
+        });
+
+        fNameCur = fNameCur || 'QR_TEXT_TO_EXCEL.xlsx';
+        fExtCur = 'xlsx';
+        document.getElementById('tab-excel').style.display = 'block';
+        renderSheet(masterWB.SheetNames[0]);
+        showView('excel');
+
+        if (!options.silent) {
+            alert(`✅ Đã đổ dữ liệu QR vào tab Excel!\nSố sheet: ${masterWB.SheetNames.length}\nSố dòng: ${totalRows}\nSố ô: ${totalCells}`);
+        }
+        return true;
+    }
+
+    function shouldOfferImportQrTextToExcel(text) {
+        const t = String(text || '');
+        return t.includes('|') || t.includes('@_@') || /\n/.test(t);
+    }
+
+
+    // ==========================================
+    // CHẾ ĐỘ RIÊNG: ĐỌC QRTEXT LIÊN TIẾP BẰNG CAMERA VÀ ĐỔ VÀO TAB EXCEL
+    // ==========================================
+    window.qrScanMode = window.qrScanMode || 'normal';
+    window.qrTextScanLastKey = '';
+
+    function setQrTextScanButtons(isReading) {
+        const startBtn = document.getElementById('btn-start-qrtext-scan');
+        const stopBtn = document.getElementById('btn-stop-qrtext-scan');
+        if (startBtn) startBtn.style.display = isReading ? 'none' : 'block';
+        if (stopBtn) stopBtn.style.display = isReading ? 'block' : 'none';
+    }
+
+    function renderQrTextScanProgress(pack) {
+        const log = document.getElementById('batch-log');
+        if (!log || !pack) return;
+
+        let panel = document.getElementById('qrtext-scan-progress-panel');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'qrtext-scan-progress-panel';
+            panel.className = 'p-2 mb-2 border rounded bg-dark text-light';
+            log.prepend(panel);
+        }
+
+        const percent = pack.total ? Math.round((pack.received / pack.total) * 100) : 0;
+        const missingPreview = pack.missing && pack.missing.length
+            ? pack.missing.slice(0, 30).join(', ') + (pack.missing.length > 30 ? '...' : '')
+            : 'Không còn thiếu';
+
+        panel.innerHTML = `
+            <div class="fw-bold text-success mb-1">🎬 ĐANG ĐỌC QRTEXT VÀO TAB EXCEL</div>
+            <div class="small">Phiên: <b class="text-warning">${escapeHtmlText(pack.sessionId)}</b></div>
+            <div class="small">Tiến độ: <b>${pack.received}/${pack.total}</b> mảnh - vừa nhận mảnh <b>${pack.index}</b></div>
+            <div class="progress my-1" style="height:10px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width:${percent}%"></div>
+            </div>
+            <div class="small text-warning">Thiếu: ${escapeHtmlText(missingPreview)}</div>
+        `;
+    }
+
+    function appendQrTextScanLog(message, type = 'info') {
+        const log = document.getElementById('batch-log');
+        if (!log) return;
+        const line = document.createElement('div');
+        const color = type === 'success' ? 'text-success' : (type === 'danger' ? 'text-danger' : 'text-info');
+        line.className = `border-bottom py-1 small fw-bold ${color}`;
+        line.innerText = message;
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function startQrTextCameraScan() {
+        window.qrScanMode = 'qrtext';
+        window.lastCombinedScan = '';
+        window.qrTextScanLastKey = '';
+        if (typeof dlQrAutoDecoder !== 'undefined' && dlQrAutoDecoder.reset) dlQrAutoDecoder.reset();
+
+        const log = document.getElementById('batch-log');
+        if (log) {
+            log.innerHTML = `<div class="text-success fw-bold mb-2 border-bottom">🎬 Chế độ ĐỌC QRTEXT đang chờ camera...<br><span class="text-secondary small">Hãy chiếu lần lượt các QR do TẠO QR PHÂN MẢNH hoặc TẠO QR KHÔNG DẤU tạo ra.</span></div>`;
+        }
+        setQrTextScanButtons(true);
+        startCam();
+    }
+
+    function stopQrTextCameraScan() {
+        window.qrScanMode = 'normal';
+        setQrTextScanButtons(false);
+        stopCam();
+        appendQrTextScanLog('⏹ Đã dừng chế độ ĐỌC QRTEXT.', 'danger');
+    }
+
+    function handleQrTextDecodedText(sourceName, rawText) {
+        const pack = dlQrAutoDecoder.add(rawText);
+        if (!pack) {
+            const badKey = String(rawText || '').slice(0, 60);
+            if (badKey && window.qrTextScanLastKey !== 'BAD_' + badKey) {
+                window.qrTextScanLastKey = 'BAD_' + badKey;
+                appendQrTextScanLog(`⚠️ ${sourceName}: QR không đúng định dạng QRTEXT [DL_...]`, 'danger');
+            }
+            return true;
+        }
+
+        const uniqueKey = `${pack.sessionId}_${pack.index}_${pack.received}_${pack.complete}`;
+        if (window.qrTextScanLastKey !== uniqueKey) {
+            window.qrTextScanLastKey = uniqueKey;
+            appendQrTextScanLog(`✅ ${sourceName}: ${pack.sessionId} - nhận mảnh ${pack.index}/${pack.total} (${pack.received}/${pack.total})`, 'info');
+            renderQrTextScanProgress(pack);
+        }
+
+        if (pack.complete) {
+            window.lastCombinedScan = pack.text;
+            const imported = importQrTextPayloadToExcel(pack.text, { silent: true });
+            renderQrTextScanProgress(pack);
+
+            const log = document.getElementById('batch-log');
+            if (log) {
+                const safeText = escapeHtmlText(pack.text);
+                log.innerHTML += `<div class="mt-3 p-2 bg-light border rounded border-success">
+                    <div class="fw-bold text-success mb-1 small">✅ ĐỌC QRTEXT HOÀN TẤT - ĐÃ GHÉP ĐỦ ${pack.total} MẢNH</div>
+                    <div class="small text-dark mb-1">Kết quả ${imported ? 'đã được đổ vào tab Excel' : 'đã ghép xong nhưng chưa đổ được vào Excel'}.</div>
+                    <textarea class="form-control form-control-sm mb-2" rows="4" readonly>${safeText}</textarea>
+                    <button class="btn btn-sm btn-success w-100 fw-bold mb-1" onclick="importQrTextPayloadToExcel(window.lastCombinedScan)">ĐỔ LẠI DỮ LIỆU VÀO TAB EXCEL</button>
+                    <button class="btn btn-sm btn-primary w-100 fw-bold" onclick="copyToClipboard(window.lastCombinedScan)">COPY TEXT ĐÃ GHÉP</button>
+                </div>`;
+            }
+
+            window.qrScanMode = 'normal';
+            setQrTextScanButtons(false);
+            if (isCamRunning) stopCam();
+        }
+        return true;
+    }
+
     function processFinalUI(combinedText) {
         if (!combinedText) return;
         window.lastCombinedScan = combinedText;
-        let isEx = combinedText.includes(" | ");
+        const isQrExcelText = typeof shouldOfferImportQrTextToExcel === 'function' && shouldOfferImportQrTextToExcel(combinedText);
+        const safeCombinedText = (typeof escapeHtmlText === 'function') ? escapeHtmlText(combinedText) : combinedText;
         let ui = `<div class="mt-3 p-2 bg-light border rounded border-primary">
             <div class="fw-bold text-dark mb-1 small">✅ TỔNG HỢP:</div>
-            <textarea class="form-control form-control-sm mb-2" rows="2" readonly>${combinedText}</textarea>`;
-        ui += isEx ? `<button class="btn btn-sm btn-success w-100 fw-bold shadow-sm" onclick="spillToExcel()">CHÈN TRÀN VÀO EXCEL</button>` 
-                   : `<button class="btn btn-sm btn-primary w-100 fw-bold" onclick="copyToClipboard(window.lastCombinedScan)">COPY TỔNG</button>`;
+            <textarea class="form-control form-control-sm mb-2" rows="3" readonly>${safeCombinedText}</textarea>`;
+        ui += isQrExcelText ? `<button class="btn btn-sm btn-success w-100 fw-bold shadow-sm mb-1" onclick="importQrTextPayloadToExcel(window.lastCombinedScan)">ĐỔ DỮ LIỆU VÀO TAB EXCEL</button>` 
+                            : `<button class="btn btn-sm btn-primary w-100 fw-bold" onclick="copyToClipboard(window.lastCombinedScan)">COPY TỔNG</button>`;
         ui += `</div>`;
         document.getElementById('batch-log').innerHTML += ui;
     }
@@ -1964,8 +2473,13 @@ function launchCam(mode) {
         scanConfig, 
         (txt) => {
             let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
+            if (window.qrScanMode === 'qrtext') {
+                if (typeof handleQrTextDecodedText === "function") handleQrTextDecodedText("Camera", d);
+                return;
+            }
             if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
-            if (typeof appendScanResult === "function") appendScanResult("Camera", d);
+            if (typeof handleDlQrDecodedText === "function" && handleDlQrDecodedText("Camera", d)) return;
+            if (typeof appendScanResult === "function") appendScanResult("Camera", d, true);
         }, 
         (err) => {} // Giấu các lỗi dò nét
     ).then(() => { 
@@ -1980,8 +2494,13 @@ function launchCam(mode) {
             { fps: 15 }, 
             (txt) => {
                 let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
+                if (window.qrScanMode === 'qrtext') {
+                    if (typeof handleQrTextDecodedText === "function") handleQrTextDecodedText("Camera", d);
+                    return;
+                }
                 if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
-                if (typeof appendScanResult === "function") appendScanResult("Camera", d);
+                if (typeof handleDlQrDecodedText === "function" && handleDlQrDecodedText("Camera", d)) return;
+                if (typeof appendScanResult === "function") appendScanResult("Camera", d, true);
             }, 
             (err) => {}
         ).then(() => { 
@@ -2035,6 +2554,10 @@ function flipCamera() {
 
 // 5. Tắt Camera an toàn
 function stopCam() {
+    if (window.qrScanMode === 'qrtext') {
+        window.qrScanMode = 'normal';
+        if (typeof setQrTextScanButtons === 'function') setQrTextScanButtons(false);
+    }
     if (html5QrCodeCam && isCamRunning) {
         html5QrCodeCam.stop().then(() => {
             html5QrCodeCam.clear();
