@@ -70,39 +70,82 @@
         }
 
         // Hàm chủ động ép hệ thống lên Server kiểm tra mã nguồn byte-by-byte
-        function checkUpdateManually() {
-            if (!navigator.onLine) return alert("❌ Thiết bị ngoại tuyến! Hãy kết nối mạng để kiểm tra bản cập nhật SCADA mới.");
-            
-            const btn = document.getElementById("btn-manual-update");
-            const icon = document.getElementById("update-icon");
-            
-            btn.setAttribute("disabled", "true");
-            if (icon) icon.classList.add("fa-spin");
-            btn.innerText = "⏳ ĐANG KIỂM TRA MÁY CHỦ SCADA...";
+        // 🚀 HÀM CẢI TIẾN THÔNG MINH: BẮT MẠCH TRẠNG THÁI SERVER VÀ PHẢN HỒI LẬP TỨC
+function checkUpdateManually() {
+    if (!navigator.onLine) return alert("❌ Thiết bị ngoại tuyến! Hãy kết nối mạng để kiểm tra bản cập nhật mới.");
+    
+    const btn = document.getElementById("btn-manual-update");
+    const icon = document.getElementById("update-icon");
+    
+    btn.setAttribute("disabled", "true");
+    if (icon) icon.classList.add("fa-spin");
+    btn.innerText = "⏳ ĐANG KẾT NỐI MÁY CHỦ SĂN TÌM PHIÊN BẢN...";
 
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistration().then(reg => {
-                    if (reg) {
-                        reg.update().then(() => {
-                            setTimeout(() => {
-                                btn.removeAttribute("disabled");
-                                if (icon) icon.classList.remove("fa-spin");
-                                btn.innerHTML = `<i class="fa-solid fa-rotate me-1" id="update-icon"></i> KIỂM TRA BẢN CẬP NHẬT MỚI`;
-                                
-                                if (!reg.waiting && !reg.installing) {
-                                    alert("✅ Hệ thống AirGap SCADA hiện tại đã là phiên bản mới nhất!");
-                                }
-                            }, 1500);
-                        }).catch(err => {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(reg => {
+            if (!reg) {
+                btn.removeAttribute("disabled");
+                if (icon) icon.classList.remove("fa-spin");
+                btn.innerHTML = `<i class="fa-solid fa-rotate me-1" id="update-icon"></i> KIỂM TRA BẢN CẬP NHẬT MỚI`;
+                return alert("❌ Hệ thống PWA chưa được kích hoạt trên máy này!");
+            }
+
+            // Tạo một biến cờ để kiểm tra xem hệ thống có kích hoạt luồng tải mới hay không
+            let hasNewUpdate = false;
+
+            // 1. Lập trình bộ bẫy sự kiện săn tìm file mới ngay khi gọi reg.update()
+            const checkUpdateState = () => {
+                if (reg.installing) {
+                    hasNewUpdate = true;
+                    btn.innerText = "📥 ĐANG TẢI GÓI DỮ LIỆU MỚI TỪ SERVER...";
+                    
+                    // Theo dõi tiến độ cài đặt file mới của trình duyệt
+                    reg.installing.addEventListener('statechange', (e) => {
+                        if (e.target.state === 'installed') {
                             btn.removeAttribute("disabled");
                             if (icon) icon.classList.remove("fa-spin");
                             btn.innerHTML = `<i class="fa-solid fa-rotate me-1" id="update-icon"></i> KIỂM TRA BẢN CẬP NHẬT MỚI`;
-                            alert("❌ Lỗi đồng bộ máy chủ: " + err.message);
-                        });
+                            // Khi trạng thái chuyển sang installed, hàm showUpdateNotification() sẵn có của anh sẽ tự dựng Banner vàng lên
+                        }
+                    });
+                }
+            };
+
+            // Lắng nghe nếu trình duyệt phát hiện byte file sw.js trên mạng có thay đổi
+            reg.addEventListener('updatefound', () => {
+                checkUpdateState();
+            });
+
+            // 2. Kích nổ lệnh ép kiểm tra mạng
+            reg.update().then(() => {
+                // Nghỉ 800ms để trình duyệt kịp phân tích tiêu đề file (Header) từ GitHub về
+                setTimeout(() => {
+                    // Nếu đã gọi lệnh update xong mà không có luồng installing (tải mới) và không có luồng waiting (chờ kích hoạt)
+                    if (!reg.installing && !reg.waiting && !hasNewUpdate) {
+                        btn.removeAttribute("disabled");
+                        if (icon) icon.classList.remove("fa-spin");
+                        btn.innerHTML = `<i class="fa-solid fa-rotate me-1" id="update-icon"></i> KIỂM TRA BẢN CẬP NHẬT MỚI`;
+                        
+                        // Phản hồi rõ ràng, dứt khoát cho người dùng
+                        alert("✅ Ứng dụng hiện tại đã là phiên bản mới nhất, không cần nâng cấp!");
+                    } 
+                    // Tình huống hy hữu: File mới đã tải xong từ trước đó nhưng anh em chưa bấm nút Nâng cấp
+                    else if (reg.waiting) {
+                        btn.removeAttribute("disabled");
+                        if (icon) icon.classList.remove("fa-spin");
+                        btn.innerHTML = `<i class="fa-solid fa-rotate me-1" id="update-icon"></i> KIỂM TRA BẢN CẬP NHẬT MỚI`;
+                        if (typeof showUpdateNotification === 'function') showUpdateNotification();
                     }
-                });
-            }
-        }
+                }, 800);
+            }).catch(err => {
+                btn.removeAttribute("disabled");
+                if (icon) icon.classList.remove("fa-spin");
+                btn.innerHTML = `<i class="fa-solid fa-rotate me-1" id="update-icon"></i> KIỂM TRA BẢN CẬP NHẬT MỚI`;
+                alert("❌ Lỗi đường truyền máy chủ: " + err.message);
+            });
+        });
+    }
+}
     </script>
     
     <style>
