@@ -3,11 +3,12 @@
   "short_name": "AirGap SCADA",
   "description": "Hệ thống truyền tải dữ liệu Air-Gap an toàn qua luồng mã QR",
   "start_url": "index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#212529",
   "theme_color": "#0dcaf0",
-  "orientation": "portrait-primary",
-    "icons": [
+  "orientation": "portrait",
+  "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
