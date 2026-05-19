@@ -83,12 +83,31 @@ function checkUpdateManually() {
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistration().then(reg => {
-            if (!reg) {
+            // 🚀 THAY THẾ BẰNG ĐOẠN CODE TỰ KÍCH HOẠT THÔNG MINH NÀY:
+if (!reg) {
+    console.warn("⚠️ Luồng nền chưa kịp kích hoạt, tiến hành ép đăng ký lại...");
+    btn.innerText = "⏳ ĐANG KÍCH HOẠT LẠI BỘ NHỚ NỀN PWA...";
+    
+    // Ép trình duyệt đăng ký lại sw.js ngay lập tức
+    navigator.serviceWorker.register('sw.js').then((newReg) => {
+        // Đăng ký lại thành công, cho chạy tiếp lệnh update sau 500ms
+        setTimeout(() => {
+            newReg.update().then(() => {
                 btn.removeAttribute("disabled");
                 if (icon) icon.classList.remove("fa-spin");
                 btn.innerHTML = `<i class="fa-solid fa-rotate me-1" id="update-icon"></i> KIỂM TRA BẢN CẬP NHẬT MỚI`;
-                return alert("❌ Hệ thống PWA chưa được kích hoạt trên máy này!");
-            }
+                alert("✅ Đã kích hoạt bộ nhớ Offline thành công! Hiện tại ứng dụng đã khớp phiên bản mới nhất.");
+            }).catch(e => location.reload());
+        }, 500);
+    }).catch((err) => {
+        // Nếu thất bại hoàn toàn (do rớt HTTPS hoặc lỗi Webview Zalo)
+        btn.removeAttribute("disabled");
+        if (icon) icon.classList.remove("fa-spin");
+        btn.innerHTML = `<i class="fa-solid fa-rotate me-1" id="update-icon"></i> KIỂM TRA BẢN CẬP NHẬT MỚI`;
+        alert("❌ KHÔNG THỂ BẬT PWA!\nNguyên nhân: Trình duyệt chặn quyền Offline.\n\n💡 Cách sửa: Anh hãy kiểm tra link xem đã có 'https://' bảo mật chưa, hoặc đảm bảo KHÔNG mở link trực tiếp bên trong ứng dụng Zalo/Facebook.");
+    });
+    return;
+}
 
             // Tạo một biến cờ để kiểm tra xem hệ thống có kích hoạt luồng tải mới hay không
             let hasNewUpdate = false;
