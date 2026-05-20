@@ -709,6 +709,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
                 🌐 CHỌN HTML → QR NGAY
                 <input type="file" hidden accept=".html,.htm,text/html" onchange="handleHtmlFileToQrAndBuild(this)">
             </label>
+            <div id="qr-fast-job-status" class="small text-info border border-info rounded p-1 bg-dark" style="display:none; font-size:0.75rem; line-height:1.35;"></div>
         </div>
         <div id="qr-display" class="mb-2"></div>
         <div class="d-grid gap-2" id="qr-action-buttons">
@@ -1214,7 +1215,31 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         return mergedText;
     }
 
-    // Đổi workbook Excel thành chuỗi QRText theo quy tắc: ô cách nhau bằng |, hết dòng xuống dòng, giữa sheet chèn @_@.
+    // Trả quyền điều khiển tạm thời cho trình duyệt để tránh treo giao diện khi xử lý dữ liệu lớn.
+    function qrIdleYield(delay = 0) {
+        return new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    function setQrFastJobStatus(message, detail = '') {
+        const el = document.getElementById('qr-fast-job-status');
+        if (!el) return;
+        el.style.display = message ? 'block' : 'none';
+        el.innerHTML = message ? `<b>${message}</b>${detail ? `<br><span class="text-secondary">${detail}</span>` : ''}` : '';
+    }
+
+    function getInlineXlsxLibrarySource() {
+        try {
+            const scripts = Array.from(document.scripts || []);
+            const hit = scripts.find(sc => {
+                const txt = sc.textContent || '';
+                return txt.includes('function make_xlsx_lib') && txt.includes('var XLSX');
+            });
+            return hit ? hit.textContent : '';
+        } catch (e) {
+            return '';
+        }
+    }
+
     function workbookToQrDelimitedText(wb) {
         if (!wb || !wb.SheetNames || !wb.SheetNames.length) return "";
         return wb.SheetNames.map(sheetName => {
@@ -1236,30 +1261,155 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         }).join("\n@_@\n");
     }
 
-    function forceBuildFragsQrFromInput() {
+    async function workbookToQrDelimitedTextAsync(wb, onProgress) {
+        if (!wb || !wb.SheetNames || !wb.SheetNames.length) return "";
+        const sheetBlocks = [];
+        for (let si = 0; si < wb.SheetNames.length; si++) {
+            const sheetName = wb.SheetNames[si];
+            const sheet = wb.Sheets[sheetName];
+            if (!sheet || !sheet['!ref']) {
+                sheetBlocks.push('');
+                continue;
+            }
+            const range = XLSX.utils.decode_range(sheet['!ref']);
+            const lines = [];
+            const totalRows = Math.max(1, range.e.r - range.s.r + 1);
+            for (let r = range.s.r; r <= range.e.r; r++) {
+                const cells = [];
+                for (let c = range.s.c; c <= range.e.c; c++) {
+                    const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+                    let val = "";
+                    if (cell) val = cell.w !== undefined ? cell.w : (cell.v !== undefined ? cell.v : "");
+                    cells.push(String(val).replace(/\r?\n/g, " ").trim());
+                }
+                lines.push(cells.join("|"));
+                if ((r - range.s.r + 1) % 80 === 0) {
+                    if (typeof onProgress === 'function') onProgress({ sheetIndex: si + 1, sheetTotal: wb.SheetNames.length, sheetName, row: r - range.s.r + 1, totalRows });
+                    await qrIdleYield(0);
+                }
+            }
+            sheetBlocks.push(lines.join("\n"));
+            await qrIdleYield(0);
+        }
+        return sheetBlocks.join("\n@_@\n");
+    }
+
+    function readExcelFileToDelimitedTextInWorker(file, onProgress) {
+        return new Promise(async (resolve, reject) => {
+            if (!window.Worker) return reject(new Error('Trình duyệt không hỗ trợ Web Worker'));
+            const xlsxSrc = getInlineXlsxLibrarySource();
+            if (!xlsxSrc) return reject(new Error('Không tìm thấy thư viện XLSX nội tuyến để chạy Worker'));
+            const workerCode = `
+                ${xlsxSrc}
+                function cellText(cell){
+                    if (!cell) return '';
+                    const v = cell.w !== undefined ? cell.w : (cell.v !== undefined ? cell.v : '');
+                    return String(v).replace(/\\r?\\n/g, ' ').trim();
+                }
+                self.onmessage = function(e){
+                    try {
+                        const data = e.data;
+                        const wb = XLSX.read(new Uint8Array(data.buffer), { type: 'array' });
+                        const blocks = [];
+                        for (let si = 0; si < wb.SheetNames.length; si++) {
+                            const sheetName = wb.SheetNames[si];
+                            const sheet = wb.Sheets[sheetName];
+                            if (!sheet || !sheet['!ref']) { blocks.push(''); continue; }
+                            const range = XLSX.utils.decode_range(sheet['!ref']);
+                            const lines = [];
+                            const totalRows = Math.max(1, range.e.r - range.s.r + 1);
+                            for (let r = range.s.r; r <= range.e.r; r++) {
+                                const cells = [];
+                                for (let c = range.s.c; c <= range.e.c; c++) {
+                                    cells.push(cellText(sheet[XLSX.utils.encode_cell({ r:r, c:c })]));
+                                }
+                                lines.push(cells.join('|'));
+                                if ((r - range.s.r + 1) % 120 === 0) {
+                                    self.postMessage({ type:'progress', sheetIndex: si + 1, sheetTotal: wb.SheetNames.length, sheetName: sheetName, row: r - range.s.r + 1, totalRows: totalRows });
+                                }
+                            }
+                            blocks.push(lines.join('\\n'));
+                            self.postMessage({ type:'progress', sheetIndex: si + 1, sheetTotal: wb.SheetNames.length, sheetName: sheetName, row: totalRows, totalRows: totalRows });
+                        }
+                        self.postMessage({ type:'done', text: blocks.join('\\n@_@\\n'), sheetCount: wb.SheetNames.length });
+                    } catch (err) {
+                        self.postMessage({ type:'error', message: err && err.message ? err.message : String(err) });
+                    }
+                };
+            `;
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+            const worker = new Worker(url);
+            worker.onmessage = ev => {
+                const msg = ev.data || {};
+                if (msg.type === 'progress') {
+                    if (typeof onProgress === 'function') onProgress(msg);
+                    return;
+                }
+                worker.terminate();
+                URL.revokeObjectURL(url);
+                if (msg.type === 'done') resolve(msg);
+                else reject(new Error(msg.message || 'Worker đọc Excel thất bại'));
+            };
+            worker.onerror = err => {
+                worker.terminate();
+                URL.revokeObjectURL(url);
+                reject(err);
+            };
+            try {
+                const buffer = await file.arrayBuffer();
+                worker.postMessage({ buffer }, [buffer]);
+            } catch (e) {
+                worker.terminate();
+                URL.revokeObjectURL(url);
+                reject(e);
+            }
+        });
+    }
+
+    async function forceBuildFragsQrFromInput() {
         const merge = document.getElementById('merge-ex-rows');
         const oldChecked = merge ? merge.checked : false;
         if (merge) merge.checked = false;
-        try { buildFragsQR(); }
+        try { await buildFragsQR({ asyncRender: true }); }
         finally { if (merge) merge.checked = oldChecked; }
     }
 
     async function handleExcelFileToQrAndBuild(input) {
         const file = input && input.files && input.files[0];
         if (!file) return;
-        showLoading(true, "ĐANG ĐỌC EXCEL VÀ TẠO QRTEXT...");
+        showLoading(true, "ĐANG ĐỌC EXCEL BẰNG CHẾ ĐỘ CHỐNG TREO...");
+        setQrFastJobStatus('📊 Đang đọc Excel...', 'Ưu tiên xử lý bằng Web Worker để giao diện không bị treo.');
+        await qrIdleYield(80);
         try {
-            const buffer = await file.arrayBuffer();
-            const wb = XLSX.read(new Uint8Array(buffer), { type: 'array' });
-            const mergedText = workbookToQrDelimitedText(wb);
+            let mergedText = '';
+            let sheetCount = 0;
+            try {
+                const result = await readExcelFileToDelimitedTextInWorker(file, p => {
+                    setQrFastJobStatus('📊 Đang đọc Excel trong nền...', `Sheet ${p.sheetIndex}/${p.sheetTotal}: ${p.sheetName} - ${p.row}/${p.totalRows} dòng`);
+                });
+                mergedText = result.text || '';
+                sheetCount = result.sheetCount || 0;
+            } catch (workerErr) {
+                setQrFastJobStatus('⚠️ Worker không khả dụng, chuyển sang chế độ chia nhịp...', workerErr.message || String(workerErr));
+                await qrIdleYield(80);
+                const buffer = await file.arrayBuffer();
+                const wb = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+                sheetCount = wb.SheetNames.length;
+                mergedText = await workbookToQrDelimitedTextAsync(wb, p => {
+                    setQrFastJobStatus('📊 Đang ghép dữ liệu Excel...', `Sheet ${p.sheetIndex}/${p.sheetTotal}: ${p.sheetName} - ${p.row}/${p.totalRows} dòng`);
+                });
+            }
             const qrInput = document.getElementById('qr-input');
             if (qrInput) qrInput.value = mergedText;
             if (typeof setSide === 'function') setSide('gen');
-            forceBuildFragsQrFromInput();
+            await forceBuildFragsQrFromInput();
             showLoading(false);
-            alert(`✅ Đã đọc file Excel [${file.name}] vào qr-input và tạo QR.\nSheet: ${wb.SheetNames.length}\nĐộ dài: ${mergedText.length.toLocaleString('vi-VN')} ký tự.`);
+            setQrFastJobStatus('✅ Đã tạo QRText từ Excel', `Sheet: ${sheetCount || 'không xác định'} | Độ dài: ${mergedText.length.toLocaleString('vi-VN')} ký tự`);
+            alert(`✅ Đã đọc file Excel [${file.name}] vào qr-input và tạo QR.\nSheet: ${sheetCount || 'không xác định'}\nĐộ dài: ${mergedText.length.toLocaleString('vi-VN')} ký tự.`);
         } catch (e) {
             showLoading(false);
+            setQrFastJobStatus('❌ Lỗi đọc Excel', e.message || String(e));
             alert('❌ Lỗi đọc Excel để tạo QRText: ' + (e.message || e));
         } finally {
             input.value = '';
@@ -1270,18 +1420,24 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         const file = input && input.files && input.files[0];
         if (!file) return;
         showLoading(true, "ĐANG ĐỌC HTML VÀ TẠO QRTEXT...");
+        setQrFastJobStatus('🌐 Đang đọc HTML...', `${file.name} - ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+        await qrIdleYield(80);
         try {
             const html = await file.text();
+            await qrIdleYield(0);
             const payload = QR_EDIT_HTML_PREFIX + html;
             const qrInput = document.getElementById('qr-input');
             if (qrInput) qrInput.value = payload;
-            if (typeof renderEditor === 'function') renderEditor(html);
+            // Không render HTML lớn ngay lập tức để tránh treo; bên nhận vẫn khôi phục vào TAB EDIT sau khi quét đủ QR.
+            if (html.length < 350000 && typeof renderEditor === 'function') renderEditor(html);
             if (typeof setSide === 'function') setSide('gen');
-            forceBuildFragsQrFromInput();
+            await forceBuildFragsQrFromInput();
             showLoading(false);
+            setQrFastJobStatus('✅ Đã tạo QRText từ HTML', `Độ dài: ${payload.length.toLocaleString('vi-VN')} ký tự`);
             alert(`✅ Đã đọc file HTML [${file.name}] vào qr-input và tạo QR.\nĐộ dài: ${payload.length.toLocaleString('vi-VN')} ký tự.`);
         } catch (e) {
             showLoading(false);
+            setQrFastJobStatus('❌ Lỗi đọc HTML', e.message || String(e));
             alert('❌ Lỗi đọc HTML để tạo QRText: ' + (e.message || e));
         } finally {
             input.value = '';
@@ -1334,23 +1490,24 @@ Tên file cần có: BaoCao_202605201030.html</pre>
     // Hàm tự trừ phần header khỏi chunkSize để tổng ký tự trong một QR không vượt mật độ đã chọn.
     function makeDlQrPayloadFragments(text, chunkSize, fixedSessionId) {
         const sessionId = fixedSessionId || makeDlQrSessionId();
-        const sourceChars = Array.from(text || '');
+        const sourceText = String(text || '');
         const maxQrChars = Math.max(20, parseInt(chunkSize, 10) || 700);
         let total = 1;
         let bodySize = maxQrChars;
 
-        // Lặp vài vòng vì độ dài header phụ thuộc tổng số mảnh và số thứ tự mảnh.
-        for (let pass = 0; pass < 6; pass++) {
+        // Tránh Array.from(text) với dữ liệu lớn vì sẽ nhân đôi RAM.
+        // slice theo UTF-16 đủ dùng cho dữ liệu Excel/HTML; nếu có emoji hiếm thì có thể tách cặp surrogate.
+        for (let pass = 0; pass < 8; pass++) {
             const headerLen = `[${sessionId}],[${total}],[${total}],`.length;
             bodySize = Math.max(1, maxQrChars - headerLen);
-            const nextTotal = Math.max(1, Math.ceil(sourceChars.length / bodySize));
+            const nextTotal = Math.max(1, Math.ceil(sourceText.length / bodySize));
             if (nextTotal === total) break;
             total = nextTotal;
         }
 
         const payloads = [];
         for (let i = 0; i < total; i++) {
-            const chunk = sourceChars.slice(i * bodySize, (i + 1) * bodySize).join('');
+            const chunk = sourceText.slice(i * bodySize, (i + 1) * bodySize);
             payloads.push({
                 sessionId,
                 total,
@@ -1436,8 +1593,46 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         return true;
     }
 
+    async function renderQrPayloadsInBatches(qrPayloads, ui, displayId = 'qr-display') {
+        const box = document.getElementById(displayId);
+        if (!box) return;
+        box.innerHTML = "";
+        const total = qrPayloads.length;
+        const batchSize = total > 300 ? 4 : (total > 120 ? 6 : 10);
+        const correctLevel = getQrCorrectionLevel(ui.correctLevel);
+
+        for (let i = 0; i < total; i++) {
+            const item = qrPayloads[i];
+            const d = document.createElement('div');
+            d.className = "qr-card text-center";
+            d.innerHTML = `<small class="text-muted fw-bold">${item.sessionId} - Mảnh ${item.index}/${item.total}</small><div id="qro-${i}" class="qr-render-box d-flex justify-content-center mt-2"></div>`;
+            box.appendChild(d);
+            new QRCode(document.getElementById(`qro-${i}`), {
+                text: safeUtf8ForQrjs(item.payload),
+                width: ui.width,
+                height: ui.height,
+                correctLevel
+            });
+            setTimeout(() => { const img = document.querySelector(`#qro-${i} img`); if (img) img.title = item.payload; }, 100);
+
+            if ((i + 1) % batchSize === 0 || i + 1 === total) {
+                setQrFastJobStatus('🎞️ Đang dựng QR theo lô...', `Đã vẽ ${i + 1}/${total} mảnh. Trình duyệt vẫn có thời gian phản hồi.`);
+                await qrIdleYield(0);
+            }
+        }
+    }
+
+    function resetQrActionButtonsAfterBuild() {
+        const btnBox = document.getElementById('qr-action-buttons') || document.getElementById('btn-dl-all-qr')?.parentNode;
+        if (btnBox) btnBox.innerHTML = `
+            <button class="btn btn-primary btn-sm fw-bold w-100 mb-1" onclick="buildFragsQR()">TẠO LẠI QR PHÂN MẢNH</button>
+            <button class="btn btn-warning btn-sm fw-bold w-100 mb-1" onclick="buildFragsQRKhongDau()">TẠO QR KHÔNG DẤU</button>
+            <button class="btn btn-success btn-sm fw-bold w-100 mb-1" onclick="downloadAllQRs()">TẢI ZIP MẢNH LẺ</button>
+            <button class="btn btn-dark btn-sm fw-bold w-100" onclick="downloadMegaSheet()">XUẤT MEGA SHEET (1 ẢNH)</button>`;
+    }
+
     // Có thể gọi: buildFragsQR({ removeDiacritics:true, chunkSize:80, width:400, height:400, correctLevel:'M' })
-    function buildFragsQR(options = {}) {
+    async function buildFragsQR(options = {}) {
         const settings = Object.assign({
             sourceId: 'qr-input',
             displayId: 'qr-display',
@@ -1469,34 +1664,17 @@ Tên file cần có: BaoCao_202605201030.html</pre>
             width: settings.width,
             correctLevel: settings.correctLevel
         });
+        setQrFastJobStatus('🧩 Đang chia dữ liệu thành mảnh QR...', `Độ dài dữ liệu: ${val.length.toLocaleString('vi-VN')} ký tự | Mật độ: ${ui.chunkSize} ký tự/QR`);
+        await qrIdleYield(0);
         const qrPayloads = makeDlQrPayloadFragments(val, ui.chunkSize, settings.sessionId);
-
-        qrPayloads.forEach((item, i) => {
-            const d = document.createElement('div');
-            d.className = "qr-card text-center";
-            d.innerHTML = `<small class="text-muted fw-bold">${item.sessionId} - Mảnh ${item.index}/${item.total}</small><div id="qro-${i}" class="qr-render-box d-flex justify-content-center mt-2"></div>`;
-            box.appendChild(d);
-            new QRCode(document.getElementById(`qro-${i}`), {
-                text: safeUtf8ForQrjs(item.payload),
-                width: ui.width,
-                height: ui.height,
-                correctLevel: getQrCorrectionLevel(ui.correctLevel)
-            });
-            setTimeout(() => { const img = document.querySelector(`#qro-${i} img`); if (img) img.title = item.payload; }, 100);
-        });
-
-        const btnBox = document.getElementById('qr-action-buttons') || document.getElementById('btn-dl-all-qr')?.parentNode;
-        if (btnBox) btnBox.innerHTML = `
-            <button class="btn btn-primary btn-sm fw-bold w-100 mb-1" onclick="buildFragsQR()">TẠO LẠI QR PHÂN MẢNH</button>
-            <button class="btn btn-warning btn-sm fw-bold w-100 mb-1" onclick="buildFragsQRKhongDau()">TẠO QR KHÔNG DẤU</button>
-            <button class="btn btn-success btn-sm fw-bold w-100 mb-1" onclick="downloadAllQRs()">TẢI ZIP MẢNH LẺ</button>
-            <button class="btn btn-dark btn-sm fw-bold w-100" onclick="downloadMegaSheet()">XUẤT MEGA SHEET (1 ẢNH)</button>`;
+        await renderQrPayloadsInBatches(qrPayloads, ui, settings.displayId);
+        resetQrActionButtonsAfterBuild();
+        setQrFastJobStatus('✅ Đã dựng xong QRText', `Tổng số mảnh: ${qrPayloads.length.toLocaleString('vi-VN')}`);
     }
-
 
     // Phiên bản riêng: tạo QR từ dữ liệu không dấu, KHÔNG chỉnh sửa buildFragsQR gốc.
     // Hàm này vẫn lấy Kích thước QR / Mật độ / Error Correction từ phần tùy chỉnh đang có.
-    function buildFragsQRKhongDau() {
+    async function buildFragsQRKhongDau() {
         const input = document.getElementById('qr-input');
         let val = input ? input.value : "";
 
@@ -1514,34 +1692,12 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         if (!val) return;
 
         const ui = getFragsQrUiSettings({ chunkSize: 40, width: 400, correctLevel: 'L' });
+        setQrFastJobStatus('🧩 Đang chia dữ liệu không dấu thành mảnh QR...', `Độ dài dữ liệu: ${val.length.toLocaleString('vi-VN')} ký tự | Mật độ: ${ui.chunkSize} ký tự/QR`);
+        await qrIdleYield(0);
         const qrPayloads = makeDlQrPayloadFragments(val, ui.chunkSize);
-
-        qrPayloads.forEach((item, i) => {
-            const d = document.createElement('div');
-            d.className = "qr-card text-center";
-            d.innerHTML = `<small class="text-muted fw-bold">${item.sessionId} - Mảnh ${item.index}/${item.total}</small><div id="qro-${i}" class="qr-render-box d-flex justify-content-center mt-2"></div>`;
-            box.appendChild(d);
-            new QRCode(document.getElementById(`qro-${i}`), {
-                text: safeUtf8ForQrjs(item.payload),
-                width: ui.width,
-                height: ui.height,
-                correctLevel: getQrCorrectionLevel(ui.correctLevel)
-            });
-            setTimeout(() => {
-                const img = document.querySelector(`#qro-${i} img`);
-                if (img) img.title = item.payload;
-            }, 100);
-        });
-
-        const btnBox = document.getElementById('qr-action-buttons') || document.getElementById('btn-dl-all-qr')?.parentNode;
-        if (btnBox) {
-            btnBox.innerHTML = `
-                <button class="btn btn-primary btn-sm fw-bold w-100 mb-1" onclick="buildFragsQR()">TẠO LẠI QR PHÂN MẢNH</button>
-                <button class="btn btn-warning btn-sm fw-bold w-100 mb-1" onclick="buildFragsQRKhongDau()">TẠO QR KHÔNG DẤU</button>
-                <button class="btn btn-success btn-sm fw-bold w-100 mb-1" onclick="downloadAllQRs()">TẢI ZIP MẢNH LẺ</button>
-                <button class="btn btn-dark btn-sm fw-bold w-100" onclick="downloadMegaSheet()">XUẤT MEGA SHEET (1 ẢNH)</button>
-            `;
-        }
+        await renderQrPayloadsInBatches(qrPayloads, ui, 'qr-display');
+        resetQrActionButtonsAfterBuild();
+        setQrFastJobStatus('✅ Đã dựng xong QRText không dấu', `Tổng số mảnh: ${qrPayloads.length.toLocaleString('vi-VN')}`);
     }
 
     async function downloadAllQRs() {
