@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hệ Thống Dữ Liệu Tổng Hợp V44.0 - PC Tuyên Quang</title>
+    <title>Hệ Thống Dữ Liệu Tổng Hợp V45.0 - PC Tuyên Quang</title>
 <link rel="manifest" href="manifest.json">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -320,7 +320,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
 <div class="app-wrapper">
     <header class="top-nav shadow-sm">
         <div class="row align-items-center">
-            <div class="col-md-2"><h6 class="text-primary fw-bold mb-0">PC TUYÊN QUANG V44</h6></div>
+            <div class="col-md-2"><h6 class="text-primary fw-bold mb-0">PC TUYÊN QUANG V45</h6></div>
 <div class="card-custom border-warning bg-opacity-10 bg-warning">
     <div class="d-flex align-items-center mb-1 text-warning fw-bold small text-uppercase">
         <svg class="me-2" width="20" height="20" viewBox="0 0 640 512" fill="currentColor" aria-hidden="true">
@@ -439,53 +439,240 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
                 <div id="zip-view" style="display:none;" class="p-3 border rounded overflow-auto bg-white"></div>
                 <div id="pdf-view" style="display:none; height: 100%;"></div>
 				<!-- HƯỚNG DẪN SỬ DỤNG -->
-        <div id="help-view" class="view-section" style="display:none; max-width: 800px; margin: 0 auto; padding-top: 10px; padding-bottom: 50px; overflow-y: auto; height: 100%;">
+        <div id="help-view" class="view-section" style="display:none; max-width: 920px; margin: 0 auto; padding-top: 10px; padding-bottom: 60px; overflow-y: auto; height: 100%;">
             <div class="card bg-dark border-secondary shadow-sm mb-4">
                 <div class="card-header bg-black border-secondary">
-                    <h5 class="text-info fw-bold mb-0"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align:middle;margin-right:6px;"><path d="M1 2.828c.885-.37 2.154-.769 3.5-.828 1.46-.064 2.725.348 3.5 1.15.775-.802 2.04-1.214 3.5-1.15 1.346.059 2.615.458 3.5.828v10.322c-.885-.37-2.154-.769-3.5-.828-1.46-.064-2.725.348-3.5 1.15-.775-.802-2.04-1.214-3.5-1.15-1.346.059-2.615.458-3.5.828V2.828z"/></svg>HƯỚNG DẪN SỬ DỤNG HỆ THỐNG DỮ LIỆU TỔNG HỢP</h5>
+                    <h5 class="text-info fw-bold mb-1">📘 HƯỚNG DẪN SỬ DỤNG HỆ THỐNG DỮ LIỆU TỔNG HỢP V45</h5>
+                    <div class="text-secondary small">Tài liệu này mô tả chi tiết các nhóm tính năng chính: biên tập dữ liệu, đọc file, bảng Excel, tạo/đọc QRText, truyền file qua QR Theater, chuyển đuôi file .txt, quét camera và hẹn giờ SCADA.</div>
                 </div>
-                <div class="card-body text-light" style="font-size: 14px; line-height: 1.6;">
-                    
-                    <h6 class="text-warning fw-bold mt-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align:middle;margin-right:6px;"><path d="M4 0h5l3 3v13l-2-1-2 1-2-1-2 1-2-1V0h2zm5 1.5V4h2.5L9 1.5z"/></svg>1. ĐỌC VÀ XỬ LÝ FILE (Excel, Word, PDF, XML, ZIP...)</h6>
-                    <p class="mb-2">Hệ thống hỗ trợ đọc và xử lý nhiều định dạng file trực tiếp trên trình duyệt mà không cần cài đặt phần mềm bên thứ 3. Rất hữu ích cho máy trạm SCADA nội bộ:</p>
-                    <ul class="mb-3 text-secondary">
-                        <li><strong>Bảng Excel & Cấu trúc XML:</strong> Tải file lên để xem dữ liệu dạng bảng/cây thư mục. Bạn có thể sao chép dữ liệu trực tiếp.</li>
-                        <li><strong>File PDF:</strong> Xem trực tiếp tài liệu hướng dẫn, quy trình vận hành.</li>
-                        <li><strong>ZIP Explorer:</strong> Xem cấu trúc cây thư mục bên trong file nén `.zip` và giải nén từng file lẻ để xem nội dung (hỗ trợ text, ảnh, pdf, xml...).</li>
-                        <li><strong>Code VBA & Giải mã VBS:</strong> Đọc và phân tích các mã script tự động hóa mà không sợ rủi ro thực thi virus.</li>
-                        <li><strong>Biên tập & Báo cáo:</strong> Cửa sổ soạn thảo hỗ trợ gõ văn bản, chèn ảnh, chỉnh sửa HTML và xuất ra file (.txt, .html).</li>
-                    </ul>
+                <div class="card-body text-light" style="font-size: 14px; line-height: 1.65;">
 
-                    <h6 class="text-warning fw-bold mt-4"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align:middle;margin-right:6px;"><path d="M2 2h4v4H2V2zm1 1v2h2V3H3zm7-1h4v4h-4V2zm1 1v2h2V3h-2zM2 10h4v4H2v-4zm1 1v2h2v-2H3zm5-1h1v1H8v-1zm2 0h1v1h-1v-1zm1 1h1v1h-1v-1zm-3 1h1v1H8v-1zm2 0h1v1h-1v-1zm2 0h1v1h-1v-1z"/></svg>2. TRUYỀN DỮ LIỆU VĂN BẢN/CẤU HÌNH QUA MÃ QR</h6>
-                    <p class="mb-2">Dùng để truyền các đoạn mã Script (VBA/VBS), thông số cấu hình, hoặc đoạn text ngắn qua môi trường Air-gap (môi trường cách ly vật lý hoàn toàn không có mạng LAN/Internet).</p>
-                    <ul class="mb-3 text-secondary">
-                        <li><strong>Bước 1:</strong> Tại "Máy Gửi" (máy có dữ liệu), nhập text vào ô soạn thảo ở tab <em>Biên Tập & Báo Cáo</em>.</li>
-                        <li><strong>Bước 2:</strong> Nhấn nút <strong>"Tạo QR Text"</strong>. Hệ thống sẽ tạo ra một mã QR tĩnh.</li>
-                        <li><strong>Bước 3:</strong> Tại "Máy Nhận" (máy SCADA), mở ứng dụng quét QR bằng webcam hoặc điện thoại để quét mã và lấy dữ liệu dạng text.</li>
-                    </ul>
-
-                    
-                    <h6 class="text-warning fw-bold mt-4"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align:middle;margin-right:6px;"><path d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V1zm1 0v2h2V1H1zm3 0v2h8V1H4zm9 0v2h2V1h-2zM1 4v8h14V4H1zm0 9v2h2v-2H1zm3 0v2h8v-2H4zm9 0v2h2v-2h-2z"/></svg>3. TRUYỀN FILE TRONG HỆ THỐNG SCADA ĐÓNG KÍN (Air-gap QR Theater)</h6>
-                    <p class="mb-2">Đây là tính năng cốt lõi giúp truyền các File có dung lượng lớn (Excel, PDF, ZIP...) vượt qua giới hạn dung lượng của một mã QR thông thường bằng công nghệ "Video QR". Hệ thống sẽ băm nhỏ file thành hàng trăm mã QR và phát liên tục như một đoạn video.</p>
-                    
-                    <div class="p-3 border border-secondary rounded bg-black mb-3">
-                        <strong class="text-info">A. Tại MÁY GỬI (Máy có hoặc không kết nối Internet / Máy vòng ngoài):</strong>
-                        <ol class="mb-2 mt-1 text-secondary">
-                            <li>Chọn file cần truyền thông qua nút <strong>"3. Tạo và phát luôn (trực tiếp)"</strong>, lưu ý nếu chọn file excel thì file nhận được sẽ là tập nén chứa file csv, nếu chọn tập tin đã được nén thì file nhận được sẽ là file nén đó....</li>
-                            <li>Hệ thống sẽ hiện ra cửa sổ phát QR. Bạn có thể chọn tốc độ chớp (1.5s, 1.0s, 0.6s, 0.15s) tùy vào chất lượng camera của máy nhận.</li>
-                        </ol>
-                        
-                        <strong class="text-info mt-3 d-block">B. Tại MÁY NHẬN (Máy SCADA vòng trong, hoặc máy tính bất kỳ có camera và file html này):</strong>
-                        <ol class="mb-2 mt-1 text-secondary">
-                            <li>Tại máy SCADA (Máy B), mở <strong>"Quét Đa Nhiệm"</strong> Sau đó bấm vào <strong>"CAM"</strong>.</li>
-                            <li>Chĩa camera (hoặc webcam) vào màn hình "Máy Gửi" đang phát Video QR.</li>
-                            <li>Ứng dụng nhận sẽ quét liên tục, tự động gom nhặt các "mảnh vỡ" (chunks) và lắp ráp lại thành File gốc hoàn chỉnh để tải xuống máy SCADA.</li>
-                        </ol>
-                        
-                        <strong class="text-danger mt-3 d-block"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align:middle;margin-right:6px;"><path d="M7.938 2.016a.13.13 0 0 1 .125 0 .145.145 0 0 1 .054.054l6.857 11.667c.036.06.036.13 0 .19a.145.145 0 0 1-.054.054.13.13 0 0 1-.065.019H1.145a.13.13 0 0 1-.065-.019.145.145 0 0 1-.054-.054.176.176 0 0 1 0-.19L7.883 2.07a.145.145 0 0 1 .054-.054zM8 5c-.535 0-.954.462-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 5zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg> Tính năng KHÔI PHỤC MẢNH SÓT (Missing Frames):</strong>
-                        <p class="mb-0 text-secondary small">Nếu trong quá trình quét, máy nhận bị lọt khung hình và báo lỗi (ví dụ: Thiếu mảnh số 5, 12, 15). Tại "Máy Gửi", bạn kéo xuống phần <strong>"NHẬP MẢNH SÓT"</strong>, gõ <code>5, 12, 15</code> và bấm Phát Lại. Hệ thống sẽ chỉ chớp đúng 3 mã QR bị thiếu này để máy nhận quét nốt mà không cần phải chạy lại cả video từ đầu.</p>
+                    <div class="alert alert-info py-2 small mb-3">
+                        <b>Nguyên tắc chung:</b> hầu hết thao tác đọc, sửa, tạo QR, copy file và đổi đuôi file đều xử lý ngay trong trình duyệt. File không tự động tải lên mạng. Riêng nút kiểm tra cập nhật PWA cần có Internet để so sánh phiên bản mới.
                     </div>
 
+                    <h6 class="text-warning fw-bold mt-2">1. KHU VỰC LÀM VIỆC VÀ CÁC TAB CHÍNH</h6>
+                    <p>Phần trung tâm là vùng hiển thị nội dung. Mỗi loại dữ liệu sẽ mở trong một tab riêng để tránh lẫn nội dung:</p>
+                    <ul class="text-secondary mb-3">
+                        <li><b>Biên Tập & Báo Cáo:</b> vùng soạn thảo HTML rich-text, có thể nhập văn bản, dán ảnh, chứa link, bảng, hình ảnh và nội dung đã định dạng.</li>
+                        <li><b>Bảng Excel:</b> hiển thị dữ liệu Excel dạng bảng; có phân trang, chuyển sheet, chọn dòng, chọn ô tuần tự và chỉnh sửa ô.</li>
+                        <li><b>Cấu trúc XML:</b> xem và chỉnh cây XML, đổi tên thẻ, thêm thẻ, nhân bản, xóa thẻ và sửa giá trị.</li>
+                        <li><b>Code VBA:</b> trích xuất mã VBA an toàn từ file Office có macro để xem nội dung mà không thực thi macro.</li>
+                        <li><b>Giải mã VBS:</b> hỗ trợ đọc và giải mã nội dung VBScript đã được mã hóa/ẩn.</li>
+                        <li><b>Xem trước HTML:</b> xem nội dung HTML trong iframe nội bộ.</li>
+                        <li><b>ZIP Explorer:</b> đọc cấu trúc file ZIP và tải từng file con.</li>
+                        <li><b>Trình đọc PDF:</b> mở PDF trực tiếp trong trình duyệt.</li>
+                    </ul>
+
+                    <h6 class="text-warning fw-bold mt-4">2. ĐỌC FILE VÀ XỬ LÝ NỘI DUNG</h6>
+                    <ol class="text-secondary mb-3">
+                        <li>Bấm nút chọn file ở khu vực thao tác chính hoặc kéo/thả file nếu trình duyệt hỗ trợ.</li>
+                        <li>Ứng dụng tự nhận dạng phần mở rộng như <code>.xlsx</code>, <code>.xlsm</code>, <code>.docx</code>, <code>.pdf</code>, <code>.xml</code>, <code>.zip</code>, <code>.html</code>, <code>.txt</code>.</li>
+                        <li>Nếu là Excel, ứng dụng mở tab <b>Bảng Excel</b>; nếu là PDF mở tab <b>Trình đọc PDF</b>; nếu là ZIP mở tab <b>ZIP Explorer</b>; nếu là XML mở tab <b>Cấu trúc XML</b>.</li>
+                        <li>Sau khi chỉnh sửa nội dung, dùng chức năng xuất/lưu để tạo file mới, thường có tiền tố <code>Fixed_</code> hoặc tên tương ứng.</li>
+                    </ol>
+                    <div class="p-2 border border-secondary rounded bg-black small text-secondary mb-3">
+                        <b class="text-info">Lưu ý:</b> với file Office có macro, hệ thống chỉ trích xuất/xem mã. Việc này giúp kiểm tra nội dung script mà không kích hoạt macro trong môi trường vận hành.
+                    </div>
+
+                    <h6 class="text-warning fw-bold mt-4">3. BIÊN TẬP & BÁO CÁO HTML RICH-TEXT</h6>
+                    <ul class="text-secondary mb-3">
+                        <li>Tab <b>Biên Tập & Báo Cáo</b> là vùng chỉnh sửa dạng HTML, không chỉ là text thuần.</li>
+                        <li>Có thể gõ nội dung, dán ảnh bằng <b>Ctrl + V</b>, chèn link, giữ bảng và định dạng HTML.</li>
+                        <li>Ảnh được dán vào sẽ được chuyển về dạng dữ liệu nhúng để có thể giữ lại khi truyền QRText sang máy khác.</li>
+                        <li>Khi dùng nút <b>ĐỌC TOÀN BỘ HTML TAB EDIT VÀO QR</b>, ứng dụng lấy toàn bộ HTML bên trong vùng biên tập, gồm ảnh, link, bảng, input/select nếu có, rồi đưa vào ô <code>qr-input</code>.</li>
+                        <li>Khi nhận lại bằng <b>ĐỌC QRTEXT → TAB EDIT</b>, nội dung HTML sẽ được khôi phục vào vùng biên tập, không bị chuyển thành text thuần.</li>
+                    </ul>
+
+                    <h6 class="text-warning fw-bold mt-4">4. LÀM VIỆC VỚI BẢNG EXCEL</h6>
+                    <ol class="text-secondary mb-3">
+                        <li>Mở file Excel để hiển thị bảng trong tab <b>Bảng Excel</b>.</li>
+                        <li>Dùng thanh sheet để chuyển giữa các sheet.</li>
+                        <li>Dùng <b>Trang Trước</b>/<b>Trang Sau</b> để xem dữ liệu lớn theo từng trang.</li>
+                        <li>Các ô trong bảng có thể dùng để tạo QR, chọn tuần tự hoặc gom dòng theo checkbox.</li>
+                        <li>Nút <b>ĐỌC TOÀN BỘ EXCEL VÀO QR</b> sẽ gom toàn bộ workbook thành text theo chuẩn:</li>
+                    </ol>
+                    <pre class="bg-black text-info p-2 rounded small mb-3">Ô1|Ô2|Ô3
+Dòng2Ô1|Dòng2Ô2|Dòng2Ô3
+@_@
+Sheet2Ô1|Sheet2Ô2|Sheet2Ô3</pre>
+                    <ul class="text-secondary mb-3">
+                        <li>Ký tự <code>|</code> phân tách các ô trong cùng dòng.</li>
+                        <li>Ký tự xuống dòng phân tách các dòng.</li>
+                        <li>Cụm <code>@_@</code> phân tách các sheet.</li>
+                        <li>Khi nhận QRText về Excel, ứng dụng tự tạo đủ sheet, hàng và cột để đổ dữ liệu vào tab <b>Bảng Excel</b>.</li>
+                    </ul>
+
+                    <h6 class="text-warning fw-bold mt-4">5. TÌM KIẾM VÀ THAY THẾ</h6>
+                    <ul class="text-secondary mb-3">
+                        <li>Ô tìm kiếm toàn cục giúp đánh dấu từ khóa trong vùng biên tập và trong bảng Excel đang hiển thị.</li>
+                        <li>Khu vực thay thế cho phép nhập chuỗi cần tìm và chuỗi thay thế.</li>
+                        <li><b>THAY TẤT CẢ:</b> thay toàn bộ kết quả khớp trong vùng hiện tại.</li>
+                        <li><b>THAY ĐƠN:</b> thay lần khớp đầu tiên.</li>
+                        <li>Khi đang ở tab Excel, thay thế áp dụng trên dữ liệu bảng; khi ở tab Biên Tập, thay thế áp dụng trên HTML/nội dung biên tập.</li>
+                    </ul>
+
+                    <h6 class="text-warning fw-bold mt-4">6. TẠO QR PHÂN MẢNH TỪ TEXT / EXCEL / HTML</h6>
+                    <p>Khối <b>Tạo mã QR</b> ở sidebar dùng để biến dữ liệu thành nhiều QR nhỏ. Mỗi QR mới có header để máy nhận tự ghép lại:</p>
+                    <pre class="bg-black text-info p-2 rounded small mb-3">[DL_YYYYMMDDhhmm],[tổng số mảnh],[mảnh thứ],[nội dung mảnh]</pre>
+                    <ol class="text-secondary mb-3">
+                        <li>Nhập hoặc đưa dữ liệu vào ô <code>qr-input</code>.</li>
+                        <li>Có thể dùng <b>ĐỌC TOÀN BỘ HTML TAB EDIT VÀO QR</b> để truyền vùng biên tập rich-text đang có trong phần mềm.</li>
+                        <li>Có thể dùng <b>ĐỌC TOÀN BỘ EXCEL VÀO QR</b> để truyền toàn bộ workbook Excel đang mở.</li>
+                        <li>Dùng <b>📊 CHỌN EXCEL → QR NGAY</b> khi muốn chọn một file Excel trực tiếp từ máy: hệ thống tự đọc tất cả sheet, nối ô bằng <code>|</code>, nối sheet bằng <code>@_@</code>, đưa vào <code>qr-input</code> và tạo QR ngay.</li>
+                        <li>Dùng <b>🌐 CHỌN HTML → QR NGAY</b> khi muốn chọn một file <code>.html/.htm</code> trực tiếp từ máy: hệ thống tự đọc toàn bộ HTML, gắn tiền tố phục hồi TAB EDIT, đưa vào <code>qr-input</code> và tạo QR ngay.</li>
+                        <li>Có thể dùng <b>CHUYỂN DỮ LIỆU THÀNH KHÔNG DẤU</b> để giảm dung lượng ký tự tiếng Việt.</li>
+                        <li>Bấm <b>TẠO QR PHÂN MẢNH</b> để tạo QR giữ nguyên dữ liệu.</li>
+                        <li>Bấm <b>TẠO QR KHÔNG DẤU</b> để tạo QR sau khi chuyển tiếng Việt sang không dấu.</li>
+                    </ol>
+                    <ul class="text-secondary mb-3">
+                        <li><b>Gộp dòng theo Checkbox:</b> nếu đang xem Excel và chọn các dòng bằng checkbox, dữ liệu QR sẽ lấy các dòng đã chọn.</li>
+                        <li><b>Chọn ô tuần tự:</b> dùng để chọn các ô trong Excel theo thứ tự mong muốn trước khi tạo dữ liệu QR.</li>
+                        <li><b>TẢI ZIP MẢNH LẺ:</b> tải toàn bộ QR đã tạo thành file ZIP.</li>
+                        <li><b>XUẤT MEGA SHEET:</b> gộp các QR thành một ảnh lớn để lưu/truyền theo kiểu ảnh tổng hợp.</li>
+                    </ul>
+
+                    <h6 class="text-warning fw-bold mt-4">7. TÙY CHỈNH MẬT ĐỘ VÀ ĐỘ BỀN QR</h6>
+                    <ul class="text-secondary mb-3">
+                        <li><b>Kích thước QR:</b> điều chỉnh kích thước mã QR theo pixel. Kích thước lớn dễ quét hơn khi chiếu lên màn hình.</li>
+                        <li><b>Mật độ ký tự/QR:</b> số ký tự tối đa trong một mã. Mật độ cao giảm số mảnh nhưng khó quét hơn.</li>
+                        <li><b>Error Correction L/M/Q/H:</b> mức sửa lỗi càng cao thì càng chống nhiễu tốt nhưng chứa được ít dữ liệu hơn.</li>
+                    </ul>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-dark table-bordered align-middle small">
+                            <thead><tr><th>Mức</th><th>Sửa lỗi</th><th>Giới hạn gợi ý</th><th>Khi nên dùng</th></tr></thead>
+                            <tbody>
+                                <tr><td>L</td><td>7%</td><td>2800 ký tự</td><td>Màn hình rõ, camera tốt, cần tốc độ.</td></tr>
+                                <tr><td>M</td><td>15%</td><td>2200 ký tự</td><td>Cân bằng giữa dung lượng và độ ổn định.</td></tr>
+                                <tr><td>Q</td><td>25%</td><td>1500 ký tự</td><td>Môi trường ánh sáng trung bình hoặc rung nhẹ.</td></tr>
+                                <tr><td>H</td><td>30%</td><td>1100 ký tự</td><td>Cần độ bền cao, camera yếu hoặc màn hình khó đọc.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h6 class="text-warning fw-bold mt-4">8. ĐỌC QRTEXT LIÊN TIẾP VÀ GHÉP TỰ ĐỘNG</h6>
+                    <p>QRTEXT là chế độ đọc những QR có header <code>[DL_...]</code> do nút <b>TẠO QR PHÂN MẢNH</b> hoặc <b>TẠO QR KHÔNG DẤU</b> tạo ra.</p>
+                    <ol class="text-secondary mb-3">
+                        <li>Chuyển sidebar sang <b>Quét Đa Nhiệm</b>.</li>
+                        <li>Bấm <b>ĐỌC QRTEXT → TAB EXCEL</b> nếu dữ liệu nguồn là bảng Excel đã nối bằng <code>|</code> và <code>@_@</code>.</li>
+                        <li>Bấm <b>ĐỌC QRTEXT → TAB EDIT</b> nếu dữ liệu nguồn là HTML rich-text hoặc văn bản cần khôi phục vào vùng biên tập.</li>
+                        <li>Camera sẽ bật. Đưa camera hướng vào màn hình đang chiếu các QR liên tiếp.</li>
+                        <li>Khung <b>CHẾ ĐỘ ĐỌC QRTEXT</b> được giữ cố định, luôn hiển thị phiên <code>DL_...</code>, số mảnh đã đọc, thanh tiến độ và danh sách mảnh còn thiếu.</li>
+                        <li>Khi đủ mảnh, hệ thống tự ghép đúng thứ tự và đổ dữ liệu vào tab đích đã chọn.</li>
+                    </ol>
+                    <div class="p-2 border border-success rounded bg-black small text-secondary mb-3">
+                        <b class="text-success">Mẹo quét:</b> nếu bị thiếu mảnh, giữ nguyên chế độ quét và tiếp tục chiếu lại các QR còn thiếu. Hệ thống không cần đọc lại các mảnh đã có.
+                    </div>
+
+                    <h6 class="text-warning fw-bold mt-4">9. QUÉT QR TỪ CAMERA, ẢNH LẺ VÀ THƯ MỤC ẢNH</h6>
+                    <ul class="text-secondary mb-3">
+                        <li><b>Cam:</b> bật webcam/camera để quét trực tiếp.</li>
+                        <li><b>Chọn Tệp:</b> chọn một hoặc nhiều ảnh QR đã lưu trên máy để giải mã hàng loạt.</li>
+                        <li><b>Thư Mục:</b> chọn cả thư mục ảnh QR để quét hàng loạt.</li>
+                        <li><b>FPS, Rộng, Cao:</b> điều chỉnh tốc độ và khung camera. Sau khi thay đổi bấm <b>ÁP DỤNG THÔNG SỐ</b>.</li>
+                        <li><b>Thu phóng Camera:</b> nếu thiết bị hỗ trợ zoom, dùng thanh trượt để phóng to QR.</li>
+                        <li><b>Đảo Cam:</b> chuyển giữa camera trước/sau hoặc giữa các webcam.</li>
+                        <li><b>Tắt Cam:</b> dừng camera để giải phóng thiết bị.</li>
+                    </ul>
+
+                    <h6 class="text-warning fw-bold mt-4">10. TRUYỀN FILE BẢO MẬT QUA QR THEATER</h6>
+                    <p>Tính năng này dùng cho môi trường Air-gap: không mạng LAN, không Internet, chỉ truyền bằng màn hình và camera.</p>
+                    <div class="p-3 border border-secondary rounded bg-black mb-3">
+                        <b class="text-info">Máy gửi:</b>
+                        <ol class="text-secondary mt-1">
+                            <li>Chọn <b>Chuẩn nén dữ liệu</b>: ZIP/Deflate để nhanh hoặc LZMA/7-Zip để file nhỏ hơn.</li>
+                            <li>Nếu file đã nén sẵn, bật <b>Tôi đã tự nén file</b> để bỏ qua xử lý Excel/CSV.</li>
+                            <li>Chọn <b>Chiến lược trình chiếu</b>: vừa tạo vừa phát để nhanh, hoặc tạo xong mới phát để ổn định.</li>
+                            <li>Dùng <b>1. TẠO FILE TRUYỀN (ZIP)</b> để tạo gói QR dạng ZIP trước.</li>
+                            <li>Dùng <b>2. PHÁT TỪ FILE ZIP</b> để phát lại gói QR đã tạo.</li>
+                            <li>Dùng <b>3. TẠO VÀ PHÁT LUÔN</b> để chọn file và phát ngay trên màn hình.</li>
+                        </ol>
+                        <b class="text-info">Máy nhận:</b>
+                        <ol class="text-secondary mt-1 mb-0">
+                            <li>Chuyển sang <b>Quét Đa Nhiệm</b> và bấm <b>Cam</b>.</li>
+                            <li>Đưa camera vào vùng trình chiếu QR của máy gửi.</li>
+                            <li>Ứng dụng tự nhận tên file, tổng số mảnh, tiến độ và danh sách mảnh còn thiếu.</li>
+                            <li>Khi đủ mảnh, hệ thống ghép lại file gốc và tải xuống.</li>
+                        </ol>
+                    </div>
+                    <ul class="text-secondary mb-3">
+                        <li><b>PHÁT:</b> bắt đầu trình chiếu QR.</li>
+                        <li><b>DỪNG:</b> dừng trình chiếu.</li>
+                        <li><b>Tạm dừng / tiếp tục:</b> dùng trong cửa sổ theater nếu cần ổn định camera.</li>
+                        <li><b>Nhập mảnh sót:</b> nhập danh sách mảnh còn thiếu, ví dụ <code>5,12,15</code>, để chỉ phát lại các mảnh đó.</li>
+                    </ul>
+
+                    <h6 class="text-warning fw-bold mt-4">11. COPY FILE → .TXT VÀ ĐỔI NGƯỢC ĐUÔI FILE</h6>
+                    <p>Nhóm chức năng này không chuyển đổi định dạng nội dung, mà chỉ tạo bản sao giữ nguyên byte và đổi tên/phần mở rộng. Dùng khi cần đưa file qua kênh chỉ cho phép <code>.txt</code>.</p>
+                    <ol class="text-secondary mb-3">
+                        <li>Bấm <b>CHỌN FILE VÀ COPY THÀNH .TXT</b>.</li>
+                        <li>Chọn một hoặc nhiều file bất kỳ.</li>
+                        <li>Ứng dụng tải xuống bản sao theo dạng <code>tênfile_phầnmởrộng.txt</code>.</li>
+                    </ol>
+                    <pre class="bg-black text-info p-2 rounded small mb-3">BaoCao.xlsx → BaoCao_xlsx.txt
+DuLieu.zip  → DuLieu_zip.txt
+Anh.png     → Anh_png.txt
+FileKhongDuoi → FileKhongDuoi_noext.txt</pre>
+                    <ol class="text-secondary mb-3">
+                        <li>Để đổi ngược, bấm <b>CHỌN FILE .TXT VÀ ĐỔI LẠI ĐUÔI</b>.</li>
+                        <li>Nếu tên file có dạng <code>tênfile_xlsx.txt</code>, hệ thống tự nhận <code>xlsx</code> làm đuôi gốc.</li>
+                        <li>Nếu tên file không có phần <code>_đuôi</code>, hệ thống dùng giá trị trong ô <b>Đuôi</b>.</li>
+                        <li>Trường hợp <code>_noext.txt</code> sẽ khôi phục thành file không có phần mở rộng.</li>
+                    </ol>
+                    <div class="alert alert-warning py-2 small mb-3">
+                        <b>Quan trọng:</b> đổi đuôi file không biến nội dung thành định dạng khác. Ví dụ <code>.xlsx</code> đổi thành <code>.txt</code> vẫn là dữ liệu Excel nhị phân; chỉ tên file thay đổi để phục vụ truyền/lưu tạm.
+                    </div>
+
+                    <h6 class="text-warning fw-bold mt-4">12. HẸN GIỜ & TỰ ĐỘNG QUÉT THƯ MỤC SCADA</h6>
+                    <ul class="text-secondary mb-3">
+                        <li><b>Hành động:</b> chọn tự động phát file SCADA hoặc tự động bật camera thu.</li>
+                        <li><b>Giờ kích hoạt:</b> thời điểm hệ thống tự thực hiện hành động.</li>
+                        <li><b>Độ trễ file:</b> số phút lùi lại khi tính hậu tố thời gian của file SCADA.</li>
+                        <li><b>CHỌN THƯ MỤC SCADA:</b> cấp quyền đọc thư mục cho trình duyệt. Cần Chrome/Edge mới có hỗ trợ File System Access API.</li>
+                        <li>Khi đến giờ, nếu chọn phát file, hệ thống tìm file theo mẫu thời gian và tự phát qua QR Theater.</li>
+                        <li>Nếu chọn thu, hệ thống tự mở camera để sẵn sàng nhận file.</li>
+                    </ul>
+
+                    <h6 class="text-warning fw-bold mt-4">12B. HẸN GIỜ TRUYỀN QRTEXT EXCEL / HTML</h6>
+                    <p>Khối <b>🎬 HẸN GIỜ TRUYỀN QRTEXT</b> dùng cho dữ liệu text có cấu trúc do phần mềm tạo ra, khác với luồng truyền file nhị phân. Máy gửi có thể tự phát rạp chiếu QRText, máy nhận có thể tự mở camera đúng chế độ Excel hoặc HTML.</p>
+                    <ol class="text-secondary mb-3">
+                        <li>Chọn <b>Chế độ lịch QRText</b>: <b>Máy gửi</b> để đến giờ tự phát rạp chiếu, hoặc <b>Máy nhận</b> để đến giờ tự mở camera thu.</li>
+                        <li>Chọn <b>Định dạng QRText</b>: <b>Excel / dữ liệu bảng</b> sẽ đổ về tab <b>Bảng Excel</b>; <b>HTML rich-text</b> sẽ đổ về tab <b>Biên Tập & Báo Cáo</b>.</li>
+                        <li>Nếu là máy gửi, chọn nguồn: <b>qr-input hiện tại</b>, <b>Excel đang mở</b>, <b>HTML TAB EDIT</b> hoặc <b>Tự đọc file trong thư mục đã cấp quyền</b>.</li>
+                        <li>Nếu chọn nguồn thư mục, bấm <b>CẤP QUYỀN THƯ MỤC QRTEXT</b>. Trình duyệt sẽ hỏi quyền đọc thư mục giống chức năng hẹn giờ truyền file SCADA.</li>
+                        <li>Với nguồn thư mục, hệ thống tìm file theo mẫu <code>TiềnTố + yyyyMMddHHmm + .xlsx/.html</code>. Có thể sửa <b>Tiền tố tên file</b> và <b>Độ trễ file</b> để khớp thời điểm xuất file thực tế.</li>
+                        <li>Chọn <b>Giờ kích hoạt</b>, chọn kiểu phát <b>Rạp chiếu</b> hoặc <b>Vẽ lưới QR</b>, sau đó bấm <b>KÍCH HOẠT LỊCH QRTEXT</b>.</li>
+                        <li>Đến giờ, máy gửi tự đọc file Excel/HTML hoặc nguồn đã chọn, tự đưa vào <code>qr-input</code> rồi phát QRText. Máy nhận nếu đặt lịch thu sẽ tự gọi camera vào chế độ <b>ĐỌC QRTEXT → TAB EXCEL</b> hoặc <b>ĐỌC QRTEXT → TAB EDIT</b> tương ứng.</li>
+                    </ol>
+                    <pre class="bg-black text-info p-2 rounded small mb-3">Ví dụ nguồn thư mục Excel:
+Tiền tố: Data_SCADA_
+Định dạng: Excel
+Giờ hệ thống: 2026-05-20 10:30
+Tên file cần có: Data_SCADA_202605201030.xlsx
+
+Ví dụ nguồn thư mục HTML:
+Tiền tố: BaoCao_
+Định dạng: HTML
+Tên file cần có: BaoCao_202605201030.html</pre>
+                    <div class="alert alert-warning py-2 small mb-3">
+                        <b>Lưu ý:</b> quyền đọc thư mục chỉ hoạt động tốt trên Chrome/Edge mới, trong môi trường HTTPS, localhost hoặc PWA đã được cấp quyền. Máy gửi và máy nhận nên đặt cùng giờ hệ thống để tự phát/tự thu khớp nhau.
+                    </div>
+
+                    <h6 class="text-warning fw-bold mt-4">13. KIỂM TRA CẬP NHẬT PWA / CHẠY OFFLINE</h6>
+                    <ul class="text-secondary mb-3">
+                        <li>Ứng dụng có Service Worker để hỗ trợ chạy dạng PWA và ưu tiên cache/offline.</li>
+                        <li>Nút <b>KIỂM TRA BẢN CẬP NHẬT MỚI</b> chỉ nên dùng khi thiết bị có mạng và cần lấy bản vá từ máy chủ.</li>
+                        <li>Nếu không có mạng, các chức năng xử lý file cục bộ, tạo QR, quét ảnh/camera và đổi đuôi file vẫn có thể hoạt động nếu thư viện đã được cache đầy đủ.</li>
+                    </ul>
+
+                    <h6 class="text-warning fw-bold mt-4">14. KHUYẾN NGHỊ VẬN HÀNH</h6>
+                    <ul class="text-secondary mb-0">
+                        <li>Với QRText hoặc truyền file, nên thử mức <b>Mật độ 700 - 1100</b> trước để ổn định, sau đó tăng dần nếu camera tốt.</li>
+                        <li>Khi chiếu QR Theater, đặt màn hình sáng vừa phải, tránh phản quang, giữ camera vuông góc với màn hình.</li>
+                        <li>Với dữ liệu HTML có nhiều ảnh, dung lượng sẽ lớn và số mảnh QR tăng mạnh; nên nén ảnh hoặc giảm kích thước ảnh trước khi truyền.</li>
+                        <li>Với file lớn, nên ưu tiên truyền file bằng QR Theater thay vì QRText.</li>
+                        <li>Luôn kiểm tra tên file sau khi đổi đuôi <code>.txt</code> và khi khôi phục để tránh nhầm định dạng.</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -493,7 +680,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         </section>
 
         <aside class="sidebar">
-    <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">QR SMART CENTER V44</h6>
+    <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">QR SMART CENTER V45</h6>
     <div class="btn-group btn-group-sm w-100 mb-3">
         <button class="btn btn-outline-primary active" id="btn-q-gen" onclick="setSide('gen')">Tạo mã QR</button>
         <button class="btn btn-outline-primary" id="btn-q-scan" onclick="setSide('scan')">Quét Đa Nhiệm</button>
@@ -514,6 +701,14 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             <button class="btn btn-outline-primary btn-sm fw-bold" onclick="readEditorTextToQrInput()">ĐỌC TOÀN BỘ HTML TAB EDIT VÀO QR</button>
             <button class="btn btn-outline-info btn-sm fw-bold" onclick="readAllExcelSheetsToQrInput()">ĐỌC TOÀN BỘ EXCEL VÀO QR</button>
             <button class="btn btn-outline-warning btn-sm fw-bold" onclick="normalizeQrInputToAscii(true)">CHUYỂN DỮ LIỆU THÀNH KHÔNG DẤU</button>
+            <label class="btn btn-outline-success btn-sm fw-bold mb-0">
+                📊 CHỌN EXCEL → QR NGAY
+                <input type="file" hidden accept=".xlsx,.xls,.xlsm,.xlsb,.csv" onchange="handleExcelFileToQrAndBuild(this)">
+            </label>
+            <label class="btn btn-info btn-sm fw-bold text-dark mb-0">
+                🌐 CHỌN HTML → QR NGAY
+                <input type="file" hidden accept=".html,.htm,text/html" onchange="handleHtmlFileToQrAndBuild(this)">
+            </label>
         </div>
         <div id="qr-display" class="mb-2"></div>
         <div class="d-grid gap-2" id="qr-action-buttons">
@@ -785,6 +980,78 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         </div>
     </div>
 </div>
+
+<div id="qrtext-scheduler-card" class="card bg-dark border-warning mb-3">
+    <div class="card-header text-warning fw-bold py-1" style="font-size: 0.9rem; border-bottom: 1px solid var(--bs-warning);">
+        🎬 HẸN GIỜ TRUYỀN QRTEXT
+    </div>
+    <div class="card-body py-2">
+        <div class="row g-2">
+            <div class="col-12">
+                <label class="small text-warning mb-1 fw-bold">Chế độ lịch QRText:</label>
+                <select id="qrtext-scheduler-action" class="form-select form-select-sm bg-dark text-warning border-warning" onchange="refreshQrTextSchedulerUi()">
+                    <option value="PHAT" selected>Máy gửi: đến giờ tự phát rạp chiếu QRText</option>
+                    <option value="THU">Máy nhận: đến giờ tự mở camera thu QRText</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="small text-warning mb-1 fw-bold">Định dạng QRText:</label>
+                <select id="qrtext-scheduler-format" class="form-select form-select-sm bg-dark text-warning border-warning" onchange="refreshQrTextSchedulerUi()">
+                    <option value="excel" selected>Excel / dữ liệu bảng → TAB EXCEL</option>
+                    <option value="html">HTML rich-text → TAB EDIT</option>
+                </select>
+            </div>
+            <div class="col-12 qrtext-sender-only">
+                <label class="small text-warning mb-1 fw-bold">Nguồn dữ liệu QRText khi phát:</label>
+                <select id="qrtext-scheduler-source" class="form-select form-select-sm bg-dark text-warning border-warning" onchange="refreshQrTextSchedulerUi()">
+                    <option value="qrinput" selected>Ô qr-input hiện tại</option>
+                    <option value="excel">Toàn bộ Excel đang mở</option>
+                    <option value="edit">Toàn bộ HTML TAB EDIT</option>
+                    <option value="folder">Tự đọc file trong thư mục đã cấp quyền</option>
+                </select>
+            </div>
+            <div class="col-12 qrtext-folder-only" style="display:none;">
+                <button type="button" class="btn btn-outline-warning btn-sm w-100 fw-bold" onclick="requestQrTextDirectory()">
+                    📁 CẤP QUYỀN THƯ MỤC QRTEXT
+                </button>
+                <input id="qrtext-dir-status" class="form-control form-control-sm bg-dark text-secondary border-warning mt-1 text-center" value="Chưa chọn thư mục QRText" readonly>
+            </div>
+            <div class="col-7 qrtext-folder-only" style="display:none;">
+                <label class="small text-warning mb-1 fw-bold">Tiền tố tên file:</label>
+                <input type="text" id="qrtext-file-prefix" class="form-control form-control-sm bg-dark text-warning border-warning text-center" value="Data_SCADA_">
+            </div>
+            <div class="col-5 qrtext-folder-only" style="display:none;">
+                <label class="small text-warning mb-1 fw-bold">Độ trễ file:</label>
+                <input type="number" id="qrtext-time-offset" class="form-control form-control-sm bg-dark text-warning border-warning text-center" value="0" min="0" max="1440">
+            </div>
+            <div class="col-7">
+                <label class="small text-warning mb-1 fw-bold">Giờ kích hoạt:</label>
+                <input type="time" id="qrtext-scheduler-time" class="form-control form-control-sm bg-dark text-warning border-warning text-center fw-bold">
+            </div>
+            <div class="col-5 qrtext-sender-only">
+                <label class="small text-warning mb-1 fw-bold">Kiểu phát:</label>
+                <select id="qrtext-scheduler-build-mode" class="form-select form-select-sm bg-dark text-warning border-warning">
+                    <option value="theater" selected>Rạp chiếu</option>
+                    <option value="grid">Vẽ lưới QR</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <div class="text-secondary small" style="font-size:0.74rem; line-height:1.35;">
+                    <b class="text-warning">Gửi:</b> có thể lấy từ qr-input, Excel đang mở, TAB EDIT hoặc thư mục đã cấp quyền. Với thư mục, tên file mặc định là <code>TiềnTố + yyyyMMddHHmm + .xlsx/.html</code>.<br>
+                    <b class="text-warning">Nhận:</b> đến giờ tự mở camera ở chế độ Excel hoặc HTML tương ứng.
+                </div>
+            </div>
+            <div class="col-12">
+                <button id="qrtext-scheduler-btn" onclick="toggleQrTextScheduler()" class="btn btn-outline-warning btn-sm w-100 fw-bold">
+                    🔔 KÍCH HOẠT LỊCH QRTEXT
+                </button>
+                <div id="qrtext-scheduler-status" class="text-warning small mt-1 text-center" style="display:none; font-size:0.8rem;">
+                    ⏳ Đang chờ đến giờ kích hoạt QRText...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </aside>
     </main>
 </div>
@@ -945,6 +1212,80 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
         const totalChars = mergedText.length.toLocaleString('vi-VN');
         alert(`Đã đưa toàn bộ dữ liệu Excel vào ô QR. Tổng độ dài: ${totalChars} ký tự.`);
         return mergedText;
+    }
+
+    // Đổi workbook Excel thành chuỗi QRText theo quy tắc: ô cách nhau bằng |, hết dòng xuống dòng, giữa sheet chèn @_@.
+    function workbookToQrDelimitedText(wb) {
+        if (!wb || !wb.SheetNames || !wb.SheetNames.length) return "";
+        return wb.SheetNames.map(sheetName => {
+            const sheet = wb.Sheets[sheetName];
+            if (!sheet || !sheet['!ref']) return "";
+            const range = XLSX.utils.decode_range(sheet['!ref']);
+            const lines = [];
+            for (let r = range.s.r; r <= range.e.r; r++) {
+                const cells = [];
+                for (let c = range.s.c; c <= range.e.c; c++) {
+                    const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+                    let val = "";
+                    if (cell) val = cell.w !== undefined ? cell.w : (cell.v !== undefined ? cell.v : "");
+                    cells.push(String(val).replace(/\r?\n/g, " ").trim());
+                }
+                lines.push(cells.join("|"));
+            }
+            return lines.join("\n");
+        }).join("\n@_@\n");
+    }
+
+    function forceBuildFragsQrFromInput() {
+        const merge = document.getElementById('merge-ex-rows');
+        const oldChecked = merge ? merge.checked : false;
+        if (merge) merge.checked = false;
+        try { buildFragsQR(); }
+        finally { if (merge) merge.checked = oldChecked; }
+    }
+
+    async function handleExcelFileToQrAndBuild(input) {
+        const file = input && input.files && input.files[0];
+        if (!file) return;
+        showLoading(true, "ĐANG ĐỌC EXCEL VÀ TẠO QRTEXT...");
+        try {
+            const buffer = await file.arrayBuffer();
+            const wb = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+            const mergedText = workbookToQrDelimitedText(wb);
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) qrInput.value = mergedText;
+            if (typeof setSide === 'function') setSide('gen');
+            forceBuildFragsQrFromInput();
+            showLoading(false);
+            alert(`✅ Đã đọc file Excel [${file.name}] vào qr-input và tạo QR.\nSheet: ${wb.SheetNames.length}\nĐộ dài: ${mergedText.length.toLocaleString('vi-VN')} ký tự.`);
+        } catch (e) {
+            showLoading(false);
+            alert('❌ Lỗi đọc Excel để tạo QRText: ' + (e.message || e));
+        } finally {
+            input.value = '';
+        }
+    }
+
+    async function handleHtmlFileToQrAndBuild(input) {
+        const file = input && input.files && input.files[0];
+        if (!file) return;
+        showLoading(true, "ĐANG ĐỌC HTML VÀ TẠO QRTEXT...");
+        try {
+            const html = await file.text();
+            const payload = QR_EDIT_HTML_PREFIX + html;
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) qrInput.value = payload;
+            if (typeof renderEditor === 'function') renderEditor(html);
+            if (typeof setSide === 'function') setSide('gen');
+            forceBuildFragsQrFromInput();
+            showLoading(false);
+            alert(`✅ Đã đọc file HTML [${file.name}] vào qr-input và tạo QR.\nĐộ dài: ${payload.length.toLocaleString('vi-VN')} ký tự.`);
+        } catch (e) {
+            showLoading(false);
+            alert('❌ Lỗi đọc HTML để tạo QRText: ' + (e.message || e));
+        } finally {
+            input.value = '';
+        }
     }
 
     function getQrCorrectionLevel(level) {
@@ -1256,7 +1597,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     }
 
     // ==========================================
-    // KHỐI 5: QUÉT ĐA NHIỆM - CƠ CHẾ QUÉT SÂU (DEEP SCAN) V44.0
+    // KHỐI 5: QUÉT ĐA NHIỆM - CƠ CHẾ QUÉT SÂU (DEEP SCAN) V45.0
     // ==========================================
     async function runBatchScanner(input) {
         const files = Array.from(input.files)
@@ -2380,6 +2721,267 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
     }
     input.value = ""; 
 }
+
+// =========================================================================
+// HỆ THỐNG TẠO RẠP CHIẾU & HẸN GIỜ QRTEXT
+// =========================================================================
+let qrTextSchedulerInterval = null;
+let isQrTextSchedulerActive = false;
+let lastQrTextTriggeredMinute = "";
+let qrTextDirectoryHandle = null;
+
+function refreshQrTextSchedulerUi() {
+    const action = document.getElementById('qrtext-scheduler-action')?.value || 'PHAT';
+    const source = document.getElementById('qrtext-scheduler-source')?.value || 'qrinput';
+    const senderEls = document.querySelectorAll('.qrtext-sender-only');
+    const folderEls = document.querySelectorAll('.qrtext-folder-only');
+    senderEls.forEach(el => el.style.display = action === 'PHAT' ? '' : 'none');
+    folderEls.forEach(el => el.style.display = (action === 'PHAT' && source === 'folder') ? '' : 'none');
+}
+
+function getQrTextTimeSuffix() {
+    const now = new Date();
+    const offsetMinutes = parseInt(document.getElementById('qrtext-time-offset')?.value, 10) || 0;
+    if (offsetMinutes > 0) now.setMinutes(now.getMinutes() - offsetMinutes);
+    const yyyy = now.getFullYear();
+    const MM = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    return `${yyyy}${MM}${dd}${hh}${mm}`;
+}
+
+function getScheduledQrTextFileName(format) {
+    const prefix = document.getElementById('qrtext-file-prefix')?.value || 'Data_SCADA_';
+    const ext = (format === 'html') ? 'html' : 'xlsx';
+    return `${prefix}${getQrTextTimeSuffix()}.${ext}`;
+}
+
+async function requestQrTextDirectory() {
+    if (!window.showDirectoryPicker) {
+        alert('Trình duyệt chưa hỗ trợ chọn thư mục. Vui lòng dùng Chrome/Edge phiên bản mới và mở qua HTTPS hoặc localhost.');
+        return;
+    }
+    try {
+        qrTextDirectoryHandle = await window.showDirectoryPicker();
+        const status = document.getElementById('qrtext-dir-status');
+        if (status) {
+            status.value = `▶ Đã kết nối: Folder [ ${qrTextDirectoryHandle.name} ]`;
+            status.classList.remove('text-secondary');
+            status.classList.add('text-success');
+        }
+    } catch (err) {
+        console.warn('Không cấp quyền thư mục QRText:', err);
+        alert('Không thể cấp quyền thư mục QRText hoặc người dùng đã hủy chọn thư mục.');
+    }
+}
+
+async function convertQrTextFileToPayload(file, format) {
+    const qrInput = document.getElementById('qr-input');
+    if (!file) return '';
+
+    if (format === 'html') {
+        const html = await file.text();
+        const payload = QR_EDIT_HTML_PREFIX + html;
+        if (qrInput) qrInput.value = payload;
+        if (typeof renderEditor === 'function') renderEditor(html);
+        return payload;
+    }
+
+    const buffer = await file.arrayBuffer();
+    const wb = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+    masterWB = wb;
+    fNameCur = file.name;
+    fExtCur = (file.name.split('.').pop() || 'xlsx').toLowerCase();
+    if (wb.SheetNames && wb.SheetNames.length && typeof renderSheet === 'function') {
+        try { renderSheet(wb.SheetNames[0]); } catch (err) { console.warn('Không render được Excel khi hẹn giờ QRText:', err); }
+    }
+    const text = workbookToQrDelimitedText(wb);
+    if (qrInput) qrInput.value = text;
+    return text;
+}
+
+async function readQrTextFileFromDirectory(format) {
+    if (!qrTextDirectoryHandle) throw new Error('Chưa cấp quyền thư mục QRText.');
+    const targetFileName = getScheduledQrTextFileName(format);
+    const statusEl = document.getElementById('qrtext-scheduler-status');
+    if (statusEl) statusEl.innerHTML = `<span class="text-info">🔍 Đang tìm file QRText: ${targetFileName}...</span>`;
+    const fileHandle = await qrTextDirectoryHandle.getFileHandle(targetFileName);
+    const file = await fileHandle.getFile();
+    return await convertQrTextFileToPayload(file, format);
+}
+
+async function prepareQrTextSourceForScheduler(source, format) {
+    const qrInput = document.getElementById('qr-input');
+    if (source === 'folder') {
+        return await readQrTextFileFromDirectory(format);
+    }
+    if (source === 'excel') {
+        const text = readAllExcelSheetsToQrInput();
+        return text || '';
+    }
+    if (source === 'edit') {
+        const text = await readEditorTextToQrInput({ silent: true });
+        return text || '';
+    }
+    return qrInput ? (qrInput.value || '') : '';
+}
+
+async function buildQrTextTheaterFromInput(options = {}) {
+    const qrInput = document.getElementById('qr-input');
+    const text = options.text !== undefined ? String(options.text || '') : String(qrInput?.value || '');
+    if (!text.trim()) {
+        alert('Chưa có dữ liệu QRText trong qr-input để truyền!');
+        return false;
+    }
+
+    showLoading(true, 'ĐANG TẠO RẠP CHIẾU QRTEXT...');
+    try {
+        const ui = getFragsQrUiSettings({ chunkSize: 700, width: 550, correctLevel: 'L' });
+        const payloads = makeDlQrPayloadFragments(text, ui.chunkSize, options.sessionId || null);
+        const dummyDiv = document.createElement('div');
+        airgapFrames = [];
+
+        for (let i = 0; i < payloads.length; i++) {
+            if (i % 20 === 0 || i === payloads.length - 1) {
+                const loadingText = document.getElementById('loading-text');
+                if (loadingText) loadingText.innerText = `Đang vẽ QRText: ${i + 1} / ${payloads.length}`;
+                await new Promise(r => setTimeout(r, 0));
+            }
+            dummyDiv.innerHTML = '';
+            new QRCode(dummyDiv, {
+                text: safeUtf8ForQrjs(payloads[i].payload),
+                width: ui.width,
+                height: ui.height,
+                correctLevel: getQrCorrectionLevel(ui.correctLevel)
+            });
+            const canvas = dummyDiv.querySelector('canvas');
+            if (!canvas) throw new Error('Không tạo được canvas QRText.');
+            airgapFrames.push(canvas.toDataURL('image/png'));
+        }
+
+        const session = payloads[0]?.sessionId || makeDlQrSessionId();
+        currentAirGapFileName = options.name || `QRTEXT_${session}.txt`;
+        framesSequence = Array.from({ length: airgapFrames.length }, (_, i) => i);
+        currentSequenceIndex = 0;
+        loopCount = 0;
+        isAirGapPaused = false;
+        showLoading(false);
+        openTheater();
+        return true;
+    } catch (e) {
+        showLoading(false);
+        alert('❌ Lỗi tạo rạp chiếu QRText: ' + (e.message || e));
+        return false;
+    }
+}
+
+async function buildOrPlayQrTextNow(mode = 'theater') {
+    if (mode === 'grid') {
+        forceBuildFragsQrFromInput();
+        return true;
+    }
+    return await buildQrTextTheaterFromInput();
+}
+
+function toggleQrTextScheduler() {
+    refreshQrTextSchedulerUi();
+    const btn = document.getElementById('qrtext-scheduler-btn');
+    const statusEl = document.getElementById('qrtext-scheduler-status');
+    const targetTime = document.getElementById('qrtext-scheduler-time')?.value;
+    const action = document.getElementById('qrtext-scheduler-action')?.value || 'PHAT';
+    const source = document.getElementById('qrtext-scheduler-source')?.value || 'qrinput';
+    const format = document.getElementById('qrtext-scheduler-format')?.value || 'excel';
+    if (!targetTime) {
+        alert('Vui lòng chọn giờ kích hoạt QRText trước!');
+        return;
+    }
+    if (action === 'PHAT' && source === 'folder' && !qrTextDirectoryHandle) {
+        alert('⚠️ Chưa cấp quyền thư mục QRText. Vui lòng bấm CẤP QUYỀN THƯ MỤC QRTEXT trước khi kích hoạt lịch.');
+        return;
+    }
+
+    if (!isQrTextSchedulerActive) {
+        isQrTextSchedulerActive = true;
+        lastQrTextTriggeredMinute = '';
+        if (btn) {
+            btn.innerText = '🔕 HỦY HẸN GIỜ QRTEXT';
+            btn.classList.replace('btn-outline-warning', 'btn-danger');
+        }
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            const modeText = action === 'PHAT' ? 'tự phát rạp chiếu' : 'tự mở camera thu';
+            const fmtText = format === 'html' ? 'HTML/TAB EDIT' : 'Excel/TAB EXCEL';
+            const fileText = (action === 'PHAT' && source === 'folder') ? `<br>File dự kiến: <b class="text-info">${getScheduledQrTextFileName(format)}</b>` : '';
+            statusEl.innerHTML = `⏳ Đang trực lịch QRText: <b class="text-white">${modeText}</b> lúc <b class="text-white">${targetTime}</b> - <b>${fmtText}</b>${fileText}`;
+        }
+        qrTextSchedulerInterval = setInterval(() => checkQrTextScheduler(targetTime), 1000);
+    } else {
+        cancelQrTextScheduler();
+    }
+}
+
+async function checkQrTextScheduler(targetTime) {
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    if (currentTime !== targetTime || lastQrTextTriggeredMinute === currentTime) return;
+
+    lastQrTextTriggeredMinute = currentTime;
+    const action = document.getElementById('qrtext-scheduler-action')?.value || 'PHAT';
+    const source = document.getElementById('qrtext-scheduler-source')?.value || 'qrinput';
+    const mode = document.getElementById('qrtext-scheduler-build-mode')?.value || 'theater';
+    const format = document.getElementById('qrtext-scheduler-format')?.value || 'excel';
+    const statusEl = document.getElementById('qrtext-scheduler-status');
+
+    if (action === 'THU') {
+        if (statusEl) statusEl.innerHTML = `📷 Đến giờ, đang mở camera thu QRText ${format === 'html' ? 'HTML → TAB EDIT' : 'Excel → TAB EXCEL'}...`;
+        triggerQrTextAutoReceive(format);
+        cancelQrTextScheduler({ keepStatus: true });
+        return;
+    }
+
+    if (statusEl) statusEl.innerHTML = '🚀 Đến giờ, đang chuẩn bị QRText để phát...';
+
+    try {
+        const text = await prepareQrTextSourceForScheduler(source, format);
+        if (!String(text || '').trim()) {
+            alert('Đến giờ phát QRText nhưng nguồn dữ liệu đang trống. Lịch đã được hủy.');
+            cancelQrTextScheduler();
+            return;
+        }
+        await buildOrPlayQrTextNow(mode);
+    } catch (error) {
+        const targetName = source === 'folder' ? getScheduledQrTextFileName(format) : '';
+        const msg = error && error.name === 'NotFoundError'
+            ? `Không tìm thấy file [ ${targetName} ] trong thư mục QRText đã cấp quyền.`
+            : (error.message || error);
+        alert('❌ LỖI HẸN GIỜ QRTEXT:\n' + msg);
+    }
+    cancelQrTextScheduler();
+}
+
+function triggerQrTextAutoReceive(format) {
+    if (typeof setSide === 'function') setSide('scan');
+    if (format === 'html') startQrTextEditCameraScan();
+    else startQrTextCameraScan();
+}
+
+function cancelQrTextScheduler(options = {}) {
+    isQrTextSchedulerActive = false;
+    clearInterval(qrTextSchedulerInterval);
+    const btn = document.getElementById('qrtext-scheduler-btn');
+    const statusEl = document.getElementById('qrtext-scheduler-status');
+    if (btn) {
+        btn.innerText = '🔔 KÍCH HOẠT LỊCH QRTEXT';
+        btn.classList.replace('btn-danger', 'btn-outline-warning');
+    }
+    if (statusEl && !options.keepStatus) {
+        statusEl.style.display = 'none';
+        statusEl.innerText = '';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', refreshQrTextSchedulerUi);
 
 // =========================================================================
 // HỆ THỐNG ĐIỀU KHIỂN HẸN GIỜ & QUÉT THƯ MỤC TRỰC TIẾP (FILE SYSTEM ACCESS)
