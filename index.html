@@ -4180,70 +4180,90 @@ function describeRunningCameraQuality() {
 function buildBestScanCameraCandidates(mode) {
     const facing = mode || currentFacingMode || 'environment';
 
-    // Danh sách từ cao xuống thấp. Trình duyệt sẽ chọn mức tốt nhất thực sự hỗ trợ.
+    // Với Html5Qrcode, độ phân giải camera phải truyền qua scanConfig.videoConstraints.
+    // Nếu truyền width/height trực tiếp vào tham số cameraIdOrConfig, một số trình duyệt sẽ không mở được camera.
     return [
-        {
-            facingMode: { ideal: facing },
-            width: { ideal: 3840 },
-            height: { ideal: 2160 },
-            frameRate: { ideal: 60 }
-        },
-        {
-            facingMode: { ideal: facing },
-            width: { ideal: 2560 },
-            height: { ideal: 1440 },
-            frameRate: { ideal: 60 }
-        },
-        {
-            facingMode: { ideal: facing },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-            frameRate: { ideal: 30 }
-        },
-        {
-            facingMode: { ideal: facing },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: { ideal: 30 }
-        },
-        { facingMode: facing },
-        { facingMode: { ideal: facing } }
+        { label: '4K',       constraints: { facingMode: { ideal: facing }, width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 30 } } },
+        { label: '2K',       constraints: { facingMode: { ideal: facing }, width: { ideal: 2560 }, height: { ideal: 1440 }, frameRate: { ideal: 30 } } },
+        { label: 'Full HD',  constraints: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } } },
+        { label: 'HD',       constraints: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720  }, frameRate: { ideal: 30 } } },
+        { label: 'Tự động',  constraints: { facingMode: { ideal: facing } } },
+        { label: 'Mặc định', constraints: true }
     ];
+}
+
+function getSimpleHtml5QrCameraSelector(mode) {
+    const facing = mode || currentFacingMode || 'environment';
+    return { facingMode: { ideal: facing } };
+}
+
+async function safeStopAndClearScanCamera() {
+    try {
+        if (html5QrCodeCam && isCamRunning && typeof html5QrCodeCam.stop === 'function') {
+            await html5QrCodeCam.stop();
+        }
+    } catch(e) {}
+    try {
+        if (html5QrCodeCam && typeof html5QrCodeCam.clear === 'function') html5QrCodeCam.clear();
+    } catch(e) {}
+    isCamRunning = false;
 }
 
 async function startHtml5QrWithBestCamera(mode, scanConfig) {
     const successHandler = getAirgapCameraSuccessHandler();
     const failureHandler = getAirgapCameraFailureHandler();
     const candidates = buildBestScanCameraCandidates(mode);
+    const simpleCameraSelector = getSimpleHtml5QrCameraSelector(mode);
 
     let lastError = null;
 
     for (let i = 0; i < candidates.length; i++) {
-        const cameraConfig = candidates[i];
+        const item = candidates[i];
+        const configForScan = Object.assign({}, scanConfig || {});
+
+        if (item.constraints && item.constraints !== true) {
+            configForScan.videoConstraints = item.constraints;
+        }
 
         try {
             setScanCameraQualityStatus(
                 i === 0
                     ? '🔎 Đang dò chất lượng camera tốt nhất...'
-                    : `🔎 Đang thử cấu hình camera dự phòng ${i + 1}/${candidates.length}...`,
+                    : `🔎 Đang thử ${item.label || 'dự phòng'} (${i + 1}/${candidates.length})...`,
                 'info'
             );
 
-            await html5QrCodeCam.start(cameraConfig, scanConfig, successHandler, failureHandler);
+            // Điểm sửa chính: cameraIdOrConfig chỉ để chọn camera/facingMode;
+            // độ phân giải thật được đặt trong config.videoConstraints.
+            await html5QrCodeCam.start(simpleCameraSelector, configForScan, successHandler, failureHandler);
             isCamRunning = true;
 
             setTimeout(() => {
                 describeRunningCameraQuality();
                 initCameraZoom(); // 🌟 Kích hoạt zoom sau khi luồng chạy ổn định
-            }, 350);
+            }, 450);
 
             return;
         } catch (err) {
             lastError = err;
-            try {
-                if (html5QrCodeCam && typeof html5QrCodeCam.clear === 'function') html5QrCodeCam.clear();
-            } catch(e) {}
+            await safeStopAndClearScanCamera();
+            if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader");
         }
+    }
+
+    // Fallback cuối: dùng đúng kiểu mở camera nguyên bản của html5-qrcode.
+    try {
+        setScanCameraQualityStatus('🔁 Đang mở camera bằng cấu hình mặc định...', 'warning');
+        await html5QrCodeCam.start(simpleCameraSelector, scanConfig || {}, successHandler, failureHandler);
+        isCamRunning = true;
+        setTimeout(() => {
+            describeRunningCameraQuality();
+            initCameraZoom();
+        }, 450);
+        return;
+    } catch (err) {
+        lastError = err;
+        await safeStopAndClearScanCamera();
     }
 
     throw lastError || new Error('Không tìm được cấu hình camera phù hợp.');
