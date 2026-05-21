@@ -4070,7 +4070,7 @@ function initCameraZoom() {
 function startCam() {
     const camBox = document.getElementById('camera-box');
     if (camBox) camBox.style.display = 'block';
-    
+
     if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader");
 
     if (!isCamRunning) {
@@ -4078,64 +4078,204 @@ function startCam() {
     }
 }
 
-// 3. Lõi khởi động luồng Video với thông số động (Đã tích hợp luồng kích hoạt Zoom)
+// Trả về callback xử lý QR dùng chung cho CAM thường và ĐỌC QRTEXT
+function getAirgapCameraSuccessHandler() {
+    return (txt) => {
+        let d = txt;
+        try { d = decodeURIComponent(escape(txt)); } catch(e) {}
+
+        if (window.qrScanMode === 'qrtext') {
+            if (typeof handleQrTextDecodedText === "function") handleQrTextDecodedText("Camera", d);
+            return;
+        }
+
+        if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
+        if (typeof handleDlQrDecodedText === "function" && handleDlQrDecodedText("Camera", d)) return;
+        if (typeof appendScanResult === "function") appendScanResult("Camera", d, true);
+    };
+}
+
+function getAirgapCameraFailureHandler() {
+    return () => {}; // Giấu lỗi dò nét để log không bị nhiễu
+}
+
+function ensureScanCameraStatusBox() {
+    const camBox = document.getElementById('camera-box');
+    if (!camBox) return null;
+
+    let status = document.getElementById('scan-camera-quality-status');
+    if (!status) {
+        status = document.createElement('div');
+        status.id = 'scan-camera-quality-status';
+        status.className = 'small fw-bold text-info mt-2 px-2 py-1 border border-info rounded';
+        status.style.cssText = 'background:rgba(0,0,0,.55); line-height:1.35;';
+        const reader = document.getElementById('camera-reader');
+        if (reader && reader.parentNode === camBox) {
+            reader.insertAdjacentElement('afterend', status);
+        } else {
+            camBox.insertBefore(status, camBox.firstChild);
+        }
+    }
+    return status;
+}
+
+function setScanCameraQualityStatus(message, type = 'info') {
+    const status = ensureScanCameraStatusBox();
+    if (!status) return;
+
+    status.classList.remove('text-info', 'text-success', 'text-warning', 'text-danger', 'border-info', 'border-success', 'border-warning', 'border-danger');
+
+    const cls = {
+        success: ['text-success', 'border-success'],
+        warning: ['text-warning', 'border-warning'],
+        danger: ['text-danger', 'border-danger'],
+        info: ['text-info', 'border-info']
+    }[type] || ['text-info', 'border-info'];
+
+    status.classList.add(...cls);
+    status.textContent = message;
+}
+
+function getRunningVideoTrackSafe() {
+    try {
+        if (html5QrCodeCam && typeof html5QrCodeCam.getRunningTrack === 'function') {
+            const t = html5QrCodeCam.getRunningTrack();
+            if (t) return t;
+        }
+    } catch(e) {}
+
+    try {
+        const videoEl = document.querySelector('#camera-reader video');
+        if (videoEl && videoEl.srcObject) {
+            return videoEl.srcObject.getVideoTracks()[0] || null;
+        }
+    } catch(e) {}
+
+    return null;
+}
+
+function describeRunningCameraQuality() {
+    const track = getRunningVideoTrackSafe();
+    if (!track) {
+        setScanCameraQualityStatus('✅ Camera đã mở. Không đọc được thông số độ phân giải thực tế.', 'success');
+        return;
+    }
+
+    let settings = {};
+    let caps = {};
+    try { settings = track.getSettings ? track.getSettings() : {}; } catch(e) {}
+    try { caps = track.getCapabilities ? track.getCapabilities() : {}; } catch(e) {}
+
+    const w = settings.width || '?';
+    const h = settings.height || '?';
+    const fps = Math.round(settings.frameRate || 0) || '?';
+    const label = settings.deviceId ? 'camera đã chọn' : (settings.facingMode ? `camera ${settings.facingMode}` : 'camera');
+    const maxW = caps.width && caps.width.max ? caps.width.max : null;
+    const maxH = caps.height && caps.height.max ? caps.height.max : null;
+
+    const capText = maxW && maxH ? ` · Tối đa thiết bị báo: ${maxW}×${maxH}` : '';
+    setScanCameraQualityStatus(`✅ Đang dùng ${label}: ${w}×${h} · FPS: ${fps}${capText}`, 'success');
+}
+
+function buildBestScanCameraCandidates(mode) {
+    const facing = mode || currentFacingMode || 'environment';
+
+    // Danh sách từ cao xuống thấp. Trình duyệt sẽ chọn mức tốt nhất thực sự hỗ trợ.
+    return [
+        {
+            facingMode: { ideal: facing },
+            width: { ideal: 3840 },
+            height: { ideal: 2160 },
+            frameRate: { ideal: 60 }
+        },
+        {
+            facingMode: { ideal: facing },
+            width: { ideal: 2560 },
+            height: { ideal: 1440 },
+            frameRate: { ideal: 60 }
+        },
+        {
+            facingMode: { ideal: facing },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 }
+        },
+        {
+            facingMode: { ideal: facing },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 30 }
+        },
+        { facingMode: facing },
+        { facingMode: { ideal: facing } }
+    ];
+}
+
+async function startHtml5QrWithBestCamera(mode, scanConfig) {
+    const successHandler = getAirgapCameraSuccessHandler();
+    const failureHandler = getAirgapCameraFailureHandler();
+    const candidates = buildBestScanCameraCandidates(mode);
+
+    let lastError = null;
+
+    for (let i = 0; i < candidates.length; i++) {
+        const cameraConfig = candidates[i];
+
+        try {
+            setScanCameraQualityStatus(
+                i === 0
+                    ? '🔎 Đang dò chất lượng camera tốt nhất...'
+                    : `🔎 Đang thử cấu hình camera dự phòng ${i + 1}/${candidates.length}...`,
+                'info'
+            );
+
+            await html5QrCodeCam.start(cameraConfig, scanConfig, successHandler, failureHandler);
+            isCamRunning = true;
+
+            setTimeout(() => {
+                describeRunningCameraQuality();
+                initCameraZoom(); // 🌟 Kích hoạt zoom sau khi luồng chạy ổn định
+            }, 350);
+
+            return;
+        } catch (err) {
+            lastError = err;
+            try {
+                if (html5QrCodeCam && typeof html5QrCodeCam.clear === 'function') html5QrCodeCam.clear();
+            } catch(e) {}
+        }
+    }
+
+    throw lastError || new Error('Không tìm được cấu hình camera phù hợp.');
+}
+
+// 3. Lõi khởi động luồng Video: tự ưu tiên chất lượng thực tế cao nhất của camera được chọn
 function launchCam(mode) {
+    currentFacingMode = mode || currentFacingMode || "environment";
+
     // Ẩn toàn bộ UI bên phát để tập trung cho camera quét
     const senderUI = document.getElementById('airgap-sender-uimoi');
     if (senderUI) senderUI.style.display = 'none';
     const scadaUI = document.getElementById('scheduler-scada');
     if (scadaUI) scadaUI.style.display = 'none';
-    
-    // Đọc thông số từ giao diện (nếu ô bị trống thì dùng giá trị mặc định)
-    const fpsVal = parseInt(document.getElementById('cam-fps')?.value) || 20;
-    const boxWidth = parseInt(document.getElementById('cam-width')?.value) || 250;
-    const boxHeight = parseInt(document.getElementById('cam-height')?.value) || 250;
 
-    // Đóng gói cấu hình quét
-    const scanConfig = { 
-        fps: fpsVal, 
-        qrbox: { width: boxWidth, height: boxHeight } 
+    // Đọc thông số quét QR. Lưu ý: cam-width/cam-height là kích thước vùng quét, không phải độ phân giải camera.
+    const fpsInput = parseInt(document.getElementById('cam-fps')?.value, 10);
+    const fpsVal = Number.isFinite(fpsInput) ? Math.max(15, fpsInput) : 30;
+    const boxWidth = parseInt(document.getElementById('cam-width')?.value, 10) || 250;
+    const boxHeight = parseInt(document.getElementById('cam-height')?.value, 10) || 250;
+
+    const scanConfig = {
+        fps: fpsVal,
+        qrbox: { width: boxWidth, height: boxHeight }
     };
 
-    html5QrCodeCam.start(
-        { facingMode: mode }, 
-        scanConfig, 
-        (txt) => {
-            let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
-            if (window.qrScanMode === 'qrtext') {
-                if (typeof handleQrTextDecodedText === "function") handleQrTextDecodedText("Camera", d);
-                return;
-            }
-            if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
-            if (typeof handleDlQrDecodedText === "function" && handleDlQrDecodedText("Camera", d)) return;
-            if (typeof appendScanResult === "function") appendScanResult("Camera", d, true);
-        }, 
-        (err) => {} // Giấu các lỗi dò nét
-    ).then(() => { 
-        isCamRunning = true; 
-        initCameraZoom(); // 🌟 KÍCH HOẠT ZOOM KHI LUỒNG CHÍNH CHẠY THÀNH CÔNG
-    }).catch(e => {
-        console.warn("Máy không hỗ trợ cấu hình hiện tại, đang hạ cấp...", e);
-        
-        // Chế độ dự phòng: Nếu cấu hình do người dùng nhập gây lỗi
-        html5QrCodeCam.start(
-            { facingMode: mode }, 
-            { fps: 15 }, 
-            (txt) => {
-                let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
-                if (window.qrScanMode === 'qrtext') {
-                    if (typeof handleQrTextDecodedText === "function") handleQrTextDecodedText("Camera", d);
-                    return;
-                }
-                if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
-                if (typeof handleDlQrDecodedText === "function" && handleDlQrDecodedText("Camera", d)) return;
-                if (typeof appendScanResult === "function") appendScanResult("Camera", d, true);
-            }, 
-            (err) => {}
-        ).then(() => { 
-            isCamRunning = true; 
-            initCameraZoom(); // 🌟 KÍCH HOẠT ZOOM KHI LUỒNG DỰ PHÒNG CHẠY THÀNH CÔNG
-        }).catch(err2 => alert("Không thể mở Camera: " + err2));
+    if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader");
+
+    startHtml5QrWithBestCamera(currentFacingMode, scanConfig).catch(err => {
+        console.warn("Không thể mở camera ở các mức chất lượng đã thử:", err);
+        setScanCameraQualityStatus("❌ Không thể mở Camera. Hãy kiểm tra quyền camera, HTTPS/PWA hoặc camera đang bị ứng dụng khác sử dụng.", 'danger');
+        alert("Không thể mở Camera: " + (err && err.message ? err.message : err));
     });
 }
 
