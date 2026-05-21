@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hệ Thống Dữ Liệu Tổng Hợp V45.1 - PC Tuyên Quang</title>
+    <title>Hệ Thống Dữ Liệu Tổng Hợp V45.0 - PC Tuyên Quang</title>
 <link rel="manifest" href="manifest.json">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -443,7 +443,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
             <div class="card bg-dark border-secondary shadow-sm mb-4">
                 <div class="card-header bg-black border-secondary">
                     <h5 class="text-info fw-bold mb-1">📘 HƯỚNG DẪN SỬ DỤNG HỆ THỐNG DỮ LIỆU TỔNG HỢP V45</h5>
-                    <div class="text-secondary small">Tài liệu này mô tả chi tiết các nhóm tính năng chính: biên tập dữ liệu, đọc file, bảng Excel, tạo/đọc QRText, truyền file qua QR Theater, chuyển đuôi file .txt, quét camera, hẹn giờ SCADA và lưu cấu hình offline.</div>
+                    <div class="text-secondary small">Tài liệu này mô tả chi tiết các nhóm tính năng chính: biên tập dữ liệu, đọc file, bảng Excel, tạo/đọc QRText, truyền file qua QR Theater, chuyển đuôi file .txt, quét camera và hẹn giờ SCADA.</div>
                 </div>
                 <div class="card-body text-light" style="font-size: 14px; line-height: 1.65;">
 
@@ -461,7 +461,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
                         <li><b>Giải mã VBS:</b> hỗ trợ đọc và giải mã nội dung VBScript đã được mã hóa/ẩn.</li>
                         <li><b>Xem trước HTML:</b> xem nội dung HTML trong iframe nội bộ.</li>
                         <li><b>ZIP Explorer:</b> đọc cấu trúc file ZIP và tải từng file con.</li>
-                        <li><b>Trình đọc PDF:</b> mở PDF trực tiếp trong trình duyệt.</li>
+                        <li><b>Trình đọc PDF:</b> trên máy tính mở trực tiếp trong khung xem. Trên mobile nếu chỉ hiện chuỗi mã lạ/blob ID, dùng các nút <b>MỞ NGOÀI</b>, <b>TẢI PDF</b> hoặc <b>THỬ MOBILE</b> vì nhiều trình duyệt điện thoại không hỗ trợ PDF trong iframe/blob.</li>
                     </ul>
 
                     <h6 class="text-warning fw-bold mt-4">2. ĐỌC FILE VÀ XỬ LÝ NỘI DUNG</h6>
@@ -658,40 +658,14 @@ Tên file cần có: BaoCao_202605201030.html</pre>
                         <b>Lưu ý:</b> quyền đọc thư mục chỉ hoạt động tốt trên Chrome/Edge mới, trong môi trường HTTPS, localhost hoặc PWA đã được cấp quyền. Máy gửi và máy nhận nên đặt cùng giờ hệ thống để tự phát/tự thu khớp nhau.
                     </div>
 
-                    <h6 class="text-warning fw-bold mt-4">13. LƯU CẤU HÌNH OFFLINE</h6>
-                    <p>Khối <b>💾 LƯU CẤU HÌNH OFFLINE</b> giúp giữ lại các thiết lập thường dùng ngay trên trình duyệt của máy đang vận hành. Chức năng này phù hợp với hệ thống truyền dữ liệu QR từ camera vì mỗi ca trực thường dùng cùng mật độ QR, cùng tốc độ rạp chiếu, cùng lịch phát/thu và cùng cấu hình thư mục.</p>
-                    <ul class="text-secondary mb-3">
-                        <li><b>Lưu cấu hình hiện tại:</b> ghi các thông số QR, rạp chiếu, camera, lịch SCADA và lịch QRText vào bộ nhớ cục bộ <code>localStorage</code>.</li>
-                        <li><b>Khôi phục cấu hình đã lưu:</b> nạp lại toàn bộ thông số đã lưu, tự cập nhật giao diện và gọi lại các hàm kiểm tra như mật độ QR, giao diện lịch QRText.</li>
-                        <li><b>Tự lưu khi thay đổi:</b> khi bật công tắc này, mỗi lần thay đổi các ô cấu hình quan trọng hệ thống tự ghi lại, giúp mở lại ứng dụng vẫn giữ thói quen dùng trước đó.</li>
-                        <li><b>Xuất JSON / Nhập JSON:</b> dùng để sao lưu cấu hình ra file hoặc chuyển cấu hình sang máy khác mà không cần mạng Internet.</li>
-                        <li><b>Xóa cấu hình đã lưu:</b> xóa các thiết lập đã lưu và đưa các ô cấu hình về trạng thái mặc định của file HTML.</li>
-                        <li><b>Khôi phục quyền thư mục:</b> nếu trình duyệt hỗ trợ File System Access API, hệ thống cố gắng lưu lại tay cầm thư mục SCADA/QRText trong IndexedDB để lần sau có thể khôi phục nhanh. Trình duyệt vẫn có thể yêu cầu xác nhận lại quyền vì lý do bảo mật.</li>
-                    </ul>
-                    <div class="alert alert-info py-2 small mb-3">
-                        <b>Không lưu dữ liệu nghiệp vụ:</b> chức năng này không lưu nội dung file, không lưu chuỗi trong <code>qr-input</code>, không lưu ảnh QR đã tạo. Nó chỉ lưu cấu hình vận hành để tránh phải nhập lại sau khi tắt/mở trình duyệt.
-                    </div>
-                    <div class="table-responsive mb-3">
-                        <table class="table table-sm table-dark table-bordered align-middle small">
-                            <thead><tr><th>Nhóm cấu hình</th><th>Các mục được lưu</th></tr></thead>
-                            <tbody>
-                                <tr><td>QRText / QR File</td><td>Kích thước QR, mật độ ký tự/QR, mức sửa lỗi, chuẩn nén, chế độ tự nén.</td></tr>
-                                <tr><td>Rạp chiếu</td><td>Chiến lược phát, tốc độ preset, tốc độ tùy chỉnh.</td></tr>
-                                <tr><td>Camera</td><td>FPS camera, mức zoom nếu trình duyệt hỗ trợ.</td></tr>
-                                <tr><td>Hẹn giờ</td><td>Hành động phát/thu, giờ kích hoạt, độ trễ file, định dạng QRText, nguồn QRText, tiền tố tên file.</td></tr>
-                                <tr><td>Thư mục</td><td>Cố gắng lưu quyền thư mục SCADA và QRText bằng IndexedDB; không phải trình duyệt nào cũng cho khôi phục tự động.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <h6 class="text-warning fw-bold mt-4">14. KIỂM TRA CẬP NHẬT PWA / CHẠY OFFLINE</h6>
+                    <h6 class="text-warning fw-bold mt-4">13. KIỂM TRA CẬP NHẬT PWA / CHẠY OFFLINE</h6>
                     <ul class="text-secondary mb-3">
                         <li>Ứng dụng có Service Worker để hỗ trợ chạy dạng PWA và ưu tiên cache/offline.</li>
                         <li>Nút <b>KIỂM TRA BẢN CẬP NHẬT MỚI</b> chỉ nên dùng khi thiết bị có mạng và cần lấy bản vá từ máy chủ.</li>
                         <li>Nếu không có mạng, các chức năng xử lý file cục bộ, tạo QR, quét ảnh/camera và đổi đuôi file vẫn có thể hoạt động nếu thư viện đã được cache đầy đủ.</li>
                     </ul>
 
-                    <h6 class="text-warning fw-bold mt-4">15. KHUYẾN NGHỊ VẬN HÀNH</h6>
+                    <h6 class="text-warning fw-bold mt-4">14. KHUYẾN NGHỊ VẬN HÀNH</h6>
                     <ul class="text-secondary mb-0">
                         <li>Với QRText hoặc truyền file, nên thử mức <b>Mật độ 700 - 1100</b> trước để ổn định, sau đó tăng dần nếu camera tốt.</li>
                         <li>Khi chiếu QR Theater, đặt màn hình sáng vừa phải, tránh phản quang, giữ camera vuông góc với màn hình.</li>
@@ -1077,34 +1051,6 @@ Tên file cần có: BaoCao_202605201030.html</pre>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<div id="airgap-offline-config-card" class="card bg-dark border-success mb-3">
-    <div class="card-header text-success fw-bold py-1" style="font-size: 0.9rem; border-bottom: 1px solid var(--bs-success);">
-        💾 LƯU CẤU HÌNH OFFLINE
-    </div>
-    <div class="card-body py-2">
-        <div class="small text-secondary mb-2" style="font-size:0.76rem; line-height:1.35;">
-            Lưu cấu hình QR, rạp chiếu, camera và lịch hẹn ngay trên máy bằng <b class="text-success">localStorage</b>. Không lưu nội dung file, không lưu dữ liệu trong <code>qr-input</code>.
-        </div>
-        <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" id="airgap-offline-autosave">
-            <label class="form-check-label small text-success fw-bold" for="airgap-offline-autosave">Tự lưu khi thay đổi cấu hình</label>
-        </div>
-        <div class="d-grid gap-2">
-            <button type="button" class="btn btn-success btn-sm fw-bold" onclick="saveAirGapOfflineConfig()">💾 LƯU CẤU HÌNH HIỆN TẠI</button>
-            <button type="button" class="btn btn-outline-success btn-sm fw-bold" onclick="loadAirGapOfflineConfig(true)">↩️ KHÔI PHỤC CẤU HÌNH ĐÃ LƯU</button>
-            <button type="button" class="btn btn-outline-info btn-sm fw-bold" onclick="restoreSavedDirectoryHandles(true)">📁 KHÔI PHỤC QUYỀN THƯ MỤC</button>
-            <div class="btn-group btn-group-sm w-100">
-                <button type="button" class="btn btn-outline-warning fw-bold" onclick="exportAirGapOfflineConfig()">⬇️ XUẤT JSON</button>
-                <label class="btn btn-outline-warning fw-bold mb-0">⬆️ NHẬP JSON
-                    <input type="file" accept=".json,application/json" hidden onchange="importAirGapOfflineConfig(this)">
-                </label>
-            </div>
-            <button type="button" class="btn btn-outline-danger btn-sm fw-bold" onclick="resetAirGapOfflineConfig()">🧹 XÓA CẤU HÌNH ĐÃ LƯU</button>
-        </div>
-        <div id="airgap-offline-config-status" class="small text-success text-center mt-2" style="font-size:0.78rem; min-height:18px;">Sẵn sàng lưu cấu hình offline.</div>
     </div>
 </div>
 </aside>
@@ -2488,7 +2434,102 @@ Tên file cần có: BaoCao_202605201030.html</pre>
     async function extractVba(buf, type) { try { const zip = await JSZip.loadAsync(buf); const v = zip.file(`${type}/vbaProject.bin`); if(v) { const bin = await v.async("string"); const m = bin.match(/[\x20-\x7E\r\n\t\xA0-\xFF]{4,}/g); vbaSource = m ? m.join('\n') : "Không có mã Macro."; document.getElementById('tab-vba').style.display='block'; document.getElementById('vba-view').innerText = "--- TRÍCH XUẤT VBA AN TOÀN ---\n\n" + vbaSource; } } catch(e) {} }
     function handleXml(text) { const parser = new DOMParser(); xmlDocMaster = parser.parseFromString(text, "text/xml"); const box = document.getElementById('xml-view'); box.innerHTML = ""; box.appendChild(drawNode(xmlDocMaster.documentElement)); document.getElementById('tab-xml').style.display='block'; showView('xml'); showLoading(false); }
     function drawNode(node) { const div = document.createElement('div'); div.className = "xml-node"; const tagLine = document.createElement('div'); tagLine.innerHTML = `<span class="xml-bracket">&lt;</span><span class="xml-tag-name" contenteditable="true" spellcheck="false">${node.nodeName}</span><span class="xml-bracket">&gt;</span>`; tagLine.querySelector('.xml-tag-name').onblur = (e) => { let newName = e.target.innerText.trim().replace(/[^\w.-]/g, ''); if(!newName.match(/^[a-zA-Z_]/)) newName = "KEY_" + newName; if(newName && newName !== node.nodeName) { try { const newNode = xmlDocMaster.createElement(newName); Array.from(node.attributes).forEach(attr => newNode.setAttribute(attr.name, attr.value)); while(node.firstChild) newNode.appendChild(node.firstChild); if (node === xmlDocMaster.documentElement) xmlDocMaster.replaceChild(newNode, node); else node.parentNode.replaceChild(newNode, node); handleXml((new XMLSerializer()).serializeToString(xmlDocMaster)); } catch(err) { e.target.innerText = node.nodeName; } } else { e.target.innerText = node.nodeName; } }; const addBtn = document.createElement('span'); addBtn.className="xml-ctrl text-success"; addBtn.innerHTML="[+] Thêm"; addBtn.onclick = () => { const n = prompt("Tên thẻ:"); if(n) { try{node.appendChild(xmlDocMaster.createElement(n.replace(/[^\w.-]/g, ''))); handleXml((new XMLSerializer()).serializeToString(xmlDocMaster));}catch(e){} }}; const cloneBtn = document.createElement('span'); cloneBtn.className="xml-ctrl text-warning"; cloneBtn.innerHTML="[++] Nhân bản"; cloneBtn.onclick = () => { const clone = node.cloneNode(true); node.parentNode.insertBefore(clone, node.nextSibling); handleXml((new XMLSerializer()).serializeToString(xmlDocMaster)); }; const delBtn = document.createElement('span'); delBtn.className="xml-ctrl text-danger"; delBtn.innerHTML="[x] Xóa"; delBtn.onclick = () => { if(node !== xmlDocMaster.documentElement && confirm("Xóa thẻ này?")){ node.remove(); handleXml((new XMLSerializer()).serializeToString(xmlDocMaster)); }}; tagLine.appendChild(addBtn); if(node !== xmlDocMaster.documentElement) { tagLine.appendChild(cloneBtn); tagLine.appendChild(delBtn); } div.appendChild(tagLine); if (node.children.length > 0) Array.from(node.children).forEach(c => div.appendChild(drawNode(c))); else { const val = document.createElement('span'); val.className="xml-val"; val.contentEditable=true; val.innerText = node.textContent; val.onblur=(e)=>node.textContent=e.target.innerText; div.appendChild(val); } return div; }
-    function handlePdf(file) { const url = URL.createObjectURL(file); document.getElementById('pdf-view').innerHTML = `<iframe src="${url}" width="100%" height="100%" style="border:none;"></iframe>`; document.getElementById('tab-pdf').style.display='block'; showView('pdf'); showLoading(false); }
+    let currentPdfBlobUrl = "";
+    let currentPdfFileName = "";
+    let currentPdfFileRef = null;
+
+    function isMobilePdfInlineRisk() {
+        const ua = navigator.userAgent || "";
+        return /Android|iPhone|iPad|iPod|Mobile|Zalo|FBAN|FBAV|MicroMessenger/i.test(ua);
+    }
+
+    function revokeCurrentPdfUrl() {
+        if (currentPdfBlobUrl) {
+            try { URL.revokeObjectURL(currentPdfBlobUrl); } catch(e) {}
+            currentPdfBlobUrl = "";
+        }
+    }
+
+    function openCurrentPdfExternal() {
+        if (!currentPdfBlobUrl) return alert("Chưa có file PDF nào đang mở.");
+        const w = window.open(currentPdfBlobUrl, "_blank", "noopener,noreferrer");
+        if (!w) alert("Trình duyệt đã chặn cửa sổ mới. Hãy bấm TẢI PDF hoặc cho phép popup.");
+    }
+
+    function downloadCurrentPdf() {
+        if (!currentPdfFileRef) return alert("Chưa có file PDF nào để tải.");
+        const pdfBlob = new Blob([currentPdfFileRef], { type: "application/pdf" });
+        if (typeof saveFile === "function") saveFile(pdfBlob, currentPdfFileName || "tai_lieu.pdf");
+        else {
+            const url = URL.createObjectURL(pdfBlob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = currentPdfFileName || "tai_lieu.pdf";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+    }
+
+    function tryPdfDataUrlFallback() {
+        if (!currentPdfFileRef) return alert("Chưa có file PDF nào để mở.");
+        const maxDataUrlSize = 18 * 1024 * 1024; // Tránh treo RAM mobile với PDF quá lớn
+        if (currentPdfFileRef.size > maxDataUrlSize) {
+            alert("PDF khá lớn, không chuyển sang DataURL để tránh treo trình duyệt. Hãy dùng nút MỞ NGOÀI hoặc TẢI PDF.");
+            return;
+        }
+        showLoading(true, "ĐANG THỬ CHẾ ĐỘ PDF MOBILE...");
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const frame = document.getElementById("pdf-mobile-frame");
+            if (frame) frame.src = ev.target.result;
+            showLoading(false);
+        };
+        reader.onerror = function() {
+            showLoading(false);
+            alert("Không thể mở PDF bằng DataURL trên trình duyệt này. Hãy dùng MỞ NGOÀI hoặc TẢI PDF.");
+        };
+        reader.readAsDataURL(currentPdfFileRef);
+    }
+
+    function handlePdf(file) {
+        revokeCurrentPdfUrl();
+        currentPdfFileRef = file;
+        currentPdfFileName = file?.name || "tai_lieu.pdf";
+        currentPdfBlobUrl = URL.createObjectURL(file);
+
+        const isMobile = isMobilePdfInlineRisk();
+        const pdfView = document.getElementById('pdf-view');
+        if (!pdfView) { showLoading(false); return; }
+
+        pdfView.innerHTML = `
+            <div class="pdf-mobile-toolbar bg-dark border border-danger rounded p-2 mb-2" style="position:sticky;top:0;z-index:20;">
+                <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                    <div class="small text-warning fw-bold">
+                        📄 ${currentPdfFileName}
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm btn-info fw-bold text-dark" onclick="openCurrentPdfExternal()">MỞ NGOÀI</button>
+                        <button type="button" class="btn btn-sm btn-success fw-bold" onclick="downloadCurrentPdf()">TẢI PDF</button>
+                        <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" onclick="tryPdfDataUrlFallback()">THỬ MOBILE</button>
+                    </div>
+                </div>
+                <div class="small mt-2 ${isMobile ? 'text-warning' : 'text-secondary'}">
+                    ${isMobile
+                        ? 'Mobile có thể không hiển thị PDF trong iframe/blob. Nếu khung dưới chỉ hiện mã lạ, bấm MỞ NGOÀI hoặc TẢI PDF.'
+                        : 'Desktop sẽ xem trực tiếp trong khung bên dưới. Nếu trình duyệt chặn, dùng MỞ NGOÀI hoặc TẢI PDF.'}
+                </div>
+            </div>
+            <iframe id="pdf-mobile-frame" src="${currentPdfBlobUrl}#toolbar=1&navpanes=0&view=FitH" width="100%" height="calc(100vh - 220px)" style="border:1px solid #444;border-radius:8px;background:#111;min-height:520px;"></iframe>
+            <div class="mt-2 small text-secondary">
+                Gợi ý: trên iPhone/iPad/Android, trình duyệt nhúng trong Zalo/Facebook thường không đọc PDF nội tuyến. Hãy mở bằng Chrome/Safari hoặc tải PDF về máy.
+            </div>`;
+
+        document.getElementById('tab-pdf').style.display='block';
+        showView('pdf');
+        showLoading(false);
+    }
     async function handleZip(file) { const zip = await JSZip.loadAsync(file); activeZip = zip; let h = '<div class="list-group list-group-flush">'; zip.forEach((p, e) => { h += `<div class="list-group-item d-flex justify-content-between"><span>${p}</span><button class="btn btn-sm btn-success fw-bold" onclick="dlZip('${p}')">TẢI</button></div>`; }); document.getElementById('zip-view').innerHTML = h + '</div>'; document.getElementById('tab-zip').style.display='block'; showView('zip'); showLoading(false); }
     function globalSearch() { const term = document.getElementById('find-global').value.trim(); const editor = document.getElementById('main-editor'); editor.innerHTML = editor.innerHTML.replace(/<mark class="hl-yellow">|<\/mark>/g, ""); document.querySelectorAll('.excel-cell').forEach(c => c.classList.remove('hl-yellow')); if (!term) return; const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); const regex = new RegExp(`(${safeTerm})`, 'gi'); const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null, false); const nodes = []; let node; while(node = walker.nextNode()) nodes.push(node); nodes.forEach(n => { if (n.parentNode.tagName !== 'MARK' && n.nodeValue.match(regex)) { const s = document.createElement('span'); s.innerHTML = n.nodeValue.replace(regex, '<mark class="hl-yellow">$1</mark>'); n.parentNode.replaceChild(s, n); } }); if (document.getElementById('excel-view').style.display !== 'none') { document.querySelectorAll('.excel-cell').forEach(c => { if(c.innerText.toLowerCase().includes(term.toLowerCase())) c.classList.add('hl-yellow'); }); } }
     function onPasteSecure(e) { const items = (e.clipboardData || e.originalEvent.clipboardData).items; for (let i of items) { if (i.type.indexOf("image") !== -1) { e.preventDefault(); const blob = i.getAsFile(); const r = new FileReader(); r.onload = (ev) => { document.execCommand('insertHTML', false, `<img src="${ev.target.result}">`); }; r.readAsDataURL(blob); break; } } }
@@ -4219,297 +4260,5 @@ async function assembleAndDownloadFile(fileName) {
         </div>
     </div>
 </div>
-
-<script>
-// =========================================================================
-// LƯU CẤU HÌNH OFFLINE - AIRGAP SCADA V45.1
-// =========================================================================
-(function(){
-    const CONFIG_KEY = "AIRGAP_SCADA_OFFLINE_CONFIG_V451";
-    const DB_NAME = "AIRGAP_SCADA_OFFLINE_DB";
-    const DB_STORE = "handles";
-    const CONFIG_IDS = [
-        "qr-size", "airgap-chunk-size", "qr-error-level",
-        "compression-choice", "pre-compressed-mode", "airgap-play-strategy",
-        "airgap-speed-preset", "airgap-speed-custom",
-        "cam-fps", "camera-zoom-slider",
-        "scheduler-task", "scheduler-time", "scada-time-offset",
-        "qrtext-scheduler-action", "qrtext-scheduler-format", "qrtext-scheduler-source",
-        "qrtext-file-prefix", "qrtext-time-offset", "qrtext-scheduler-time",
-        "qrtext-scheduler-build-mode", "airgap-offline-autosave"
-    ];
-
-    function setOfflineConfigStatus(message, type){
-        const el = document.getElementById("airgap-offline-config-status");
-        if (!el) return;
-        el.textContent = message || "";
-        el.className = "small text-center mt-2 " + (type === "error" ? "text-danger" : type === "warn" ? "text-warning" : "text-success");
-    }
-
-    function getConfigElementValue(el){
-        if (!el) return null;
-        if (el.type === "checkbox") return !!el.checked;
-        return el.value;
-    }
-
-    function setConfigElementValue(el, value){
-        if (!el || value === undefined || value === null) return;
-        if (el.type === "checkbox") el.checked = !!value;
-        else el.value = value;
-        try { el.dispatchEvent(new Event("change", { bubbles: true })); } catch(e) {}
-    }
-
-    function collectAirGapOfflineConfig(){
-        const controls = {};
-        CONFIG_IDS.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) controls[id] = getConfigElementValue(el);
-        });
-        return {
-            version: "V45.1",
-            savedAt: new Date().toISOString(),
-            controls,
-            note: "Chỉ lưu cấu hình vận hành; không lưu nội dung file, qr-input hoặc ảnh QR."
-        };
-    }
-
-    function applyAirGapOfflineConfig(config, silent){
-        if (!config || !config.controls) {
-            if (!silent) setOfflineConfigStatus("⚠️ Không có cấu hình hợp lệ để khôi phục.", "warn");
-            return false;
-        }
-        Object.keys(config.controls).forEach(id => setConfigElementValue(document.getElementById(id), config.controls[id]));
-        try { if (typeof validateChunkSize === "function") validateChunkSize(); } catch(e) {}
-        try { if (typeof refreshQrTextSchedulerUi === "function") refreshQrTextSchedulerUi(); } catch(e) {}
-        if (!silent) setOfflineConfigStatus("✅ Đã khôi phục cấu hình lưu lúc: " + (config.savedAt ? new Date(config.savedAt).toLocaleString() : "không rõ"));
-        return true;
-    }
-
-    async function openOfflineDb(){
-        return new Promise((resolve, reject) => {
-            if (!window.indexedDB) return reject(new Error("Trình duyệt không hỗ trợ IndexedDB."));
-            const req = indexedDB.open(DB_NAME, 1);
-            req.onupgradeneeded = () => {
-                const db = req.result;
-                if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
-            };
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => reject(req.error || new Error("Không mở được IndexedDB."));
-        });
-    }
-
-    async function idbPut(key, value){
-        const db = await openOfflineDb();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(DB_STORE, "readwrite");
-            tx.objectStore(DB_STORE).put(value, key);
-            tx.oncomplete = () => resolve(true);
-            tx.onerror = () => reject(tx.error);
-        });
-    }
-
-    async function idbGet(key){
-        const db = await openOfflineDb();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(DB_STORE, "readonly");
-            const req = tx.objectStore(DB_STORE).get(key);
-            req.onsuccess = () => resolve(req.result || null);
-            req.onerror = () => reject(req.error);
-        });
-    }
-
-    async function idbClear(){
-        try {
-            const db = await openOfflineDb();
-            return new Promise((resolve) => {
-                const tx = db.transaction(DB_STORE, "readwrite");
-                tx.objectStore(DB_STORE).clear();
-                tx.oncomplete = () => resolve(true);
-                tx.onerror = () => resolve(false);
-            });
-        } catch(e) { return false; }
-    }
-
-    async function persistDirectoryHandles(){
-        try {
-            if (typeof scadaDirectoryHandle !== "undefined" && scadaDirectoryHandle) await idbPut("scadaDirectoryHandle", scadaDirectoryHandle);
-            if (typeof qrTextDirectoryHandle !== "undefined" && qrTextDirectoryHandle) await idbPut("qrTextDirectoryHandle", qrTextDirectoryHandle);
-        } catch(e) { console.warn("Không thể lưu quyền thư mục vào IndexedDB:", e); }
-    }
-
-    async function ensureHandlePermission(handle, ask){
-        if (!handle) return false;
-        try {
-            if (typeof handle.queryPermission === "function") {
-                const q = await handle.queryPermission({ mode: "read" });
-                if (q === "granted") return true;
-            }
-            if (ask && typeof handle.requestPermission === "function") {
-                const r = await handle.requestPermission({ mode: "read" });
-                return r === "granted";
-            }
-        } catch(e) {}
-        return false;
-    }
-
-    async function restoreSavedDirectoryHandles(askPermission){
-        let restored = [];
-        try {
-            const scadaHandle = await idbGet("scadaDirectoryHandle");
-            if (scadaHandle && await ensureHandlePermission(scadaHandle, !!askPermission)) {
-                scadaDirectoryHandle = scadaHandle;
-                restored.push("SCADA");
-                const el = document.getElementById("scada-dir-status");
-                if (el) {
-                    el.value = `▶ Đã khôi phục: Folder [ ${scadaHandle.name} ]`;
-                    el.classList.remove("text-secondary");
-                    el.classList.add("text-success");
-                }
-            }
-            const qrHandle = await idbGet("qrTextDirectoryHandle");
-            if (qrHandle && await ensureHandlePermission(qrHandle, !!askPermission)) {
-                qrTextDirectoryHandle = qrHandle;
-                restored.push("QRText");
-                const el = document.getElementById("qrtext-dir-status");
-                if (el) {
-                    el.value = `▶ Đã khôi phục: Folder [ ${qrHandle.name} ]`;
-                    el.classList.remove("text-secondary");
-                    el.classList.add("text-success");
-                }
-            }
-            if (askPermission) setOfflineConfigStatus(restored.length ? "✅ Đã khôi phục quyền thư mục: " + restored.join(", ") : "⚠️ Chưa có quyền thư mục nào được khôi phục. Trình duyệt có thể yêu cầu chọn lại thư mục.", restored.length ? "ok" : "warn");
-        } catch(e) {
-            if (askPermission) setOfflineConfigStatus("⚠️ Không khôi phục được quyền thư mục: " + e.message, "warn");
-        }
-    }
-
-    async function saveAirGapOfflineConfig(silent){
-        try {
-            const config = collectAirGapOfflineConfig();
-            localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
-            await persistDirectoryHandles();
-            if (!silent) setOfflineConfigStatus("✅ Đã lưu cấu hình offline lúc " + new Date().toLocaleTimeString());
-            return true;
-        } catch(e) {
-            setOfflineConfigStatus("❌ Không thể lưu cấu hình: " + e.message, "error");
-            return false;
-        }
-    }
-
-    function loadAirGapOfflineConfig(showMessage){
-        try {
-            const raw = localStorage.getItem(CONFIG_KEY);
-            if (!raw) {
-                if (showMessage) setOfflineConfigStatus("⚠️ Chưa có cấu hình offline đã lưu.", "warn");
-                return false;
-            }
-            const config = JSON.parse(raw);
-            const ok = applyAirGapOfflineConfig(config, !showMessage);
-            restoreSavedDirectoryHandles(false);
-            return ok;
-        } catch(e) {
-            setOfflineConfigStatus("❌ Không thể đọc cấu hình đã lưu: " + e.message, "error");
-            return false;
-        }
-    }
-
-    function resetAirGapOfflineConfig(){
-        if (!confirm("Xóa cấu hình offline đã lưu và đưa các ô cấu hình về mặc định?")) return;
-        try { localStorage.removeItem(CONFIG_KEY); } catch(e) {}
-        idbClear();
-        CONFIG_IDS.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            if (el.tagName === "SELECT") el.selectedIndex = 0;
-            else if (el.type === "checkbox") el.checked = false;
-            else if (el.defaultValue !== undefined) el.value = el.defaultValue;
-            try { el.dispatchEvent(new Event("change", { bubbles: true })); } catch(e) {}
-        });
-        setOfflineConfigStatus("🧹 Đã xóa cấu hình offline đã lưu.", "warn");
-    }
-
-    function exportAirGapOfflineConfig(){
-        const config = collectAirGapOfflineConfig();
-        const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json;charset=utf-8" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "airgap_scada_config_" + new Date().toISOString().slice(0,19).replace(/[-:T]/g, "") + ".json";
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-        setOfflineConfigStatus("⬇️ Đã xuất file cấu hình JSON.");
-    }
-
-    async function importAirGapOfflineConfig(input){
-        const file = input && input.files && input.files[0];
-        if (!file) return;
-        try {
-            const config = JSON.parse(await file.text());
-            if (!applyAirGapOfflineConfig(config, true)) throw new Error("File JSON không đúng cấu trúc cấu hình.");
-            localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
-            setOfflineConfigStatus("⬆️ Đã nhập và áp dụng cấu hình từ file JSON.");
-        } catch(e) { setOfflineConfigStatus("❌ Không nhập được cấu hình: " + e.message, "error"); }
-        finally { input.value = ""; }
-    }
-
-    function bindAirGapOfflineConfig(){
-        CONFIG_IDS.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el || el.dataset.airgapConfigBound === "1") return;
-            el.dataset.airgapConfigBound = "1";
-            const fn = () => {
-                const auto = document.getElementById("airgap-offline-autosave");
-                if (auto && auto.checked) saveAirGapOfflineConfig(true);
-            };
-            el.addEventListener("change", fn);
-            if (el.tagName === "INPUT" && el.type !== "checkbox" && el.type !== "file") el.addEventListener("input", fn);
-        });
-    }
-
-    function wrapDirectoryPickers(){
-        if (window.__airgapOfflinePickerWrapped) return;
-        window.__airgapOfflinePickerWrapped = true;
-        if (typeof window.requestScadaDirectory === "function") {
-            const oldScada = window.requestScadaDirectory;
-            window.requestScadaDirectory = async function(){
-                const result = await oldScada.apply(this, arguments);
-                await persistDirectoryHandles();
-                const auto = document.getElementById("airgap-offline-autosave");
-                if (auto && auto.checked) await saveAirGapOfflineConfig(true);
-                return result;
-            };
-        }
-        if (typeof window.requestQrTextDirectory === "function") {
-            const oldQrText = window.requestQrTextDirectory;
-            window.requestQrTextDirectory = async function(){
-                const result = await oldQrText.apply(this, arguments);
-                await persistDirectoryHandles();
-                const auto = document.getElementById("airgap-offline-autosave");
-                if (auto && auto.checked) await saveAirGapOfflineConfig(true);
-                return result;
-            };
-        }
-    }
-
-    function initAirGapOfflineConfig(){
-        bindAirGapOfflineConfig();
-        wrapDirectoryPickers();
-        loadAirGapOfflineConfig(false);
-        setTimeout(() => restoreSavedDirectoryHandles(false), 200);
-    }
-
-    window.collectAirGapOfflineConfig = collectAirGapOfflineConfig;
-    window.saveAirGapOfflineConfig = saveAirGapOfflineConfig;
-    window.loadAirGapOfflineConfig = loadAirGapOfflineConfig;
-    window.resetAirGapOfflineConfig = resetAirGapOfflineConfig;
-    window.exportAirGapOfflineConfig = exportAirGapOfflineConfig;
-    window.importAirGapOfflineConfig = importAirGapOfflineConfig;
-    window.restoreSavedDirectoryHandles = restoreSavedDirectoryHandles;
-
-    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAirGapOfflineConfig);
-    else initAirGapOfflineConfig();
-})();
-</script>
-
 </body>
 </html>
