@@ -404,6 +404,39 @@ if (!reg) {
             }
         }
 
+        /* === AIRGAP FIX: Tab Tạo mã QR / Quét Đa Nhiệm luôn khớp khung và không bị CSS mở rộng ghi đè === */
+        .sidebar #qr-side-tabs{
+            width: 100% !important;
+            max-width: var(--airgap-sidebar-control-max) !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            display: flex !important;
+        }
+        .sidebar #qr-side-tabs > .btn{
+            flex: 1 1 0;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sidebar #side-gen,
+        .sidebar #side-scan{
+            display: none !important;
+            width: 100%;
+            max-width: var(--airgap-sidebar-control-max) !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        .sidebar #side-gen.is-active,
+        .sidebar #side-scan.is-active{
+            display: block !important;
+        }
+        @media (max-width: 600px){
+            .sidebar #qr-side-tabs > .btn{
+                white-space: normal;
+            }
+        }
+
         .qr-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; background: white; border-radius: 8px; }
         .qr-render-box canvas, .qr-render-box img { width: 150px !important; height: 150px !important; margin: 0 auto; }
         
@@ -892,6 +925,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
                         <li>Nút <b>↔</b> khôi phục bố cục mặc định.</li>
                         <li>Vạch dọc giữa vùng xem file và sidebar có thể kéo trái/phải để chia lại kích thước theo nhu cầu. Trạng thái này được lưu cùng cấu hình offline nếu anh bấm <b>LƯU CẤU HÌNH HIỆN TẠI</b> hoặc bật tự lưu.</li>
                         <li><b>Màn hình gập / tablet nhỏ:</b> hệ thống giữ thêm cụm nút điều chỉnh nổi ở góc dưới phải và giữ thanh kéo khi bề rộng màn hình còn từ 601px trở lên. Nếu xoay dọc quá hẹp, giao diện tự chuyển sang kiểu mobile để tránh che nội dung.</li>
+                        <li>Khi kéo rộng sidebar, thanh <b>Tạo mã QR / Quét Đa Nhiệm</b> luôn tự căn giữa theo cùng độ rộng với các khối chức năng. Nếu bấm <b>Quét Đa Nhiệm</b>, hệ thống chỉ hiện nhóm quét QR/camera; nếu bấm <b>Tạo mã QR</b>, hệ thống chỉ hiện nhóm tạo QR.</li>
                     </ul>
 
                     <h6 class="text-warning fw-bold mt-4">16. KHUYẾN NGHỊ VẬN HÀNH</h6>
@@ -913,12 +947,12 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         <aside class="sidebar">
     <div class="sidebar-edge-tools"><button type="button" class="btn btn-primary btn-sm fw-bold" onclick="toggleAirGapSidebar(false)" title="Mở lại sidebar">☰</button></div>
     <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">QR SMART CENTER V45</h6>
-    <div class="btn-group btn-group-sm w-100 mb-3">
+    <div id="qr-side-tabs" class="btn-group btn-group-sm w-100 mb-3 qr-side-tabs">
         <button class="btn btn-outline-primary active" id="btn-q-gen" onclick="setSide('gen')">Tạo mã QR</button>
         <button class="btn btn-outline-primary" id="btn-q-scan" onclick="setSide('scan')">Quét Đa Nhiệm</button>
     </div>
 
-    <div id="side-gen">
+    <div id="side-gen" class="is-active">
         <div class="form-check form-switch mb-1 small fw-bold text-danger">
             <input class="form-check-input" type="checkbox" id="merge-ex-rows">
             <label class="form-check-label">Gộp dòng (Theo Checkbox)</label>
@@ -2908,7 +2942,23 @@ Tên file cần có: BaoCao_202605201030.html</pre>
     }
 
     function autoQR(t) { document.getElementById('qr-input').value = t; buildFragsQR(); }
-    function setSide(m) { document.getElementById('side-gen').style.display = m==='gen'?'block':'none'; document.getElementById('side-scan').style.display = m==='scan'?'block':'none'; document.getElementById('btn-q-gen').classList.toggle('active',m==='gen'); document.getElementById('btn-q-scan').classList.toggle('active',m==='scan'); }
+    function setSide(m) {
+        const gen = document.getElementById('side-gen');
+        const scan = document.getElementById('side-scan');
+        const btnGen = document.getElementById('btn-q-gen');
+        const btnScan = document.getElementById('btn-q-scan');
+        const isGen = m === 'gen';
+        if (gen) {
+            gen.classList.toggle('is-active', isGen);
+            gen.style.display = isGen ? 'block' : 'none';
+        }
+        if (scan) {
+            scan.classList.toggle('is-active', !isGen);
+            scan.style.display = isGen ? 'none' : 'block';
+        }
+        if (btnGen) btnGen.classList.toggle('active', isGen);
+        if (btnScan) btnScan.classList.toggle('active', !isGen);
+    }
 
 	
     // ==========================================
