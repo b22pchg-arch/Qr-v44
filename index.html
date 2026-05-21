@@ -547,7 +547,100 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
 <script src="cordova.js"></script>
 <style id="offline-image-modal-css">
 #offline-image-modal{position:fixed;inset:0;z-index:2147483000;display:none;background:rgba(3,7,18,.96);color:#e5f6ff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}#offline-image-modal.offline-image-open{display:flex;flex-direction:column}.offline-image-modal__header{flex:0 0 auto;min-height:48px;padding:8px 12px;border-bottom:1px solid rgba(14,165,233,.45);display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(90deg,rgba(2,6,23,.98),rgba(15,23,42,.98))}.offline-image-modal__title{font-weight:900;color:#22d3ee;letter-spacing:.2px}.offline-image-modal__subtitle{font-size:12px;color:#93c5fd;margin-top:2px}.offline-image-modal__body{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(230px,310px) minmax(0,1fr);gap:10px;padding:10px}.offline-image-panel{min-height:0;overflow:auto;border:1px solid rgba(14,165,233,.5);border-radius:12px;background:rgba(15,23,42,.92);padding:10px}.offline-image-stage{min-height:0;position:relative;overflow:hidden;border:1px solid rgba(148,163,184,.45);border-radius:12px;background:#050816;display:grid;place-items:center}.offline-image-stage__hint{color:#94a3b8;text-align:center;max-width:560px;line-height:1.6;padding:20px}#offline-image-viewer,#offline-camera-video{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:none}#offline-image-viewer.offline-image-fill,#offline-camera-video.offline-image-fill{width:100%;height:100%;object-fit:contain}#offline-camera-video{background:#000}.offline-qr-frame{position:absolute;width:min(70vmin,520px);aspect-ratio:1/1;border:4px solid #22c55e;box-shadow:0 0 0 9999px rgba(0,0,0,.38),0 0 28px rgba(34,197,94,.6);border-radius:18px;pointer-events:none;display:none}.offline-image-modal .form-control,.offline-image-modal .form-select{background-color:#020617;color:#e0f2fe;border-color:rgba(14,165,233,.55)}.offline-image-modal .form-control:focus,.offline-image-modal .form-select:focus{box-shadow:0 0 0 .15rem rgba(14,165,233,.28)}.offline-image-group{border:1px solid rgba(148,163,184,.25);border-radius:10px;padding:9px;margin-bottom:10px;background:rgba(2,6,23,.56)}.offline-image-group__title{font-weight:900;color:#67e8f9;font-size:12px;text-transform:uppercase;margin-bottom:7px}.offline-image-btn-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.offline-image-btn-row.three{grid-template-columns:repeat(3,minmax(0,1fr))}.offline-image-btn-row .btn{font-weight:800;white-space:nowrap}#offline-image-status{color:#38bdf8;font-size:12px;margin-top:6px;overflow-wrap:anywhere}#offline-capture-canvas{display:none}body.offline-image-modal-active{overflow:hidden!important}@media(max-width:768px){.offline-image-modal__body{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);padding:7px}.offline-image-panel{max-height:42vh}.offline-image-stage{min-height:52vh}.offline-image-btn-row,.offline-image-btn-row.three{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.offline-image-modal__header{align-items:flex-start}.offline-image-modal__subtitle{display:none}.offline-image-btn-row,.offline-image-btn-row.three{grid-template-columns:1fr}.offline-image-panel{max-height:46vh}}
-</style></head>
+</style>
+<style id="airgap-mobile-sidebar-and-image-button-fix-css">
+/* FIX V45: Mobile sidebar phải là ngăn nổi, không được đẩy layout xuống nửa màn hình. */
+@media (max-width: 600px){
+  .airgap-layout-buttons{display:none!important;}
+  .airgap-floating-layout-tools{display:inline-flex!important;}
+  .main-layout,
+  body.airgap-sidebar-collapsed .main-layout,
+  body.airgap-workspace-collapsed .main-layout{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .workspace{
+    grid-column:1!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+  .layout-resizer{display:none!important;}
+  .sidebar{
+    position:fixed!important;
+    top:54px!important;
+    right:0!important;
+    bottom:0!important;
+    left:auto!important;
+    width:min(92vw,390px)!important;
+    max-width:92vw!important;
+    height:auto!important;
+    max-height:calc(100vh - 54px)!important;
+    overflow-y:auto!important;
+    transform:translateX(104%)!important;
+    transition:transform .22s ease!important;
+    z-index:3050!important;
+    box-shadow:-8px 0 30px rgba(0,0,0,.28)!important;
+    display:block!important;
+    pointer-events:none!important;
+  }
+  body.airgap-mobile-sidebar-open .sidebar{
+    transform:translateX(0)!important;
+    pointer-events:auto!important;
+  }
+  body:not(.airgap-mobile-sidebar-open) .sidebar{
+    transform:translateX(104%)!important;
+    pointer-events:none!important;
+  }
+  body.airgap-mobile-sidebar-open::after{
+    content:"";
+    position:fixed;
+    inset:54px 0 0 0;
+    background:rgba(15,23,42,.28);
+    z-index:3040;
+    pointer-events:none;
+  }
+  .sidebar-edge-tools,.workspace-edge-tools{display:none!important;}
+}
+
+/* FIX V45: nút trong modal Ảnh Offline không bị chữ vượt khỏi khung. */
+#offline-image-modal .btn{
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+  line-height:1.18!important;
+  min-height:34px;
+  padding-left:.45rem!important;
+  padding-right:.45rem!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+}
+#offline-image-modal .offline-image-btn-row{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+#offline-image-modal .offline-image-btn-row.three{
+  grid-template-columns:repeat(auto-fit,minmax(88px,1fr))!important;
+}
+#offline-image-modal .offline-image-panel .btn.w-100{
+  width:100%!important;
+}
+#offline-image-modal .offline-image-modal__header .btn{
+  min-width:96px;
+}
+@media (max-width:480px){
+  #offline-image-modal .offline-image-btn-row,
+  #offline-image-modal .offline-image-btn-row.three{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #offline-image-modal .offline-image-modal__header .btn{
+    min-width:76px;
+    font-size:12px;
+  }
+}
+</style>
+</head>
 <body>
 <div class="loader-overlay" id="loading-screen">
 <div class="spinner-border text-primary"></div>
@@ -4951,11 +5044,11 @@ async function assembleAndDownloadFile(fileName) {
         <div class="offline-image-group__title">1. Xem ảnh offline</div>
         <input accept="image/*,.svg,.bmp,.webp,.gif,.png,.jpg,.jpeg" hidden id="offline-image-file-input" multiple onchange="openOfflineImagesFromInput(this)" type="file">
         <div class="offline-image-btn-row three mb-2">
-          <button class="btn btn-info btn-sm" onclick="document.getElementById('offline-image-file-input').click()" type="button">📁 CHỌN ẢNH</button>
+          <button class="btn btn-info btn-sm" onclick="document.getElementById('offline-image-file-input').click()" type="button">📁 CHỌN</button>
           <button class="btn btn-outline-primary btn-sm" onclick="showPrevOfflineImage()" type="button">◀ TRƯỚC</button>
           <button class="btn btn-outline-primary btn-sm" onclick="showNextOfflineImage()" type="button">SAU ▶</button>
         </div>
-        <button class="btn btn-outline-warning btn-sm w-100 fw-bold" onclick="toggleOfflineImageFit()" type="button">↔ VỪA KHUNG / GỐC</button>
+        <button class="btn btn-outline-warning btn-sm w-100 fw-bold" onclick="toggleOfflineImageFit()" type="button">↔ VỪA KHUNG/GỐC</button>
         <div class="small text-info mt-2" id="offline-image-counter">Chưa chọn ảnh.</div>
       </div>
       <div class="offline-image-group">
@@ -5057,5 +5150,46 @@ window.addEventListener('beforeunload',function(){stopCamera();revokeUrls();stat
   }, true);
   window.addEventListener('resize', function(){ if(!isMobile()) document.body.classList.remove('airgap-mobile-sidebar-open'); });
 })();
-</script></body>
+</script>
+<script id="airgap-mobile-sidebar-final-fix-js">
+(function(){
+  function isMobileLayout(){
+    return window.matchMedia && window.matchMedia('(max-width: 600px)').matches;
+  }
+  function openMobileSidebar(open){
+    document.body.classList.remove('airgap-sidebar-collapsed','airgap-workspace-collapsed');
+    document.body.classList.toggle('airgap-mobile-sidebar-open', !!open);
+  }
+  const desktopSidebar = window.toggleAirGapSidebar;
+  const desktopWorkspace = window.toggleAirGapWorkspace;
+  window.toggleAirGapSidebar = function(forceExpanded){
+    if(isMobileLayout()){
+      if(forceExpanded === false){ openMobileSidebar(false); return; }
+      openMobileSidebar(!document.body.classList.contains('airgap-mobile-sidebar-open'));
+      return;
+    }
+    if(typeof desktopSidebar === 'function') return desktopSidebar.apply(this, arguments);
+  };
+  window.toggleAirGapWorkspace = function(forceExpanded){
+    if(isMobileLayout()){
+      if(forceExpanded === false){ openMobileSidebar(false); return; }
+      openMobileSidebar(!document.body.classList.contains('airgap-mobile-sidebar-open'));
+      return;
+    }
+    if(typeof desktopWorkspace === 'function') return desktopWorkspace.apply(this, arguments);
+  };
+  document.addEventListener('click', function(ev){
+    if(!isMobileLayout() || !document.body.classList.contains('airgap-mobile-sidebar-open')) return;
+    const sidebar = document.querySelector('.sidebar');
+    const btn = ev.target.closest('.airgap-layout-buttons,.airgap-floating-layout-tools');
+    if(sidebar && !sidebar.contains(ev.target) && !btn){
+      openMobileSidebar(false);
+    }
+  }, true);
+  window.addEventListener('resize', function(){
+    if(!isMobileLayout()) document.body.classList.remove('airgap-mobile-sidebar-open');
+  });
+})();
+</script>
+</body>
 </html>
