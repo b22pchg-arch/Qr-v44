@@ -5336,5 +5336,239 @@ window.addEventListener('beforeunload',function(){stopCamera();revokeUrls();stat
   }
 })();
 </script>
-</body>
+</b
+
+<!-- FINAL PATCH V45.1: mobile workspace full height + optional desktop mode -->
+<style id="airgap-mobile-workspace-fullheight-desktop-mode-css">
+@media (max-width: 900px), (pointer: coarse) and (max-width: 1100px) {
+  :root{
+    --airgap-mobile-top-real: var(--airgap-mobile-sidebar-top, 52px);
+  }
+  html, body{
+    min-height: 100dvh !important;
+  }
+  .app-wrapper{
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  .main-layout,
+  body.airgap-sidebar-collapsed .main-layout,
+  body.airgap-workspace-collapsed .main-layout{
+    height: calc(100dvh - var(--airgap-mobile-top-real, 52px)) !important;
+    min-height: calc(100dvh - var(--airgap-mobile-top-real, 52px)) !important;
+    max-height: calc(100dvh - var(--airgap-mobile-top-real, 52px)) !important;
+    overflow: hidden !important;
+  }
+  .workspace,
+  body.airgap-sidebar-collapsed .workspace,
+  body.airgap-workspace-collapsed .workspace{
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+  #docTabs{
+    flex: 0 0 auto !important;
+    margin-bottom: 6px !important;
+  }
+  #view-host{
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+  #main-editor,
+  #excel-view,
+  #xml-view,
+  #vba-view,
+  #vbs-view,
+  #html-view,
+  #zip-view,
+  #pdf-view,
+  #help-view{
+    min-height: 0 !important;
+    max-height: 100% !important;
+  }
+  #main-editor{
+    height: 100% !important;
+    flex: 1 1 auto !important;
+  }
+  #pdf-view iframe,
+  #pdf-view object,
+  #pdf-view embed{
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+
+  /* Chế độ desktop cưỡng bức trên mobile/tablet: dùng toàn bộ giao diện như máy tính, cho cuộn ngang nếu thiếu rộng. */
+  body.airgap-force-desktop-mobile{
+    overflow: auto !important;
+  }
+  body.airgap-force-desktop-mobile .app-wrapper{
+    width: max(100vw, 980px) !important;
+    min-width: 980px !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  body.airgap-force-desktop-mobile .main-layout,
+  body.airgap-force-desktop-mobile.airgap-sidebar-collapsed .main-layout,
+  body.airgap-force-desktop-mobile.airgap-workspace-collapsed .main-layout{
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) var(--airgap-resizer-width, 12px) minmax(260px, var(--airgap-sidebar-width, 360px)) !important;
+    height: calc(100dvh - var(--airgap-mobile-top-real, 52px)) !important;
+    min-height: calc(100dvh - var(--airgap-mobile-top-real, 52px)) !important;
+    max-height: calc(100dvh - var(--airgap-mobile-top-real, 52px)) !important;
+    overflow: hidden !important;
+  }
+  body.airgap-force-desktop-mobile.airgap-sidebar-collapsed .main-layout{
+    grid-template-columns: minmax(0, 1fr) 46px !important;
+  }
+  body.airgap-force-desktop-mobile.airgap-workspace-collapsed .main-layout{
+    grid-template-columns: 56px var(--airgap-resizer-width, 12px) minmax(260px, 1fr) !important;
+  }
+  body.airgap-force-desktop-mobile .layout-resizer{
+    display: block !important;
+  }
+  body.airgap-force-desktop-mobile .workspace,
+  body.airgap-force-desktop-mobile.airgap-sidebar-collapsed .workspace,
+  body.airgap-force-desktop-mobile.airgap-workspace-collapsed .workspace{
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    padding: 8px !important;
+  }
+  body.airgap-force-desktop-mobile .sidebar,
+  body.airgap-force-desktop-mobile.airgap-sidebar-collapsed .sidebar,
+  body.airgap-force-desktop-mobile.airgap-workspace-collapsed .sidebar{
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    box-shadow: none !important;
+    border-left: 0 !important;
+    z-index: auto !important;
+    display: block !important;
+  }
+  body.airgap-force-desktop-mobile.airgap-sidebar-collapsed .sidebar{
+    display: none !important;
+  }
+  body.airgap-force-desktop-mobile .airgap-mobile-sidebar-open::before,
+  body.airgap-force-desktop-mobile::before{
+    content: none !important;
+    display: none !important;
+  }
+  body.airgap-force-desktop-mobile .sidebar-edge-tools,
+  body.airgap-force-desktop-mobile .workspace-edge-tools{
+    display: none;
+  }
+  body.airgap-force-desktop-mobile.airgap-sidebar-collapsed .sidebar-edge-tools,
+  body.airgap-force-desktop-mobile.airgap-workspace-collapsed .workspace-edge-tools{
+    display: flex !important;
+  }
+}
+
+.airgap-desktop-mode-btn.active,
+.airgap-desktop-mode-btn.is-active{
+  background: #111827 !important;
+  color: #fff !important;
+  border-color: #111827 !important;
+}
+</style>
+<script id="airgap-mobile-workspace-fullheight-desktop-mode-js">
+(function(){
+  var KEY = 'airgap_force_desktop_mobile_v45_1';
+
+  function compact(){
+    try {
+      return window.matchMedia('(max-width: 900px)').matches ||
+             (window.matchMedia('(pointer: coarse)').matches && window.matchMedia('(max-width: 1100px)').matches);
+    } catch(e) { return window.innerWidth <= 900; }
+  }
+
+  function topbarHeight(){
+    var candidates = [
+      document.querySelector('.topbar'),
+      document.querySelector('.top-nav'),
+      document.querySelector('header'),
+      document.querySelector('.app-header'),
+      document.querySelector('.navbar')
+    ].filter(Boolean);
+    var topbar = candidates[0];
+    var h = topbar ? Math.round(topbar.getBoundingClientRect().height || 0) : 0;
+    if (!h) {
+      var wrapper = document.querySelector('.app-wrapper');
+      if (wrapper) {
+        var main = document.querySelector('.main-layout');
+        if (main) h = Math.max(48, Math.round(main.getBoundingClientRect().top - wrapper.getBoundingClientRect().top));
+      }
+    }
+    return Math.max(48, h || 52);
+  }
+
+  function syncSizing(){
+    var h = topbarHeight();
+    document.documentElement.style.setProperty('--airgap-mobile-sidebar-top', h + 'px');
+    document.documentElement.style.setProperty('--airgap-mobile-top-real', h + 'px');
+  }
+
+  function setDesktopMode(on){
+    document.body.classList.toggle('airgap-force-desktop-mobile', !!on);
+    if (on) document.body.classList.remove('airgap-mobile-sidebar-open');
+    try { localStorage.setItem(KEY, on ? '1' : '0'); } catch(e) {}
+    document.querySelectorAll('.airgap-desktop-mode-btn').forEach(function(btn){
+      btn.classList.toggle('active', !!on);
+      btn.classList.toggle('is-active', !!on);
+      btn.title = on ? 'Đang bật chế độ desktop trên mobile/tablet' : 'Bật chế độ desktop trên mobile/tablet';
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    syncSizing();
+  }
+
+  window.toggleAirGapDesktopMobileMode = function(){
+    setDesktopMode(!document.body.classList.contains('airgap-force-desktop-mobile'));
+  };
+
+  function addButton(container, small){
+    if (!container || container.querySelector('.airgap-desktop-mode-btn')) return;
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = (small ? 'btn btn-outline-dark btn-sm airgap-desktop-mode-btn' : 'btn btn-dark btn-sm airgap-desktop-mode-btn');
+    b.textContent = '🖥';
+    b.title = 'Bật chế độ desktop trên mobile/tablet';
+    b.onclick = function(ev){ ev.preventDefault(); ev.stopPropagation(); window.toggleAirGapDesktopMobileMode(); };
+    container.appendChild(b);
+  }
+
+  function init(){
+    syncSizing();
+    addButton(document.querySelector('.airgap-floating-layout-tools'), true);
+    addButton(document.querySelector('.airgap-layout-buttons'), true);
+    var saved = false;
+    try { saved = localStorage.getItem(KEY) === '1'; } catch(e) {}
+    setDesktopMode(saved);
+  }
+
+  window.addEventListener('resize', function(){
+    syncSizing();
+    if (!compact()) document.body.classList.remove('airgap-mobile-sidebar-open');
+  });
+  window.addEventListener('orientationchange', function(){ setTimeout(syncSizing, 300); });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+ody>
 </html>
