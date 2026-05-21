@@ -1689,8 +1689,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
             updateOfflineCameraActualInfo(stream, video);
             setOfflineImageStatus((offlineImageState.mode==="qr"?"Đang chụp mã QR offline":"Đang chụp ảnh offline")+" bằng "+getOfflineFacingText()+".");
         }catch(err){
-            alert("Không mở được camera. Hãy kiểm tra quyền camera hoặc dùng HTTPS/PWA.
-"+(err&&err.message?err.message:err));
+            alert("Không mở được camera. Hãy kiểm tra quyền camera hoặc dùng HTTPS/PWA.\n"+(err&&err.message?err.message:err));
             setOfflineImageStatus("Camera chưa sẵn sàng.");
         }
     }
