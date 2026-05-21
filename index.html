@@ -437,6 +437,24 @@ if (!reg) {
             }
         }
 
+
+        /* === AIRGAP FIX: chế độ chỉ Sidebar vẫn phải tách riêng Tạo mã QR / Quét Đa Nhiệm === */
+        body.airgap-workspace-collapsed .sidebar #side-gen,
+        body.airgap-workspace-collapsed .sidebar #side-scan{
+            display: none !important;
+        }
+        body.airgap-workspace-collapsed .sidebar #side-gen.is-active,
+        body.airgap-workspace-collapsed .sidebar #side-scan.is-active{
+            display: block !important;
+        }
+        body.airgap-workspace-collapsed .sidebar #qr-side-tabs{
+            display: flex !important;
+            width: 100% !important;
+            max-width: var(--airgap-sidebar-control-max) !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+
         .qr-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; background: white; border-radius: 8px; }
         .qr-render-box canvas, .qr-render-box img { width: 150px !important; height: 150px !important; margin: 0 auto; }
         
