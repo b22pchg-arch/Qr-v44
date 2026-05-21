@@ -5044,11 +5044,11 @@ async function assembleAndDownloadFile(fileName) {
         <div class="offline-image-group__title">1. Xem ảnh offline</div>
         <input accept="image/*,.svg,.bmp,.webp,.gif,.png,.jpg,.jpeg" hidden id="offline-image-file-input" multiple onchange="openOfflineImagesFromInput(this)" type="file">
         <div class="offline-image-btn-row three mb-2">
-          <button class="btn btn-info btn-sm" onclick="document.getElementById('offline-image-file-input').click()" type="button">📁 CHỌN</button>
+          <button class="btn btn-info btn-sm" onclick="document.getElementById('offline-image-file-input').click()" type="button">📁 CHỌN ẢNH</button>
           <button class="btn btn-outline-primary btn-sm" onclick="showPrevOfflineImage()" type="button">◀ TRƯỚC</button>
           <button class="btn btn-outline-primary btn-sm" onclick="showNextOfflineImage()" type="button">SAU ▶</button>
         </div>
-        <button class="btn btn-outline-warning btn-sm w-100 fw-bold" onclick="toggleOfflineImageFit()" type="button">↔ VỪA KHUNG/GỐC</button>
+        <button class="btn btn-outline-warning btn-sm w-100 fw-bold" onclick="toggleOfflineImageFit()" type="button">↔ VỪA KHUNG / GỐC</button>
         <div class="small text-info mt-2" id="offline-image-counter">Chưa chọn ảnh.</div>
       </div>
       <div class="offline-image-group">
@@ -5121,74 +5121,219 @@ document.addEventListener('keydown',function(ev){if(ev.key==='Escape'){const m=m
 window.addEventListener('beforeunload',function(){stopCamera();revokeUrls();state.shots.forEach(s=>{try{URL.revokeObjectURL(s.url)}catch(e){}})})
 })();
 </script>
-<script id="airgap-mobile-sidebar-safe-toggle-js">
-(function(){
-  const oldSidebar = window.toggleAirGapSidebar;
-  const oldWorkspace = window.toggleAirGapWorkspace;
-  function isMobile(){ return window.matchMedia && window.matchMedia('(max-width: 600px)').matches; }
-  window.toggleAirGapSidebar = function(){
-    if(isMobile()){
-      document.body.classList.remove('airgap-sidebar-collapsed','airgap-workspace-collapsed');
-      document.body.classList.toggle('airgap-mobile-sidebar-open');
-      return;
-    }
-    if(typeof oldSidebar === 'function') return oldSidebar.apply(this, arguments);
-  };
-  window.toggleAirGapWorkspace = function(){
-    if(isMobile()){
-      document.body.classList.remove('airgap-sidebar-collapsed','airgap-workspace-collapsed');
-      document.body.classList.toggle('airgap-mobile-sidebar-open');
-      return;
-    }
-    if(typeof oldWorkspace === 'function') return oldWorkspace.apply(this, arguments);
-  };
-  document.addEventListener('click', function(ev){
-    if(!isMobile() || !document.body.classList.contains('airgap-mobile-sidebar-open')) return;
-    const sidebar=document.querySelector('.sidebar');
-    const btn=ev.target.closest('.airgap-layout-buttons,.airgap-floating-layout-tools');
-    if(sidebar && !sidebar.contains(ev.target) && !btn) document.body.classList.remove('airgap-mobile-sidebar-open');
-  }, true);
-  window.addEventListener('resize', function(){ if(!isMobile()) document.body.classList.remove('airgap-mobile-sidebar-open'); });
-})();
-</script>
-<script id="airgap-mobile-sidebar-final-fix-js">
-(function(){
-  function isMobileLayout(){
-    return window.matchMedia && window.matchMedia('(max-width: 600px)').matches;
+
+<!-- FINAL CLEAN PATCH V45: mobile sidebar controls + offline image button wrapping -->
+<style id="airgap-mobile-sidebar-clean-final-css">
+/* Trên mobile/tablet, sidebar là ngăn nổi cố định. Không tham gia layout nên không đẩy workspace xuống dưới. */
+@media (max-width: 900px), (pointer: coarse) and (max-width: 1100px) {
+  html, body {
+    overflow-x: hidden !important;
   }
-  function openMobileSidebar(open){
-    document.body.classList.remove('airgap-sidebar-collapsed','airgap-workspace-collapsed');
-    document.body.classList.toggle('airgap-mobile-sidebar-open', !!open);
+
+  .main-layout,
+  body.airgap-sidebar-collapsed .main-layout,
+  body.airgap-workspace-collapsed .main-layout {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
-  const desktopSidebar = window.toggleAirGapSidebar;
-  const desktopWorkspace = window.toggleAirGapWorkspace;
+
+  .workspace,
+  body.airgap-sidebar-collapsed .workspace,
+  body.airgap-workspace-collapsed .workspace {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+    padding: 8px !important;
+    border-right: 0 !important;
+  }
+
+  .workspace > * {
+    max-width: 100% !important;
+  }
+
+  .layout-resizer,
+  .sidebar-edge-tools,
+  .workspace-edge-tools,
+  .airgap-layout-buttons {
+    display: none !important;
+  }
+
+  .sidebar,
+  body.airgap-sidebar-collapsed .sidebar,
+  body.airgap-workspace-collapsed .sidebar {
+    position: fixed !important;
+    top: var(--airgap-mobile-sidebar-top, 52px) !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: auto !important;
+    width: min(92vw, 420px) !important;
+    max-width: 92vw !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: calc(100dvh - var(--airgap-mobile-sidebar-top, 52px)) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    transform: translateX(108%) !important;
+    transition: transform .22s ease !important;
+    z-index: 2147482500 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: none !important;
+    box-shadow: -10px 0 28px rgba(15,23,42,.32) !important;
+    border-left: 2px solid #0d6efd !important;
+    background: #f8f9fa !important;
+    padding: 10px !important;
+  }
+
+  body.airgap-mobile-sidebar-open .sidebar {
+    transform: translateX(0) !important;
+    pointer-events: auto !important;
+  }
+
+  body.airgap-mobile-sidebar-open::before {
+    content: "";
+    position: fixed;
+    inset: var(--airgap-mobile-sidebar-top, 52px) 0 0 0;
+    background: rgba(15,23,42,.22);
+    z-index: 2147482400;
+  }
+
+  .airgap-floating-layout-tools {
+    display: inline-flex !important;
+    position: fixed !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    z-index: 2147482600 !important;
+    background: rgba(255,255,255,.96) !important;
+    border: 1px solid rgba(13,110,253,.35) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 22px rgba(15,23,42,.18) !important;
+    padding: 3px !important;
+    gap: 3px !important;
+  }
+
+  /* Nút đầu tiên trên mobile là đóng/ẩn sidebar, không mở sidebar nữa. */
+  .airgap-floating-layout-tools button:first-child {
+    opacity: .72;
+  }
+}
+
+/* Ảnh Offline: chữ trong nút tự xuống dòng, không vượt khỏi khung. */
+#offline-image-modal .btn,
+#offline-image-modal button,
+#offline-image-modal label.btn {
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+  min-height: 34px !important;
+  padding-left: .45rem !important;
+  padding-right: .45rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+#offline-image-modal .offline-image-btn-row,
+#offline-image-modal .offline-image-btn-row.three {
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)) !important;
+  gap: 6px !important;
+}
+@media (max-width: 420px) {
+  #offline-image-modal .offline-image-btn-row,
+  #offline-image-modal .offline-image-btn-row.three {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+</style>
+<script id="airgap-mobile-sidebar-clean-final-js">
+(function(){
+  function isCompactLayout(){
+    try {
+      return window.matchMedia('(max-width: 900px)').matches ||
+             (window.matchMedia('(pointer: coarse)').matches && window.matchMedia('(max-width: 1100px)').matches);
+    } catch(e) {
+      return window.innerWidth <= 900;
+    }
+  }
+
+  function setTopOffset(){
+    var topNav = document.querySelector('.top-nav, header.top-nav, header, .app-topbar, .navbar');
+    var h = topNav ? Math.max(48, Math.round(topNav.getBoundingClientRect().height || 52)) : 52;
+    document.documentElement.style.setProperty('--airgap-mobile-sidebar-top', h + 'px');
+  }
+
+  function closeMobileSidebar(){
+    setTopOffset();
+    document.body.classList.remove('airgap-sidebar-collapsed', 'airgap-workspace-collapsed');
+    document.body.classList.remove('airgap-mobile-sidebar-open');
+  }
+
+  function openMobileSidebar(){
+    setTopOffset();
+    document.body.classList.remove('airgap-sidebar-collapsed', 'airgap-workspace-collapsed');
+    document.body.classList.add('airgap-mobile-sidebar-open');
+  }
+
+  var desktopSidebar = window.toggleAirGapSidebar;
+  var desktopWorkspace = window.toggleAirGapWorkspace;
+  var desktopReset = window.resetAirGapLayout;
+
   window.toggleAirGapSidebar = function(forceExpanded){
-    if(isMobileLayout()){
-      if(forceExpanded === false){ openMobileSidebar(false); return; }
-      openMobileSidebar(!document.body.classList.contains('airgap-mobile-sidebar-open'));
-      return;
+    if (isCompactLayout()) {
+      // Trên mobile/tablet: nút đầu tiên chỉ đóng/ẩn sidebar.
+      closeMobileSidebar();
+      return false;
     }
-    if(typeof desktopSidebar === 'function') return desktopSidebar.apply(this, arguments);
+    if (typeof desktopSidebar === 'function') return desktopSidebar.apply(this, arguments);
   };
+
   window.toggleAirGapWorkspace = function(forceExpanded){
-    if(isMobileLayout()){
-      if(forceExpanded === false){ openMobileSidebar(false); return; }
-      openMobileSidebar(!document.body.classList.contains('airgap-mobile-sidebar-open'));
-      return;
+    if (isCompactLayout()) {
+      // Trên mobile/tablet: nút thứ hai là nút mở sidebar dạng ngăn nổi.
+      if (document.body.classList.contains('airgap-mobile-sidebar-open')) closeMobileSidebar();
+      else openMobileSidebar();
+      return false;
     }
-    if(typeof desktopWorkspace === 'function') return desktopWorkspace.apply(this, arguments);
+    if (typeof desktopWorkspace === 'function') return desktopWorkspace.apply(this, arguments);
   };
-  document.addEventListener('click', function(ev){
-    if(!isMobileLayout() || !document.body.classList.contains('airgap-mobile-sidebar-open')) return;
-    const sidebar = document.querySelector('.sidebar');
-    const btn = ev.target.closest('.airgap-layout-buttons,.airgap-floating-layout-tools');
-    if(sidebar && !sidebar.contains(ev.target) && !btn){
-      openMobileSidebar(false);
+
+  window.resetAirGapLayout = function(){
+    if (isCompactLayout()) {
+      closeMobileSidebar();
+      return false;
     }
+    if (typeof desktopReset === 'function') return desktopReset.apply(this, arguments);
+  };
+
+  document.addEventListener('click', function(ev){
+    if (!isCompactLayout() || !document.body.classList.contains('airgap-mobile-sidebar-open')) return;
+    var sidebar = document.querySelector('.sidebar');
+    var layoutBtn = ev.target.closest('.airgap-layout-buttons, .airgap-floating-layout-tools');
+    if (layoutBtn) return;
+    if (sidebar && !sidebar.contains(ev.target)) closeMobileSidebar();
   }, true);
+
   window.addEventListener('resize', function(){
-    if(!isMobileLayout()) document.body.classList.remove('airgap-mobile-sidebar-open');
+    setTopOffset();
+    if (!isCompactLayout()) document.body.classList.remove('airgap-mobile-sidebar-open');
+    else document.body.classList.remove('airgap-sidebar-collapsed', 'airgap-workspace-collapsed');
   });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function(){ setTopOffset(); if(isCompactLayout()) closeMobileSidebar(); });
+  } else {
+    setTopOffset();
+    if(isCompactLayout()) closeMobileSidebar();
+  }
 })();
 </script>
 </body>
