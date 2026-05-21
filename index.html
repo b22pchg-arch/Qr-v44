@@ -514,6 +514,7 @@ t.opts["CalcIter"]=q;break;case 13:t.opts["CalcMode"]=q;break;case 14:t.opts["Ca
     /* === AIRGAP: xem ảnh/chụp ảnh offline === */
     #image-view{display:none;height:100%;min-height:0;width:100%;overflow:hidden;flex-direction:column;background:#0f172a;border:1px solid rgba(148,163,184,.35);border-radius:10px;}
     .airgap-image-toolbar{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;padding:.45rem;background:#111827;border-bottom:1px solid rgba(148,163,184,.28);}
+    .airgap-image-select{width:auto;min-width:120px;max-width:170px;background:#0f172a;color:#e0f2fe;border-color:#38bdf8;font-weight:700;}
     .airgap-image-stage{position:relative;flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto;padding:.5rem;background:radial-gradient(circle at 20% 0%, rgba(6,182,212,.16), transparent 35%),radial-gradient(circle at 80% 0%, rgba(37,99,235,.12), transparent 35%),#020617;}
     .airgap-image-stage img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:8px;box-shadow:0 12px 34px rgba(0,0,0,.45);background:#fff;}
     .airgap-image-stage img.airgap-image-original{max-width:none;max-height:none;}
@@ -660,7 +661,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
   <path d="M3 1h7l3 3v11H3V1zm6 1v3h3L9 2z"/>
   <path d="M4.5 7h1.2c.8 0 1.3.45 1.3 1.15S6.5 9.3 5.7 9.3h-.4V11h-.8V7zm.8.7v.9h.35c.35 0 .55-.17.55-.45s-.2-.45-.55-.45H5.3zM7.5 7h1.1c1.2 0 1.9.75 1.9 2s-.7 2-1.9 2H7.5V7zm.8.7v2.6h.3c.7 0 1.1-.45 1.1-1.3s-.4-1.3-1.1-1.3h-.3zM11 7h2.1v.7h-1.3v.9H13v.7h-1.2V11H11V7z" fill="#fff"/>
 </svg>Trình đọc PDF</button></li>
-                <li class="nav-item"><button class="nav-link" id="tab-image" style="display:none;" onclick="showView('image')">🖼 Ảnh Offline</button></li>
+                <li class="nav-item"><button class="nav-link" id="tab-image" onclick="showView('image')">🖼 Ảnh Offline</button></li>
 				<li class="nav-item"><button class="nav-link" id="tab-help" onclick="showView('help')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align:middle;margin-right:6px;"><path d="M1 2.828c.885-.37 2.154-.769 3.5-.828 1.46-.064 2.725.348 3.5 1.15.775-.802 2.04-1.214 3.5-1.15 1.346.059 2.615.458 3.5.828v10.322c-.885-.37-2.154-.769-3.5-.828-1.46-.064-2.725.348-3.5 1.15-.775-.802-2.04-1.214-3.5-1.15-1.346.059-2.615.458-3.5.828V2.828z"/></svg>Hướng dẫn</button></li>
             </ul>
 
@@ -702,8 +703,16 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
                         <button type="button" class="btn btn-outline-light btn-sm fw-bold" onclick="showPrevOfflineImage()">◀ ẢNH TRƯỚC</button>
                         <button type="button" class="btn btn-outline-light btn-sm fw-bold" onclick="showNextOfflineImage()">ẢNH SAU ▶</button>
                         <button type="button" class="btn btn-outline-warning btn-sm fw-bold" onclick="toggleOfflineImageFit()">↔ VỪA KHUNG/GỐC</button>
+                        <select id="offline-camera-quality" class="form-select form-select-sm airgap-image-select" title="Định dạng và chất lượng ảnh chụp">
+                            <option value="image/png|1|png" selected>PNG rõ nét</option>
+                            <option value="image/jpeg|0.95|jpg">JPG 95%</option>
+                            <option value="image/jpeg|0.85|jpg">JPG 85%</option>
+                            <option value="image/jpeg|0.70|jpg">JPG 70%</option>
+                            <option value="image/webp|0.90|webp">WEBP 90%</option>
+                        </select>
                         <button type="button" class="btn btn-success btn-sm fw-bold" onclick="startOfflineCameraCapture('photo')">📸 CHỤP ẢNH</button>
                         <button type="button" class="btn btn-warning btn-sm fw-bold" onclick="startOfflineCameraCapture('qr')">▣ CHỤP MÃ QR</button>
+                        <button type="button" class="btn btn-outline-info btn-sm fw-bold" onclick="switchOfflineCameraFacing()">🔄 ĐẢO CAM</button>
                         <button type="button" class="btn btn-danger btn-sm fw-bold" onclick="stopOfflineCameraCapture()">⏹ DỪNG CAM</button>
                         <button type="button" class="btn btn-primary btn-sm fw-bold" onclick="captureOfflineCameraFrame()">💾 CHỤP & LƯU</button>
                         <button type="button" class="btn btn-outline-danger btn-sm fw-bold" onclick="clearOfflineImages()">XÓA DANH SÁCH</button>
@@ -747,7 +756,9 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
                     <ul class="text-secondary mb-3">
                         <li>Bấm tab hoặc nút <b>🖼 XEM ẢNH OFFLINE</b> để chọn các file ảnh như <code>.jpg</code>, <code>.png</code>, <code>.webp</code>, <code>.gif</code>, <code>.bmp</code>, <code>.svg</code>. Ảnh được xem ngay trong trình duyệt, không cần mạng.</li>
                         <li>Dùng <b>ẢNH TRƯỚC / ẢNH SAU</b> để chuyển ảnh; dùng <b>VỪA KHUNG/GỐC</b> để đổi giữa chế độ fit màn hình và kích thước gốc.</li>
-                        <li>Trong <b>Quét Đa Nhiệm</b>, bấm <b>📸 CHỤP ẢNH OFFLINE</b> để mở camera và chụp ảnh thường. Ảnh được lưu xuống máy ở định dạng <code>.png</code>.</li>
+                        <li>Tab <b>Ảnh Offline</b> được đặt cố định cạnh tab <b>Hướng dẫn</b>, nên có thể mở độc lập mà không bị đè bởi các vùng xem PDF, Excel, HTML hoặc ZIP.</li>
+                        <li>Trước khi chụp có thể chọn <b>chất lượng/định dạng ảnh</b>: PNG rõ nét, JPG 95/85/70% hoặc WEBP 90% nếu trình duyệt hỗ trợ.</li>
+                        <li>Trong <b>Quét Đa Nhiệm</b>, bấm <b>📸 CHỤP ẢNH OFFLINE</b> để mở camera và chụp ảnh thường. Dùng nút <b>ĐẢO CAM</b> để chuyển giữa camera sau và camera trước.</li>
                         <li>Bấm <b>▣ CHỤP RIÊNG MÃ QR</b> để mở chế độ đặc biệt có khung xanh ở giữa màn hình. Đưa QR vào giữa khung rồi bấm <b>CHỤP & LƯU</b>; hệ thống sẽ cắt vùng trung tâm để tạo ảnh QR rõ gọn hơn.</li>
                         <li>Toàn bộ ảnh chụp và ảnh chọn từ máy chỉ xử lý nội bộ trong trình duyệt; không upload lên máy chủ.</li>
                     </ul>
@@ -1484,7 +1495,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
     // ==========================================
     // AIRGAP: XEM ẢNH OFFLINE & CHỤP ẢNH / CHỤP MÃ QR
     // ==========================================
-    const offlineImageState = { items: [], index: 0, fit: true, stream: null, mode: "photo" };
+    const offlineImageState = { items: [], index: 0, fit: true, stream: null, mode: "photo", facingMode: "environment" };
     function isOfflineImageFile(file){ const name=(file&&file.name||"").toLowerCase(); const type=(file&&file.type||"").toLowerCase(); return type.startsWith("image/") || /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name); }
     function setOfflineImageStatus(text){ const el=document.getElementById("offline-image-status"); if(el) el.textContent=text||""; }
     async function openOfflineImagesFromInput(input){ try{ if(!input||!input.files||!input.files.length) return; await openOfflineImagesFromFiles(input.files); input.value=""; }catch(err){ alert("Lỗi mở ảnh offline: "+(err&&err.message?err.message:err)); } }
@@ -1496,10 +1507,68 @@ Tên file cần có: BaoCao_202605201030.html</pre>
     function showNextOfflineImage(){ if(!offlineImageState.items.length) return; offlineImageState.index=(offlineImageState.index+1)%offlineImageState.items.length; renderOfflineImage(); }
     function toggleOfflineImageFit(){ offlineImageState.fit=!offlineImageState.fit; renderOfflineImage(); }
     function clearOfflineImages(ask=true){ if(ask&&offlineImageState.items.length&&!confirm("Xóa danh sách ảnh đang xem?")) return; offlineImageState.items.forEach(item=>{try{URL.revokeObjectURL(item.url);}catch(e){}}); offlineImageState.items=[]; offlineImageState.index=0; renderOfflineImageThumbs(); renderOfflineImage(); }
-    async function startOfflineCameraCapture(mode="photo"){ try{ const tab=document.getElementById("tab-image"); if(tab) tab.style.display="block"; showView("image"); stopOfflineCameraCapture(false); offlineImageState.mode=mode==="qr"?"qr":"photo"; const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}}}); offlineImageState.stream=stream; const stage=document.getElementById("offline-image-stage"); stage.innerHTML=`<div class="airgap-camera-wrap"><video id="offline-camera-video" autoplay playsinline muted></video><div id="offline-camera-overlay" class="airgap-camera-overlay ${offlineImageState.mode==='qr'?'is-qr':''}"><div class="airgap-qr-crop-box"></div></div><div class="airgap-camera-hint">${offlineImageState.mode==='qr'?'Đưa mã QR vào giữa khung xanh rồi bấm CHỤP & LƯU':'Bấm CHỤP & LƯU để lưu ảnh PNG offline'}</div></div>`; const video=document.getElementById("offline-camera-video"); video.srcObject=stream; await video.play(); setOfflineImageStatus(offlineImageState.mode==="qr"?"Đang chụp mã QR offline.":"Đang chụp ảnh offline."); }catch(err){ alert("Không mở được camera. Hãy kiểm tra quyền camera hoặc dùng HTTPS/PWA.\n"+(err&&err.message?err.message:err)); setOfflineImageStatus("Camera chưa sẵn sàng."); } }
+    function getOfflineCameraQuality(){
+        const raw=(document.getElementById("offline-camera-quality")?.value||"image/png|1|png").split("|");
+        const mime=raw[0]||"image/png";
+        const quality=Math.max(0.1, Math.min(1, parseFloat(raw[1]||"1")||1));
+        const ext=(raw[2]||"png").replace(/[^a-z0-9]/gi,"").toLowerCase()||"png";
+        return {mime, quality, ext};
+    }
+    function getOfflineFacingText(){ return offlineImageState.facingMode==="user" ? "cam trước" : "cam sau"; }
+    async function startOfflineCameraCapture(mode="photo"){
+        try{
+            const tab=document.getElementById("tab-image"); if(tab) tab.style.display="block";
+            showView("image");
+            stopOfflineCameraCapture(false);
+            offlineImageState.mode=mode==="qr"?"qr":"photo";
+            const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:offlineImageState.facingMode},width:{ideal:1920},height:{ideal:1080}}});
+            offlineImageState.stream=stream;
+            const stage=document.getElementById("offline-image-stage");
+            stage.innerHTML=`<div class="airgap-camera-wrap"><video id="offline-camera-video" autoplay playsinline muted></video><div id="offline-camera-overlay" class="airgap-camera-overlay ${offlineImageState.mode==='qr'?'is-qr':''}"><div class="airgap-qr-crop-box"></div></div><div class="airgap-camera-hint">${offlineImageState.mode==='qr'?'Đưa mã QR vào giữa khung xanh rồi bấm CHỤP & LƯU':'Bấm CHỤP & LƯU để lưu ảnh offline'} - ${getOfflineFacingText()}</div></div>`;
+            const video=document.getElementById("offline-camera-video");
+            video.srcObject=stream;
+            await video.play();
+            setOfflineImageStatus((offlineImageState.mode==="qr"?"Đang chụp mã QR offline":"Đang chụp ảnh offline")+" bằng "+getOfflineFacingText()+".");
+        }catch(err){
+            alert("Không mở được camera. Hãy kiểm tra quyền camera hoặc dùng HTTPS/PWA.
+"+(err&&err.message?err.message:err));
+            setOfflineImageStatus("Camera chưa sẵn sàng.");
+        }
+    }
+    async function switchOfflineCameraFacing(){
+        offlineImageState.facingMode = offlineImageState.facingMode === "environment" ? "user" : "environment";
+        if(offlineImageState.stream){
+            await startOfflineCameraCapture(offlineImageState.mode||"photo");
+        }else{
+            setOfflineImageStatus("Đã chọn "+getOfflineFacingText()+". Bấm CHỤP ẢNH hoặc CHỤP MÃ QR để mở camera.");
+        }
+    }
     function stopOfflineCameraCapture(showMsg=true){ if(offlineImageState.stream){ offlineImageState.stream.getTracks().forEach(t=>t.stop()); offlineImageState.stream=null; const video=document.getElementById("offline-camera-video"); if(video) video.srcObject=null; if(showMsg) setOfflineImageStatus("Đã dừng camera."); } }
-    function captureOfflineCameraFrame(){ const video=document.getElementById("offline-camera-video"); if(!video||!video.videoWidth||!video.videoHeight) return alert("Camera chưa có hình để chụp."); const canvas=document.createElement("canvas"); const ctx=canvas.getContext("2d"); let sx=0,sy=0,sw=video.videoWidth,sh=video.videoHeight; if(offlineImageState.mode==="qr"){ const side=Math.floor(Math.min(video.videoWidth,video.videoHeight)*0.72); sx=Math.floor((video.videoWidth-side)/2); sy=Math.floor((video.videoHeight-side)/2); sw=side; sh=side; } canvas.width=sw; canvas.height=sh; ctx.drawImage(video,sx,sy,sw,sh,0,0,sw,sh); canvas.toBlob(blob=>{ if(!blob) return alert("Không tạo được ảnh chụp."); const stamp=new Date().toISOString().replace(/[-:T.Z]/g,"").slice(0,14); const name=(offlineImageState.mode==="qr"?"QR_Capture_":"Photo_Capture_")+stamp+".png"; const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); offlineImageState.items.push({file:null,name,url,captured:true}); offlineImageState.index=offlineImageState.items.length-1; renderOfflineImageThumbs(); setOfflineImageStatus("Đã chụp và lưu: "+name); },"image/png",0.96); }
-    window.openOfflineImagesFromInput=openOfflineImagesFromInput; window.openOfflineImagesFromFiles=openOfflineImagesFromFiles; window.showPrevOfflineImage=showPrevOfflineImage; window.showNextOfflineImage=showNextOfflineImage; window.toggleOfflineImageFit=toggleOfflineImageFit; window.clearOfflineImages=clearOfflineImages; window.startOfflineCameraCapture=startOfflineCameraCapture; window.stopOfflineCameraCapture=stopOfflineCameraCapture; window.captureOfflineCameraFrame=captureOfflineCameraFrame;
+    function captureOfflineCameraFrame(){
+        const video=document.getElementById("offline-camera-video");
+        if(!video||!video.videoWidth||!video.videoHeight) return alert("Camera chưa có hình để chụp.");
+        const canvas=document.createElement("canvas");
+        const ctx=canvas.getContext("2d");
+        let sx=0,sy=0,sw=video.videoWidth,sh=video.videoHeight;
+        if(offlineImageState.mode==="qr"){
+            const side=Math.floor(Math.min(video.videoWidth,video.videoHeight)*0.72);
+            sx=Math.floor((video.videoWidth-side)/2); sy=Math.floor((video.videoHeight-side)/2); sw=side; sh=side;
+        }
+        canvas.width=sw; canvas.height=sh;
+        ctx.drawImage(video,sx,sy,sw,sh,0,0,sw,sh);
+        const q=getOfflineCameraQuality();
+        const saveBlob=(blob,mime,ext)=>{
+            if(!blob) return alert("Không tạo được ảnh chụp.");
+            const stamp=new Date().toISOString().replace(/[-:T.Z]/g,"").slice(0,14);
+            const name=(offlineImageState.mode==="qr"?"QR_Capture_":"Photo_Capture_")+stamp+"."+ext;
+            const url=URL.createObjectURL(blob);
+            const a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+            offlineImageState.items.push({file:null,name,url,captured:true}); offlineImageState.index=offlineImageState.items.length-1;
+            renderOfflineImageThumbs(); setOfflineImageStatus("Đã chụp và lưu: "+name);
+        };
+        canvas.toBlob(blob=>{ if(blob) return saveBlob(blob,q.mime,q.ext); canvas.toBlob(fallback=>saveBlob(fallback,"image/png","png"),"image/png",1); },q.mime,q.quality);
+    }
+    window.openOfflineImagesFromInput=openOfflineImagesFromInput; window.openOfflineImagesFromFiles=openOfflineImagesFromFiles; window.showPrevOfflineImage=showPrevOfflineImage; window.showNextOfflineImage=showNextOfflineImage; window.toggleOfflineImageFit=toggleOfflineImageFit; window.clearOfflineImages=clearOfflineImages; window.startOfflineCameraCapture=startOfflineCameraCapture; window.switchOfflineCameraFacing=switchOfflineCameraFacing; window.stopOfflineCameraCapture=stopOfflineCameraCapture; window.captureOfflineCameraFrame=captureOfflineCameraFrame;
 
     // ==========================================
     // KHỐI 2: ĐỊNH TUYẾN FILE & CHỌN Ô TUẦN TỰ
@@ -1509,7 +1578,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
             const files = e.target.files; if(!files.length) return;
             showLoading(true, "ĐANG ĐỌC TỆP..."); 
             fNameCur = files[0].name; fExtCur = fNameCur.split('.').pop().toLowerCase();
-            ['tab-excel','tab-xml','tab-vba','tab-zip','tab-pdf','tab-image','tab-html', 'tab-vbs'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
+            ['tab-excel','tab-xml','tab-vba','tab-zip','tab-pdf','tab-html', 'tab-vbs'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
             stopCam(); selectedCellCoords = []; document.getElementById('qr-input').value = "";
 
             const reader = new FileReader();
