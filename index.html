@@ -437,7 +437,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
                 </div>
                 
                 <div id="zip-view" style="display:none;" class="p-3 border rounded overflow-auto bg-white"></div>
-                <div id="pdf-view" style="display:none; height: 100%;"></div>
+                <div id="pdf-view" style="display:none; height:100%; min-height:0; width:100%; overflow:hidden; flex-direction:column; background:#111;"></div>
 				<!-- HƯỚNG DẪN SỬ DỤNG -->
         <div id="help-view" class="view-section" style="display:none; max-width: 920px; margin: 0 auto; padding-top: 10px; padding-bottom: 60px; overflow-y: auto; height: 100%;">
             <div class="card bg-dark border-secondary shadow-sm mb-4">
@@ -661,7 +661,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 
                     <h6 class="text-warning fw-bold mt-4">14. LƯU Ý TRÌNH ĐỌC PDF TRÊN MOBILE</h6>
                     <ul class="text-secondary mb-3">
-                        <li>Ứng dụng giữ cơ chế mở PDF cũ bằng <code>iframe</code> từ <code>blob URL</code>, vì cơ chế này đã chạy tốt trên nhiều máy mobile trước đây.</li>
+                        <li>Ứng dụng giữ cơ chế mở PDF cũ bằng <code>iframe</code> từ <code>blob URL</code>, vì cơ chế này đã chạy tốt trên nhiều máy mobile trước đây. Khung PDF được đặt dạng co giãn toàn màn hình còn lại, tự mở rộng theo chiều cao màn hình trên điện thoại.</li>
                         <li>Nếu một số trình duyệt mobile chỉ hiện dãy ký tự/ID thay vì trang PDF, đó là trình duyệt không render PDF nội tuyến tại thời điểm đó. Hãy bấm <b>MỞ NGOÀI</b> để chuyển PDF sang trình xem của hệ điều hành.</li>
                         <li>Nút <b>TẢI PDF</b> chỉ tạo bản tải xuống cục bộ từ file đã chọn, không gửi file ra Internet.</li>
                         <li>Khi dùng PWA/offline, nên mở bằng Chrome/Edge/Safari chính thức thay vì WebView trong Zalo/Facebook để trình đọc PDF hoạt động ổn định hơn.</li>
@@ -1131,7 +1131,8 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 
     function showView(v) { 
         ['main-editor','excel-view','xml-view','vba-view','html-view','zip-view','pdf-view', 'vbs-view', 'help-view'].forEach(id => { let el = document.getElementById(id); if(el) el.style.display='none'; }); 
-        document.getElementById(v==='edit'?'main-editor':v+'-view').style.display = (v==='excel')?'flex':'block'; 
+        const viewEl = document.getElementById(v==='edit'?'main-editor':v+'-view');
+        if (viewEl) viewEl.style.display = (v==='excel' || v==='pdf') ? 'flex' : 'block'; 
         document.querySelectorAll('#docTabs .nav-link').forEach(l => l.classList.remove('active')); 
         document.getElementById(v==='edit'?'tab-btn-edit':'tab-'+v).classList.add('active'); 
     }
@@ -2532,19 +2533,21 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         // Giữ nguyên cơ chế cũ đã từng chạy tốt trên mobile: iframe trực tiếp từ blob URL.
         // Chỉ bổ sung thanh nút dự phòng, không thay thế luồng xem PDF chính.
         pdfView.innerHTML = `
-            <div class="bg-dark border border-info rounded p-2 mb-2" style="position:sticky;top:0;z-index:20;">
+            <div class="bg-dark border border-info rounded p-2" style="flex:0 0 auto; position:sticky; top:0; z-index:20;">
                 <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                    <div class="small text-info fw-bold">📄 ${currentPdfFileName}</div>
+                    <div class="small text-info fw-bold text-truncate" style="max-width:60vw;">📄 ${currentPdfFileName}</div>
                     <div class="d-flex flex-wrap gap-2">
                         <button type="button" class="btn btn-sm btn-info fw-bold text-dark" onclick="openCurrentPdfExternal()">MỞ NGOÀI</button>
                         <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" onclick="downloadCurrentPdf()">TẢI PDF</button>
                     </div>
                 </div>
-                <div class="small text-secondary mt-1">
+                <div class="small text-secondary mt-1 d-none d-md-block">
                     Nếu mobile chỉ hiện dãy ký tự/blob ID, hãy bấm <b>MỞ NGOÀI</b>. Trình duyệt hỗ trợ PDF nội tuyến vẫn xem trực tiếp như phiên bản cũ.
                 </div>
             </div>
-            <iframe src="${currentPdfBlobUrl}" width="100%" height="calc(100% - 74px)" style="border:none; min-height:70vh;"></iframe>`;
+            <div style="flex:1 1 auto; min-height:0; width:100%; overflow:hidden;">
+                <iframe src="${currentPdfBlobUrl}" width="100%" height="100%" style="display:block; border:none; width:100%; height:100%; min-height:calc(100vh - 118px); background:#fff;"></iframe>
+            </div>`;
         document.getElementById('tab-pdf').style.display='block';
         showView('pdf');
         showLoading(false);
