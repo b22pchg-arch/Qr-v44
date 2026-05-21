@@ -333,6 +333,118 @@ if (!reg) {
             }
         }
 
+
+        /* === AIRGAP SIDEBAR AUTO-FIT: đồng bộ thẻ trong phần không gian được phân bổ === */
+        .sidebar *{
+            min-width: 0;
+        }
+        .sidebar .card,
+        .sidebar .btn-group,
+        .sidebar .d-grid,
+        .sidebar textarea,
+        .sidebar .form-control,
+        .sidebar .form-select,
+        .sidebar #camera-box,
+        .sidebar #batch-log,
+        .sidebar #qr-display{
+            max-width: 100%;
+        }
+        .sidebar .card{
+            width: 100%;
+        }
+        .sidebar.airgap-sidebar-narrow{
+            --airgap-sidebar-control-max: 100%;
+        }
+        .sidebar.airgap-sidebar-medium{
+            --airgap-sidebar-control-max: min(100%, 620px);
+        }
+        .sidebar.airgap-sidebar-wide{
+            --airgap-sidebar-control-max: 100%;
+        }
+        .sidebar.airgap-sidebar-wide > h6,
+        .sidebar.airgap-sidebar-wide > .btn-group,
+        .sidebar.airgap-sidebar-wide #side-gen,
+        .sidebar.airgap-sidebar-wide #side-scan,
+        .sidebar.airgap-sidebar-wide > hr,
+        .sidebar.airgap-sidebar-wide > .fw-bold,
+        .sidebar.airgap-sidebar-wide > #airgap-sender-uimoi,
+        .sidebar.airgap-sidebar-wide > .card,
+        .sidebar.airgap-sidebar-wide > div:not(.sidebar-edge-tools){
+            max-width: 100%;
+            width: 100%;
+        }
+        .sidebar.airgap-sidebar-wide #airgap-sender-uimoi{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(310px, 100%), 1fr));
+            gap: 10px;
+            align-items: start;
+        }
+        .sidebar.airgap-sidebar-wide #airgap-sender-uimoi > *,
+        .sidebar.airgap-sidebar-wide #side-gen > *,
+        .sidebar.airgap-sidebar-wide #side-scan > *{
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        .sidebar.airgap-sidebar-wide #airgap-sender-uimoi > .card,
+        .sidebar.airgap-sidebar-wide #airgap-sender-uimoi > .mb-3,
+        .sidebar.airgap-sidebar-wide #airgap-sender-uimoi > .d-grid{
+            width: 100%;
+            max-width: none;
+            margin-bottom: 0 !important;
+        }
+        .sidebar.airgap-sidebar-wide #side-gen > .d-grid.gap-2,
+        .sidebar.airgap-sidebar-wide #side-scan > .d-grid.gap-2{
+            display: grid !important;
+            grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+            gap: 8px !important;
+            max-width: 100%;
+        }
+        .sidebar.airgap-sidebar-wide #qr-action-buttons{
+            grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+        }
+        .sidebar.airgap-sidebar-wide .card-header{
+            padding-top: .32rem !important;
+            padding-bottom: .32rem !important;
+        }
+        .sidebar.airgap-sidebar-wide .card-body{
+            padding-top: .5rem !important;
+            padding-bottom: .5rem !important;
+        }
+        .sidebar.airgap-sidebar-wide .mb-3{
+            margin-bottom: .6rem !important;
+        }
+        .sidebar.airgap-sidebar-wide .btn{
+            min-height: 32px;
+            padding-top: .32rem;
+            padding-bottom: .32rem;
+        }
+        .sidebar.airgap-sidebar-wide .row.g-2{
+            --bs-gutter-x: .45rem;
+            --bs-gutter-y: .45rem;
+        }
+        .sidebar.airgap-sidebar-wide .small,
+        .sidebar.airgap-sidebar-wide small{
+            font-size: .78em;
+        }
+        .sidebar.airgap-sidebar-wide #side-gen textarea#qr-input{
+            min-height: 86px;
+        }
+        .sidebar.airgap-sidebar-medium .card,
+        .sidebar.airgap-sidebar-medium .d-grid.gap-2,
+        .sidebar.airgap-sidebar-medium .btn-group,
+        .sidebar.airgap-sidebar-medium textarea#qr-input{
+            width: 100%;
+        }
+        @media (min-width: 601px) and (max-width: 1024px){
+            .sidebar.airgap-sidebar-wide #airgap-sender-uimoi{
+                grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+            }
+            .sidebar.airgap-sidebar-wide #side-gen > .d-grid.gap-2,
+            .sidebar.airgap-sidebar-wide #side-scan > .d-grid.gap-2{
+                grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+            }
+        }
+
         .qr-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; background: white; border-radius: 8px; }
         .qr-render-box canvas, .qr-render-box img { width: 150px !important; height: 150px !important; margin: 0 auto; }
         
@@ -820,6 +932,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
                         <li>Nút <b>⇥</b> dùng để thu gọn vùng xem file sang biên trái. Khi đó sidebar tự mở rộng để thao tác QR, camera, hẹn giờ hoặc cấu hình thuận tiện hơn.</li>
                         <li>Nút <b>↔</b> khôi phục bố cục mặc định.</li>
                         <li>Vạch dọc giữa vùng xem file và sidebar có thể kéo trái/phải để chia lại kích thước theo nhu cầu. Trạng thái này được lưu cùng cấu hình offline nếu anh bấm <b>LƯU CẤU HÌNH HIỆN TẠI</b> hoặc bật tự lưu.</li>
+                        <li>Khi sidebar được mở rộng trên desktop, tablet hoặc màn hình gập, các thẻ điều khiển sẽ tự chuyển sang chế độ <b>tự co gọn/chia lưới</b> để tận dụng toàn bộ không gian được phân bổ, tránh nút bị kéo dài và giúp các khối hiển thị đồng đều hơn.</li>
                         <li><b>Màn hình gập / tablet nhỏ:</b> hệ thống giữ thêm cụm nút điều chỉnh nổi ở góc dưới phải và giữ thanh kéo khi bề rộng màn hình còn từ 601px trở lên. Nếu xoay dọc quá hẹp, giao diện tự chuyển sang kiểu mobile để tránh che nội dung.</li>
                     </ul>
 
@@ -4573,6 +4686,37 @@ async function assembleAndDownloadFile(fileName) {
     window.resetAirGapLayout = resetLayout;
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initLayout);
     else initLayout();
+})();
+
+
+// TỰ ĐIỀU CHỈNH MẬT ĐỘ SIDEBAR THEO KÍCH THƯỚC THỰC TẾ
+// Khi sidebar rộng trên desktop/màn hình gập, các thẻ tự chia lưới gọn hơn thay vì kéo dài đơn lẻ.
+(function(){
+    function refreshSidebarDensity(){
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        const width = Math.round(sidebar.getBoundingClientRect().width || sidebar.clientWidth || 0);
+        sidebar.classList.remove('airgap-sidebar-narrow', 'airgap-sidebar-medium', 'airgap-sidebar-wide');
+        if (width >= 760) sidebar.classList.add('airgap-sidebar-wide');
+        else if (width >= 480) sidebar.classList.add('airgap-sidebar-medium');
+        else sidebar.classList.add('airgap-sidebar-narrow');
+    }
+    function bindSidebarDensity(){
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar || sidebar.dataset.airgapDensityBound === '1') return;
+        sidebar.dataset.airgapDensityBound = '1';
+        refreshSidebarDensity();
+        if (window.ResizeObserver) {
+            const ro = new ResizeObserver(refreshSidebarDensity);
+            ro.observe(sidebar);
+        }
+        const mo = new MutationObserver(refreshSidebarDensity);
+        mo.observe(document.body, { attributes:true, attributeFilter:['class'] });
+        window.addEventListener('resize', refreshSidebarDensity);
+        window.refreshAirGapSidebarDensity = refreshSidebarDensity;
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindSidebarDensity);
+    else bindSidebarDensity();
 })();
 
 // LƯU CẤU HÌNH OFFLINE - AIRGAP SCADA V45.1
