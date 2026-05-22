@@ -973,6 +973,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <li><b>FPS:</b> tốc độ quét QR. Giá trị 20–30 phù hợp phần lớn thiết bị; máy yếu nên giảm FPS để tránh giật.</li>
 <li><b>Rộng/Cao:</b> là kích thước vùng quét QR, không phải độ phân giải camera. Nếu QR lớn trên màn hình, có thể tăng vùng quét lên 300–450px.</li>
 <li><b>Thông tin chất lượng:</b> khi camera mở thành công, hệ thống hiển thị độ phân giải và FPS thực tế đang chạy để dễ kiểm tra.</li>
+<li><b>TỰ LẤY NÉT:</b> sau khi camera mở, nút này yêu cầu trình duyệt áp dụng autofocus liên tục <code>continuous</code> hoặc lấy nét một lần <code>single-shot</code> nếu camera/trình duyệt hỗ trợ. Trên một số thiết bị, đặc biệt iOS hoặc webcam desktop, trình duyệt có thể không cho điều khiển focus nên hệ thống sẽ báo rõ.</li>
 </ul>
 <h6 class="text-warning fw-bold mt-4">14. CÔNG CỤ PDF NÂNG CAO</h6>
 <p>Nhóm công cụ PDF dùng thư viện <code>PDFLib</code> đã nhúng sẵn trong HTML để xử lý trực tiếp trên trình duyệt. File PDF không bị gửi ra Internet.</p>
@@ -1170,9 +1171,9 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <select class="form-select form-select-sm bg-dark text-warning border-secondary" id="scan-camera-device">
 <option value="">Tự động theo camera sau/trước</option>
 </select>
-<button class="btn btn-outline-info fw-bold" onclick="listScanCameras()" type="button">DÒ CAM</button><button class="btn btn-outline-success fw-bold" onclick="probeScanCameraQuality()" type="button">DÒ CHẤT LƯỢNG</button>
+<button class="btn btn-outline-info fw-bold" onclick="listScanCameras()" type="button">DÒ CAM</button><button class="btn btn-outline-success fw-bold" onclick="probeScanCameraQuality()" type="button">DÒ CHẤT LƯỢNG</button><button class="btn btn-outline-warning fw-bold" onclick="applyScanCameraAutofocus()" type="button">TỰ LẤY NÉT</button>
 </div>
-<div class="small text-secondary mt-1">Nếu không chọn camera cụ thể, hệ thống ưu tiên camera sau. Bấm DÒ CHẤT LƯỢNG một lần để lưu độ phân giải tốt nhất; các lần mở sau sẽ dùng cấu hình đã lưu.</div>
+<div class="small text-secondary mt-1">Nếu không chọn camera cụ thể, hệ thống ưu tiên camera sau. Bấm DÒ CHẤT LƯỢNG một lần để lưu độ phân giải tốt nhất; bấm TỰ LẤY NÉT sau khi camera mở để yêu cầu trình duyệt bật autofocus/continuous focus nếu thiết bị hỗ trợ.</div>
 </div>
 <div class="col-4">
 <label class="small text-light mb-1">FPS:</label>
@@ -4802,6 +4803,98 @@ function describeRunningCameraQuality(extraLabel = '') {
     const capText = maxW && maxH ? ` · Tối đa thiết bị báo: ${maxW}×${maxH}` : '';
 
     setScanCameraQualityStatus(`${extraLabel ? extraLabel + ' · ' : ''}Đang dùng camera: ${w}×${h} · FPS: ${fps}${facing}${capText}`, 'success');
+}
+
+// ==============================================================
+// AIRGAP SCAN CAMERA AUTOFOCUS V45.1
+// Mục đích: thêm nút TỰ LẤY NÉT cho phần Quét đa nhiệm / CAM / QRText.
+// Cơ chế: lấy MediaStreamTrack đang chạy từ html5-qrcode, kiểm tra capabilities,
+// rồi thử áp dụng focusMode continuous hoặc single-shot bằng applyConstraints().
+// Lưu ý: autofocus trong trình duyệt phụ thuộc thiết bị/trình duyệt; Android Chrome
+// thường hỗ trợ tốt hơn desktop/iOS. Nếu không hỗ trợ, hàm sẽ báo rõ và không làm hỏng camera.
+// ==============================================================
+function getScanCameraFocusCapabilities(track) {
+    const caps = track && track.getCapabilities ? (track.getCapabilities() || {}) : {};
+    const settings = track && track.getSettings ? (track.getSettings() || {}) : {};
+    let focusModes = caps.focusMode || caps.focusModes || [];
+    if (typeof focusModes === 'string') focusModes = [focusModes];
+    if (!Array.isArray(focusModes)) focusModes = [];
+    return { caps, settings, focusModes };
+}
+
+async function tryApplyScanCameraFocusMode(track, mode) {
+    if (!track || typeof track.applyConstraints !== 'function') {
+        throw new Error('Track camera không hỗ trợ applyConstraints().');
+    }
+
+    const attempts = [
+        { advanced: [{ focusMode: mode }] },
+        { focusMode: mode },
+        { focusMode: { exact: mode } }
+    ];
+
+    let lastErr = null;
+    for (const constraints of attempts) {
+        try {
+            await track.applyConstraints(constraints);
+            return true;
+        } catch (err) {
+            lastErr = err;
+        }
+    }
+    throw lastErr || new Error('Không áp dụng được focusMode=' + mode);
+}
+
+async function applyScanCameraAutofocus() {
+    let track = getRunningVideoTrackSafe();
+
+    // Nếu người dùng bấm khi camera chưa mở, tự mở camera trước rồi lấy track.
+    if (!track || track.readyState !== 'live') {
+        setScanCameraQualityStatus('Camera chưa mở, đang mở camera trước khi lấy nét...', 'info');
+        try { startCam(); } catch(e) {}
+        await new Promise(resolve => setTimeout(resolve, 900));
+        track = getRunningVideoTrackSafe();
+    }
+
+    if (!track || track.readyState !== 'live') {
+        setScanCameraQualityStatus('Chưa lấy được luồng camera để áp dụng autofocus.', 'warning');
+        alert('Chưa lấy được luồng camera. Hãy mở CAM/Đọc QRText trước rồi bấm TỰ LẤY NÉT.');
+        return false;
+    }
+
+    try { track.contentHint = 'detail'; } catch(e) {}
+
+    const { caps, settings, focusModes } = getScanCameraFocusCapabilities(track);
+    const supportedText = focusModes.length ? focusModes.join(', ') : 'không báo focusMode';
+
+    try {
+        if (focusModes.includes('continuous')) {
+            await tryApplyScanCameraFocusMode(track, 'continuous');
+            setScanCameraQualityStatus(`Đã yêu cầu autofocus liên tục. Focus hỗ trợ: ${supportedText}`, 'success');
+            setTimeout(() => describeRunningCameraQuality('Autofocus liên tục'), 250);
+            return true;
+        }
+
+        if (focusModes.includes('single-shot')) {
+            await tryApplyScanCameraFocusMode(track, 'single-shot');
+            setScanCameraQualityStatus(`Đã yêu cầu lấy nét một lần. Focus hỗ trợ: ${supportedText}`, 'success');
+            setTimeout(() => describeRunningCameraQuality('Lấy nét một lần'), 250);
+            return true;
+        }
+
+        // Một số trình duyệt không khai báo capabilities nhưng vẫn chấp nhận constraint.
+        await tryApplyScanCameraFocusMode(track, 'continuous');
+        setScanCameraQualityStatus('Đã gửi lệnh autofocus continuous thử nghiệm. Trình duyệt không công bố focusMode trong capabilities.', 'success');
+        setTimeout(() => describeRunningCameraQuality('Autofocus thử nghiệm'), 250);
+        return true;
+    } catch (err) {
+        const hasDistance = caps && caps.focusDistance;
+        const distanceText = hasDistance ? ' Thiết bị có báo focusDistance nhưng không bật được autofocus tự động.' : '';
+        console.warn('Không áp dụng được autofocus:', err, { caps, settings });
+        setScanCameraQualityStatus(`Thiết bị/trình duyệt không hỗ trợ điều khiển autofocus qua Web API. Focus hỗ trợ: ${supportedText}.${distanceText}`, 'warning');
+        alert('Không áp dụng được autofocus trên trình duyệt/thiết bị này.\n\nTrình duyệt báo focusMode: ' + supportedText + '\n\nCamera vẫn có thể đang tự lấy nét mặc định của hệ điều hành.');
+        return false;
+    }
 }
 
 function getScanCameraVideoBaseConstraint(mode) {
