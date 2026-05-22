@@ -771,7 +771,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
 <li><b>Giải mã VBS:</b> hỗ trợ đọc và giải mã nội dung VBScript đã được mã hóa/ẩn.</li>
 <li><b>Xem trước HTML:</b> xem nội dung HTML trong iframe nội bộ.</li>
 <li><b>ZIP Explorer:</b> đọc cấu trúc file ZIP và tải từng file con.</li>
-<li><b>Trình đọc PDF:</b> mở PDF trực tiếp bằng cơ chế cũ trong khung xem. Nếu mobile chỉ hiện chuỗi dạng blob/ID, dùng nút <b>MỞ NGOÀI</b> để mở bằng trình xem PDF của hệ điều hành hoặc nút <b>TẢI PDF</b> để tải về.</li>
+<li><b>Trình đọc PDF:</b> PDFLib dùng để tạo/sửa/gộp/tách PDF, không phải thư viện render trang PDF. Phần xem PDF dùng trình render PDF của trình duyệt và có các chế độ <b>Xem tự động</b>, <b>Object/Embed</b>, <b>Iframe Blob</b>, <b>DataURL Mobile</b>. Nếu mobile không hiện trang, bấm <b>ĐỔI KIỂU XEM</b> trước khi dùng <b>MỞ NGOÀI</b>.</li>
 </ul>
 
 <ul class="text-secondary mb-3">
@@ -988,7 +988,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <h6 class="text-warning fw-bold mt-4">14. LƯU Ý TRÌNH ĐỌC PDF TRÊN MOBILE</h6>
 <ul class="text-secondary mb-3">
 <li>Ứng dụng giữ cơ chế mở PDF cũ bằng <code>iframe</code> từ <code>blob URL</code>, vì cơ chế này đã chạy tốt trên nhiều máy mobile trước đây. Khung PDF được đặt dạng co giãn toàn màn hình còn lại, tự mở rộng theo chiều cao màn hình trên điện thoại.</li>
-<li>Nếu một số trình duyệt mobile chỉ hiện dãy ký tự/ID thay vì trang PDF, đó là trình duyệt không render PDF nội tuyến tại thời điểm đó. Hãy bấm <b>MỞ NGOÀI</b> để chuyển PDF sang trình xem của hệ điều hành.</li>
+<li>Nếu một số trình duyệt mobile chỉ hiện dãy ký tự/ID thay vì trang PDF, hãy thử lần lượt <b>Object/Embed</b>, <b>Iframe Blob</b> và <b>DataURL Mobile</b>. Chế độ DataURL có thể tốn RAM với PDF lớn, nhưng đôi khi giúp xem trực tiếp trong trang tốt hơn.</li>
 <li>Nút <b>TẢI PDF</b> chỉ tạo bản tải xuống cục bộ từ file đã chọn, không gửi file ra Internet.</li>
 <li>Khi dùng PWA/offline, nên mở bằng Chrome/Edge/Safari chính thức thay vì WebView trong Zalo/Facebook để trình đọc PDF hoạt động ổn định hơn.</li>
 </ul>
@@ -2823,6 +2823,8 @@ Tên file cần có: BaoCao_202605201030.html</pre>
     let currentPdfFileName = "tai_lieu.pdf";
     let currentPdfBytes = null;
     let currentPdfPageCount = 0;
+    let currentPdfDataUrl = null;
+    let currentPdfViewerMode = localStorage.getItem('airgapPdfViewerMode') || 'auto';
 
     function pdfEscapeHtml(s) {
         return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -2841,6 +2843,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
             try { URL.revokeObjectURL(currentPdfBlobUrl); } catch(e) {}
             currentPdfBlobUrl = null;
         }
+        currentPdfDataUrl = null;
     }
 
     function pdfBaseName(name = currentPdfFileName) {
@@ -2893,6 +2896,85 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         renderPdfWorkspace(statusText);
     }
 
+    function pdfIsLikelyMobile() {
+        return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '') || (matchMedia && matchMedia('(pointer: coarse)').matches);
+    }
+
+    function pdfCurrentBytesSizeMB() {
+        return currentPdfBytes ? (currentPdfBytes.byteLength / 1024 / 1024) : 0;
+    }
+
+    function pdfBlobToDataUrl(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error || new Error('Không đọc được PDF dạng DataURL.'));
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    async function pdfEnsureDataUrl() {
+        if (currentPdfDataUrl) return currentPdfDataUrl;
+        if (!currentPdfBytes) throw new Error('Chưa có PDF đang mở.');
+        const sizeMB = pdfCurrentBytesSizeMB();
+        if (sizeMB > 18) {
+            const ok = confirm(`PDF khoảng ${sizeMB.toFixed(1)} MB. Chế độ DataURL có thể tốn RAM trên mobile. Vẫn thử xem nội tuyến?`);
+            if (!ok) throw new Error('Đã hủy tạo DataURL.');
+        }
+        currentPdfDataUrl = await pdfBlobToDataUrl(pdfBytesToBlob(currentPdfBytes));
+        return currentPdfDataUrl;
+    }
+
+    function pdfGetViewerSourceForMode(mode) {
+        if (mode === 'dataurl') return currentPdfDataUrl || '';
+        return currentPdfBlobUrl || '';
+    }
+
+    function pdfBuildInlineViewerHtml() {
+        if (!currentPdfBytes || !currentPdfBlobUrl) {
+            return `<div class="h-100 d-flex align-items-center justify-content-center text-center text-secondary p-4"><div><div class="fw-bold text-info mb-2">CÔNG CỤ PDF</div><div>Mở file PDF để xem/sửa, hoặc bấm <b>TẠO PDF</b> để tạo tài liệu mới.</div></div></div>`;
+        }
+        const mode = currentPdfViewerMode || 'auto';
+        const src = pdfGetViewerSourceForMode(mode);
+        const fallback = `<div class="text-center text-warning p-3 small">Trình duyệt này không render PDF nội tuyến ở chế độ hiện tại. Hãy thử <button type="button" class="btn btn-sm btn-outline-info fw-bold mx-1" onclick="pdfCycleInlineViewer()">ĐỔI KIỂU XEM</button> hoặc dùng <b>MỞ NGOÀI</b>.</div>`;
+        const commonStyle = `display:block; border:none; width:100%; height:100%; min-height:calc(100vh - 118px); background:#fff;`;
+        if (mode === 'dataurl' && !src) {
+            return `<div class="h-100 d-flex align-items-center justify-content-center text-center text-secondary p-4"><div><div class="fw-bold text-info mb-2">CHẾ ĐỘ DATAURL</div><div class="mb-2">Bấm nút dưới để tạo nguồn xem nội tuyến cho mobile.</div><button type="button" class="btn btn-info fw-bold text-dark" onclick="pdfSetViewerMode('dataurl')">TẠO DATAURL VÀ XEM</button></div></div>`;
+        }
+        if (mode === 'iframe') {
+            return `<iframe title="PDF Viewer" src="${src}" width="100%" height="100%" style="${commonStyle}"></iframe>`;
+        }
+        if (mode === 'dataurl') {
+            return `<iframe title="PDF Viewer DataURL" src="${src}" width="100%" height="100%" style="${commonStyle}"></iframe>`;
+        }
+        if (mode === 'object') {
+            return `<object data="${src}" type="application/pdf" style="${commonStyle}"><embed src="${src}" type="application/pdf" style="${commonStyle}">${fallback}</object>`;
+        }
+        // Auto: ưu tiên object/embed vì một số mobile không thích iframe blob.
+        return `<object data="${src}" type="application/pdf" style="${commonStyle}"><embed src="${src}" type="application/pdf" style="${commonStyle}"><iframe title="PDF Viewer" src="${src}" width="100%" height="100%" style="${commonStyle}"></iframe>${fallback}</object>`;
+    }
+
+    async function pdfSetViewerMode(mode) {
+        try {
+            currentPdfViewerMode = mode || 'auto';
+            localStorage.setItem('airgapPdfViewerMode', currentPdfViewerMode);
+            if (currentPdfViewerMode === 'dataurl') {
+                await pdfEnsureDataUrl();
+            }
+            renderPdfWorkspace(`Đã chuyển chế độ xem PDF sang: ${currentPdfViewerMode}. PDFLib dùng để sửa/tạo PDF; phần hiển thị vẫn dựa vào trình render PDF của trình duyệt.`);
+            showView('pdf');
+        } catch(e) {
+            alert('Không đổi được chế độ xem PDF: ' + (e.message || e));
+        }
+    }
+
+    async function pdfCycleInlineViewer() {
+        const modes = ['auto', 'object', 'iframe', 'dataurl'];
+        const idx = modes.indexOf(currentPdfViewerMode || 'auto');
+        const next = modes[(idx + 1) % modes.length];
+        await pdfSetViewerMode(next);
+    }
+
     function openCurrentPdfExternal() {
         if (!currentPdfBlobUrl) return alert('Chưa có PDF đang mở.');
         window.open(currentPdfBlobUrl, '_blank', 'noopener,noreferrer');
@@ -2922,7 +3004,14 @@ Tên file cần có: BaoCao_202605201030.html</pre>
             <div class="bg-dark border border-info rounded p-2" style="flex:0 0 auto; position:sticky; top:0; z-index:20;">
                 <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
                     <div class="small text-info fw-bold text-truncate" style="max-width:60vw;">PDF: ${safeTitle} <span class="text-secondary">(${pageInfo})</span></div>
-                    <div class="d-flex flex-wrap gap-1">
+                    <div class="d-flex flex-wrap gap-1 align-items-center">
+                        <select class="form-select form-select-sm bg-dark text-info border-info fw-bold" style="width:auto; min-width:150px;" onchange="pdfSetViewerMode(this.value)" title="Chế độ xem PDF nội tuyến">
+                            <option value="auto" ${currentPdfViewerMode === 'auto' ? 'selected' : ''}>Xem tự động</option>
+                            <option value="object" ${currentPdfViewerMode === 'object' ? 'selected' : ''}>Object/Embed</option>
+                            <option value="iframe" ${currentPdfViewerMode === 'iframe' ? 'selected' : ''}>Iframe Blob</option>
+                            <option value="dataurl" ${currentPdfViewerMode === 'dataurl' ? 'selected' : ''}>DataURL Mobile</option>
+                        </select>
+                        <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfCycleInlineViewer()">ĐỔI KIỂU XEM</button>
                         <button type="button" class="btn btn-sm btn-info fw-bold text-dark" onclick="openCurrentPdfExternal()">MỞ NGOÀI</button>
                         <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" onclick="downloadCurrentPdf()">TẢI PDF</button>
                     </div>
@@ -2942,7 +3031,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
                 <div class="small text-secondary">${safeStatus}</div>
             </div>
             <div style="flex:1 1 auto; min-height:0; width:100%; overflow:hidden; background:#111;">
-                ${hasPdf ? `<iframe src="${currentPdfBlobUrl}" width="100%" height="100%" style="display:block; border:none; width:100%; height:100%; min-height:calc(100vh - 118px); background:#fff;"></iframe>` : `<div class="h-100 d-flex align-items-center justify-content-center text-center text-secondary p-4"><div><div class="fw-bold text-info mb-2">CÔNG CỤ PDF</div><div>Mở file PDF để xem/sửa, hoặc bấm <b>TẠO PDF</b> để tạo tài liệu mới.</div></div></div>`}
+                ${pdfBuildInlineViewerHtml()}
             </div>`;
         const tab = document.getElementById('tab-pdf');
         if (tab) tab.style.display = 'block';
@@ -2954,7 +3043,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
                 revokeCurrentPdfUrl();
                 currentPdfFileName = file?.name || 'tai_lieu.pdf';
                 const bytes = await pdfReadFileBytes(file);
-                await pdfSetCurrentBytes(bytes, currentPdfFileName, 'Đã mở PDF. Có thể xem, tải, gộp, tách, xóa trang, đánh dấu hoặc watermark.');
+                await pdfSetCurrentBytes(bytes, currentPdfFileName, 'Đã mở PDF. Trình xem sẽ thử chế độ nội tuyến tốt nhất. Nếu mobile không render được, hãy bấm ĐỔI KIỂU XEM để thử Object/Iframe/DataURL.');
                 showView('pdf');
             } catch (e) {
                 alert('Không mở được PDF: ' + (e.message || e));
