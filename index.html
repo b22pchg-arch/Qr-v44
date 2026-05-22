@@ -655,6 +655,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
 <input class="form-control border-primary" id="file-router" multiple="" type="file"/>
 <button class="btn btn-primary fw-bold" onclick="masterExport()">XUẤT FILE</button>
 <button class="btn btn-danger fw-bold" onclick="unlockVBAHex()" title="Bẻ khóa DPB-&gt;DPx">BẺ KHÓA VBA</button>
+<button class="btn btn-info fw-bold text-dark" onclick="openPdfToolPanel()" type="button">PDF TOOLS</button>
 </div>
 </div>
 <div class="col-md-3">
@@ -963,6 +964,27 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <div class="alert alert-warning py-2 small mb-3">
 <b>Lưu ý:</b> quyền đọc thư mục chỉ hoạt động tốt trên Chrome/Edge mới, trong môi trường HTTPS, localhost hoặc PWA đã được cấp quyền. Máy gửi và máy nhận nên đặt cùng giờ hệ thống để tự phát/tự thu khớp nhau.
                     </div>
+<h6 class="text-warning fw-bold mt-4">14. CÔNG CỤ PDF NÂNG CAO</h6>
+<p>Nhóm công cụ PDF dùng thư viện <code>PDFLib</code> đã nhúng sẵn trong HTML để xử lý trực tiếp trên trình duyệt. File PDF không bị gửi ra Internet.</p>
+<ul class="text-secondary mb-3">
+<li><b>TẠO PDF:</b> tạo tài liệu PDF mới từ tiêu đề và nội dung nhập tay. Nội dung tiếng Việt được dựng qua canvas nội bộ để hạn chế lỗi font.</li>
+<li><b>TẠO TỪ NGUỒN:</b> chọn nhiều nguồn ngoài để tạo một PDF mới. Hỗ trợ PDF, Word DOCX/DOCM, ảnh PNG/JPG/WEBP/BMP/GIF/SVG và các file text như TXT, CSV, JSON, XML, HTML, MD, LOG. PDF sẽ được copy trang, Word/text/HTML được dựng thành trang PDF, ảnh thành trang ảnh.</li>
+<li><b>THÊM TRANG/NGUỒN:</b> khi bấm nút này, có thể chọn thêm nhiều nguồn dữ liệu vào cuối PDF hiện tại, bao gồm cả Word DOCX/DOCM; nếu không chọn nguồn thì có thể thêm một trang A4 trắng.</li>
+<li><b>GỘP PDF:</b> chọn nhiều file PDF để gộp lại. Có thể chọn gộp cả PDF đang mở vào đầu file kết quả.</li>
+<li><b>TÁCH PDF:</b> nhập nhóm trang, ví dụ <code>1-3;4-6;7</code>. Nếu để trống, hệ thống tách từng trang và đóng gói thành ZIP.</li>
+<li><b>TRÍCH TRANG:</b> lấy một số trang như <code>1-3,5</code> thành một PDF mới.</li>
+<li><b>XÓA TRANG:</b> xóa các trang nhập theo dạng <code>2,5-7</code>. Hệ thống không cho xóa toàn bộ trang.</li>
+<li><b>XOAY TRANG:</b> xoay các trang đã chọn theo góc <code>90/180/270/-90</code>.</li>
+<li><b>DI CHUYỂN TRANG:</b> nhập các trang cần di chuyển và vị trí chèn trước. Ví dụ chọn trang <code>5-7</code>, vị trí <code>2</code> để đưa nhóm trang đó lên trước trang 2.</li>
+<li><b>THÊM ĐÁNH DẤU / XÓA ĐÁNH DẤU:</b> thêm dải ghi chú nổi bật ở đầu các trang đã chọn. Các đánh dấu do công cụ này thêm trong phiên hiện tại có thể xóa lại bằng nút <b>XÓA ĐÁNH DẤU</b>.</li>
+<li><b>THÊM WATERMARK / XÓA WATERMARK:</b> đóng watermark mờ chéo trên một hoặc nhiều trang. Watermark do công cụ này thêm trong phiên hiện tại có thể xóa lại bằng nút <b>XÓA WATERMARK</b>.</li>
+<li><b>CHE/XÓA VÙNG:</b> phủ trắng một vùng theo tọa độ phần trăm <code>x,y,rộng,cao</code> tính từ góc trái dưới trang PDF. Dùng để che thông tin trước khi chia sẻ. Đây là thao tác phủ trắng vào PDF mới, không phải xóa đối tượng gốc trong PDF.</li>
+<li><b>COPY TEXT:</b> PDFLib không tự trích text thật từ PDF. Nếu bản HTML sau này tích hợp thêm PDF.js thì nút này có thể copy text; còn bản nhẹ hiện tại nên dùng <b>MỞ NGOÀI</b> để chọn/copy text bằng trình xem PDF của trình duyệt nếu PDF có lớp text.</li>
+<li><b>GỠ KHÓA HẠN CHẾ:</b> không dò hoặc bẻ mật khẩu. Nút này chỉ thử lưu lại PDF đã mở được để loại bỏ một số hạn chế quyền đối với tài liệu anh có quyền xử lý. PDF yêu cầu mật khẩu mở file thật sự thì PDFLib không thể gỡ nếu không có mật khẩu hợp lệ.</li>
+</ul>
+<div class="alert alert-warning py-2 small mb-3">
+<b>Lưu ý:</b> PDFLib xử lý tốt thao tác trang, gộp/tách, watermark và ghi chú phủ lên PDF. Việc sửa trực tiếp chữ đã có sẵn trong PDF không giống trình soạn thảo Word; nếu cần “xóa chữ” trong file PDF, nên dùng chức năng <b>CHE/XÓA VÙNG</b> để phủ trắng vùng cần ẩn rồi lưu PDF mới. Việc xóa đánh dấu/watermark bằng nút XÓA chỉ áp dụng cho các lớp do công cụ này thêm trong phiên hiện tại. Với watermark đã nằm sẵn trong PDF gốc, dùng TẨY WATERMARK NGOÀI để phủ nền trắng theo dải chéo hoặc vùng tọa độ; cách này không bẻ/xóa object gốc nhưng giúp che watermark trên nền trắng. Với Word đang hiển thị dạng HTML, dùng WORD/HTML ĐANG XEM → PDF để tận dụng bố cục HTML và in/lưu thành PDF bằng trình duyệt.
+</div>
 <h6 class="text-warning fw-bold mt-4">14. LƯU Ý TRÌNH ĐỌC PDF TRÊN MOBILE</h6>
 <ul class="text-secondary mb-3">
 <li>Ứng dụng giữ cơ chế mở PDF cũ bằng <code>iframe</code> từ <code>blob URL</code>, vì cơ chế này đã chạy tốt trên nhiều máy mobile trước đây. Khung PDF được đặt dạng co giãn toàn màn hình còn lại, tự mở rộng theo chiều cao màn hình trên điện thoại.</li>
@@ -2799,6 +2821,20 @@ Tên file cần có: BaoCao_202605201030.html</pre>
     function drawNode(node) { const div = document.createElement('div'); div.className = "xml-node"; const tagLine = document.createElement('div'); tagLine.innerHTML = `<span class="xml-bracket">&lt;</span><span class="xml-tag-name" contenteditable="true" spellcheck="false">${node.nodeName}</span><span class="xml-bracket">&gt;</span>`; tagLine.querySelector('.xml-tag-name').onblur = (e) => { let newName = e.target.innerText.trim().replace(/[^\w.-]/g, ''); if(!newName.match(/^[a-zA-Z_]/)) newName = "KEY_" + newName; if(newName && newName !== node.nodeName) { try { const newNode = xmlDocMaster.createElement(newName); Array.from(node.attributes).forEach(attr => newNode.setAttribute(attr.name, attr.value)); while(node.firstChild) newNode.appendChild(node.firstChild); if (node === xmlDocMaster.documentElement) xmlDocMaster.replaceChild(newNode, node); else node.parentNode.replaceChild(newNode, node); handleXml((new XMLSerializer()).serializeToString(xmlDocMaster)); } catch(err) { e.target.innerText = node.nodeName; } } else { e.target.innerText = node.nodeName; } }; const addBtn = document.createElement('span'); addBtn.className="xml-ctrl text-success"; addBtn.innerHTML="[+] Thêm"; addBtn.onclick = () => { const n = prompt("Tên thẻ:"); if(n) { try{node.appendChild(xmlDocMaster.createElement(n.replace(/[^\w.-]/g, ''))); handleXml((new XMLSerializer()).serializeToString(xmlDocMaster));}catch(e){} }}; const cloneBtn = document.createElement('span'); cloneBtn.className="xml-ctrl text-warning"; cloneBtn.innerHTML="[++] Nhân bản"; cloneBtn.onclick = () => { const clone = node.cloneNode(true); node.parentNode.insertBefore(clone, node.nextSibling); handleXml((new XMLSerializer()).serializeToString(xmlDocMaster)); }; const delBtn = document.createElement('span'); delBtn.className="xml-ctrl text-danger"; delBtn.innerHTML="[x] Xóa"; delBtn.onclick = () => { if(node !== xmlDocMaster.documentElement && confirm("Xóa thẻ này?")){ node.remove(); handleXml((new XMLSerializer()).serializeToString(xmlDocMaster)); }}; tagLine.appendChild(addBtn); if(node !== xmlDocMaster.documentElement) { tagLine.appendChild(cloneBtn); tagLine.appendChild(delBtn); } div.appendChild(tagLine); if (node.children.length > 0) Array.from(node.children).forEach(c => div.appendChild(drawNode(c))); else { const val = document.createElement('span'); val.className="xml-val"; val.contentEditable=true; val.innerText = node.textContent; val.onblur=(e)=>node.textContent=e.target.innerText; div.appendChild(val); } return div; }
     let currentPdfBlobUrl = null;
     let currentPdfFileName = "tai_lieu.pdf";
+    let currentPdfBytes = null;
+    let currentPdfPageCount = 0;
+
+    function pdfEscapeHtml(s) {
+        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function pdfEnsureLib() {
+        if (typeof PDFLib === 'undefined' || !PDFLib.PDFDocument) {
+            alert('Chưa nạp được PDFLib. Không thể dùng công cụ sửa/tạo/gộp/tách PDF.');
+            return false;
+        }
+        return true;
+    }
 
     function revokeCurrentPdfUrl() {
         if (currentPdfBlobUrl) {
@@ -2807,50 +2843,446 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         }
     }
 
-    function openCurrentPdfExternal() {
-        if (!currentPdfBlobUrl) return alert("Chưa có PDF đang mở.");
-        window.open(currentPdfBlobUrl, "_blank", "noopener,noreferrer");
+    function pdfBaseName(name = currentPdfFileName) {
+        return String(name || 'tai_lieu.pdf').replace(/\.[^.]+$/i, '') || 'tai_lieu';
     }
 
-    function downloadCurrentPdf() {
-        if (!currentPdfBlobUrl) return alert("Chưa có PDF đang mở.");
+    function pdfMakeFileName(prefix = 'PDF') {
+        const base = pdfBaseName(currentPdfFileName);
+        const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
+        return `${prefix}_${base}_${stamp}.pdf`;
+    }
+
+    function pdfDownloadBlob(blob, filename) {
         const a = document.createElement('a');
-        a.href = currentPdfBlobUrl;
-        a.download = currentPdfFileName || "tai_lieu.pdf";
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        a.download = filename || 'tai_lieu.pdf';
         document.body.appendChild(a);
         a.click();
         a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
     }
 
-    function handlePdf(file) {
-        revokeCurrentPdfUrl();
-        currentPdfFileName = file?.name || "tai_lieu.pdf";
-        currentPdfBlobUrl = URL.createObjectURL(file);
-        const pdfView = document.getElementById('pdf-view');
-        if (!pdfView) { showLoading(false); return; }
+    function pdfBytesToBlob(bytes) {
+        return new Blob([bytes], { type: 'application/pdf' });
+    }
 
-        // Giữ nguyên cơ chế cũ đã từng chạy tốt trên mobile: iframe trực tiếp từ blob URL.
-        // Chỉ bổ sung thanh nút dự phòng, không thay thế luồng xem PDF chính.
+    async function pdfReadFileBytes(file) {
+        return new Uint8Array(await file.arrayBuffer());
+    }
+
+    async function pdfLoadDocument(bytes = currentPdfBytes) {
+        if (!pdfEnsureLib()) throw new Error('Thiếu PDFLib');
+        if (!bytes) throw new Error('Chưa có PDF đang mở.');
+        return await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+    }
+
+    async function pdfSetCurrentBytes(bytes, fileName, statusText = '') {
+        if (!bytes) throw new Error('Không có dữ liệu PDF.');
+        revokeCurrentPdfUrl();
+        currentPdfBytes = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+        currentPdfFileName = fileName || currentPdfFileName || 'tai_lieu.pdf';
+        currentPdfBlobUrl = URL.createObjectURL(pdfBytesToBlob(currentPdfBytes));
+        try {
+            const doc = await pdfLoadDocument(currentPdfBytes);
+            currentPdfPageCount = doc.getPageCount();
+        } catch(e) {
+            currentPdfPageCount = 0;
+        }
+        renderPdfWorkspace(statusText);
+    }
+
+    function openCurrentPdfExternal() {
+        if (!currentPdfBlobUrl) return alert('Chưa có PDF đang mở.');
+        window.open(currentPdfBlobUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    function downloadCurrentPdf() {
+        if (!currentPdfBytes) return alert('Chưa có PDF đang mở.');
+        pdfDownloadBlob(pdfBytesToBlob(currentPdfBytes), currentPdfFileName || 'tai_lieu.pdf');
+    }
+
+    function openPdfToolPanel() {
+        const tab = document.getElementById('tab-pdf');
+        if (tab) tab.style.display = 'block';
+        renderPdfWorkspace('Sẵn sàng dùng công cụ PDF. Có thể mở PDF hoặc tạo PDF mới.');
+        showView('pdf');
+    }
+
+    function renderPdfWorkspace(statusText = '') {
+        const pdfView = document.getElementById('pdf-view');
+        if (!pdfView) return;
+        const hasPdf = !!currentPdfBlobUrl;
+        const title = hasPdf ? currentPdfFileName : 'Chưa mở PDF';
+        const pageInfo = hasPdf && currentPdfPageCount ? `${currentPdfPageCount} trang` : 'Chưa có số trang';
+        const safeTitle = pdfEscapeHtml(title);
+        const safeStatus = pdfEscapeHtml(statusText || 'Các thao tác đều xử lý cục bộ trong trình duyệt, không gửi PDF ra Internet.');
         pdfView.innerHTML = `
             <div class="bg-dark border border-info rounded p-2" style="flex:0 0 auto; position:sticky; top:0; z-index:20;">
-                <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                    <div class="small text-info fw-bold text-truncate" style="max-width:60vw;">📄 ${currentPdfFileName}</div>
-                    <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
+                    <div class="small text-info fw-bold text-truncate" style="max-width:60vw;">PDF: ${safeTitle} <span class="text-secondary">(${pageInfo})</span></div>
+                    <div class="d-flex flex-wrap gap-1">
                         <button type="button" class="btn btn-sm btn-info fw-bold text-dark" onclick="openCurrentPdfExternal()">MỞ NGOÀI</button>
                         <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" onclick="downloadCurrentPdf()">TẢI PDF</button>
                     </div>
                 </div>
-                <div class="small text-secondary mt-1 d-none d-md-block">
-                    Nếu mobile chỉ hiện dãy ký tự/blob ID, hãy bấm <b>MỞ NGOÀI</b>. Trình duyệt hỗ trợ PDF nội tuyến vẫn xem trực tiếp như phiên bản cũ.
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                    <button type="button" class="btn btn-sm btn-success fw-bold" onclick="pdfCreateFromTextPrompt()">TẠO PDF</button>
+                    <button type="button" class="btn btn-sm btn-outline-success fw-bold" onclick="pdfAddBlankPage()">THÊM TRANG TRẮNG</button>
+                    <button type="button" class="btn btn-sm btn-primary fw-bold" onclick="pdfMergePrompt()">GỘP PDF</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary fw-bold" onclick="pdfSplitPrompt()">TÁCH PDF</button>
+                    <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfExtractPrompt()">TRÍCH TRANG</button>
+                    <button type="button" class="btn btn-sm btn-danger fw-bold" onclick="pdfDeletePagesPrompt()">XÓA TRANG</button>
+                    <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="pdfRotatePagesPrompt()">XOAY TRANG</button>
+                    <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" onclick="pdfAddMarkPrompt()">ĐÁNH DẤU</button>
+                    <button type="button" class="btn btn-sm btn-secondary fw-bold" onclick="pdfWatermarkPrompt()">WATERMARK</button>
+                    <button type="button" class="btn btn-sm btn-light fw-bold" onclick="pdfRedactRectPrompt()">CHE/XÓA VÙNG</button>
                 </div>
+                <div class="small text-secondary">${safeStatus}</div>
             </div>
-            <div style="flex:1 1 auto; min-height:0; width:100%; overflow:hidden;">
-                <iframe src="${currentPdfBlobUrl}" width="100%" height="100%" style="display:block; border:none; width:100%; height:100%; min-height:calc(100vh - 118px); background:#fff;"></iframe>
+            <div style="flex:1 1 auto; min-height:0; width:100%; overflow:hidden; background:#111;">
+                ${hasPdf ? `<iframe src="${currentPdfBlobUrl}" width="100%" height="100%" style="display:block; border:none; width:100%; height:100%; min-height:calc(100vh - 118px); background:#fff;"></iframe>` : `<div class="h-100 d-flex align-items-center justify-content-center text-center text-secondary p-4"><div><div class="fw-bold text-info mb-2">CÔNG CỤ PDF</div><div>Mở file PDF để xem/sửa, hoặc bấm <b>TẠO PDF</b> để tạo tài liệu mới.</div></div></div>`}
             </div>`;
-        document.getElementById('tab-pdf').style.display='block';
-        showView('pdf');
-        showLoading(false);
+        const tab = document.getElementById('tab-pdf');
+        if (tab) tab.style.display = 'block';
     }
+
+    function handlePdf(file) {
+        (async () => {
+            try {
+                revokeCurrentPdfUrl();
+                currentPdfFileName = file?.name || 'tai_lieu.pdf';
+                const bytes = await pdfReadFileBytes(file);
+                await pdfSetCurrentBytes(bytes, currentPdfFileName, 'Đã mở PDF. Có thể xem, tải, gộp, tách, xóa trang, đánh dấu hoặc watermark.');
+                showView('pdf');
+            } catch (e) {
+                alert('Không mở được PDF: ' + (e.message || e));
+            } finally {
+                showLoading(false);
+            }
+        })();
+    }
+
+    function pdfParsePageNumbers(input, pageCount, options = {}) {
+        const allowBlankAll = !!options.blankAll;
+        const unique = !!options.unique;
+        const raw = String(input || '').trim();
+        if (!raw) {
+            if (allowBlankAll) return Array.from({ length: pageCount }, (_, i) => i + 1);
+            return [];
+        }
+        const out = [];
+        raw.split(/[;,\s]+/).forEach(part => {
+            if (!part) return;
+            const m = part.match(/^(\d+)\s*-\s*(\d+)$/);
+            if (m) {
+                let a = parseInt(m[1], 10), b = parseInt(m[2], 10);
+                if (a > b) [a, b] = [b, a];
+                for (let n = a; n <= b; n++) if (n >= 1 && n <= pageCount) out.push(n);
+            } else {
+                const n = parseInt(part, 10);
+                if (n >= 1 && n <= pageCount) out.push(n);
+            }
+        });
+        return unique ? Array.from(new Set(out)) : out;
+    }
+
+    function pdfParseRangeGroups(input, pageCount) {
+        const raw = String(input || '').trim();
+        if (!raw) return Array.from({ length: pageCount }, (_, i) => [i + 1]);
+        return raw.split(/[;|]+/).map(group => pdfParsePageNumbers(group, pageCount, { unique: true })).filter(g => g.length);
+    }
+
+    function pdfDataUrlToBytes(dataUrl) {
+        const b64 = String(dataUrl).split(',')[1] || '';
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+    }
+
+    function pdfMakeTextPngBytes(text, options = {}) {
+        const fontSize = options.fontSize || 26;
+        const maxWidth = options.maxWidth || 1200;
+        const padding = options.padding ?? 18;
+        const color = options.color || '#0f172a';
+        const bg = options.bg || null;
+        const weight = options.weight || '700';
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.font = `${weight} ${fontSize}px Arial, sans-serif`;
+        const lines = [];
+        String(text || '').split(/\r?\n/).forEach(par => {
+            const words = par.split(/\s+/);
+            let line = '';
+            words.forEach(word => {
+                const test = line ? `${line} ${word}` : word;
+                if (ctx.measureText(test).width > maxWidth - padding * 2 && line) {
+                    lines.push(line);
+                    line = word;
+                } else {
+                    line = test;
+                }
+            });
+            lines.push(line || ' ');
+        });
+        const lineH = Math.ceil(fontSize * 1.35);
+        canvas.width = maxWidth;
+        canvas.height = Math.max(lineH + padding * 2, lines.length * lineH + padding * 2);
+        const c2 = canvas.getContext('2d');
+        if (bg) { c2.fillStyle = bg; c2.fillRect(0, 0, canvas.width, canvas.height); }
+        c2.font = `${weight} ${fontSize}px Arial, sans-serif`;
+        c2.fillStyle = color;
+        c2.textBaseline = 'top';
+        lines.forEach((line, i) => c2.fillText(line, padding, padding + i * lineH));
+        return pdfDataUrlToBytes(canvas.toDataURL('image/png'));
+    }
+
+    async function pdfCreateFromTextPrompt() {
+        try {
+            if (!pdfEnsureLib()) return;
+            const title = prompt('Nhập tiêu đề PDF:', 'Tài liệu mới');
+            if (title === null) return;
+            const body = prompt('Nhập nội dung PDF. Có thể dùng tiếng Việt:', 'Nội dung tài liệu...');
+            if (body === null) return;
+            showLoading(true, 'ĐANG TẠO PDF...');
+            const doc = await PDFLib.PDFDocument.create();
+            const page = doc.addPage([595.28, 841.89]);
+            const png = await doc.embedPng(pdfMakeTextPngBytes(`${title}\n\n${body}`, { fontSize: 24, maxWidth: 1500, weight: '700' }));
+            const margin = 42;
+            const scale = Math.min((page.getWidth() - margin * 2) / png.width, (page.getHeight() - margin * 2) / png.height, 1);
+            page.drawImage(png, { x: margin, y: page.getHeight() - margin - png.height * scale, width: png.width * scale, height: png.height * scale });
+            const bytes = await doc.save();
+            await pdfSetCurrentBytes(bytes, pdfMakeFileName('TaoMoi'), 'Đã tạo PDF mới từ nội dung nhập.');
+            showView('pdf');
+        } catch(e) {
+            alert('Lỗi tạo PDF: ' + (e.message || e));
+        } finally { showLoading(false); }
+    }
+
+    async function pdfAddBlankPage() {
+        try {
+            if (!pdfEnsureLib()) return;
+            showLoading(true, 'ĐANG THÊM TRANG...');
+            const doc = currentPdfBytes ? await pdfLoadDocument() : await PDFLib.PDFDocument.create();
+            doc.addPage([595.28, 841.89]);
+            const bytes = await doc.save();
+            await pdfSetCurrentBytes(bytes, currentPdfBytes ? pdfMakeFileName('ThemTrang') : pdfMakeFileName('PDFMoi'), 'Đã thêm một trang trắng vào cuối PDF.');
+            showView('pdf');
+        } catch(e) { alert('Lỗi thêm trang: ' + (e.message || e)); }
+        finally { showLoading(false); }
+    }
+
+    async function pdfDeletePagesPrompt() {
+        try {
+            const doc = await pdfLoadDocument();
+            const pageCount = doc.getPageCount();
+            const raw = prompt(`Nhập trang cần xóa. Ví dụ: 2,5-7\nPDF hiện có ${pageCount} trang.`, '');
+            if (raw === null) return;
+            const pages = pdfParsePageNumbers(raw, pageCount, { unique: true }).sort((a, b) => b - a);
+            if (!pages.length) return alert('Không có trang hợp lệ để xóa.');
+            if (pages.length >= pageCount) return alert('Không thể xóa toàn bộ trang PDF.');
+            if (!confirm(`Xóa ${pages.length} trang: ${pages.slice().reverse().join(', ')} ?`)) return;
+            showLoading(true, 'ĐANG XÓA TRANG PDF...');
+            pages.forEach(n => doc.removePage(n - 1));
+            const bytes = await doc.save();
+            await pdfSetCurrentBytes(bytes, pdfMakeFileName('XoaTrang'), `Đã xóa ${pages.length} trang.`);
+            showView('pdf');
+        } catch(e) { alert('Lỗi xóa trang: ' + (e.message || e)); }
+        finally { showLoading(false); }
+    }
+
+    async function pdfExtractPrompt() {
+        try {
+            const src = await pdfLoadDocument();
+            const pageCount = src.getPageCount();
+            const raw = prompt(`Nhập trang cần trích ra PDF mới. Ví dụ: 1-3,5\nPDF hiện có ${pageCount} trang.`, '1');
+            if (raw === null) return;
+            const pages = pdfParsePageNumbers(raw, pageCount, { unique: true });
+            if (!pages.length) return alert('Không có trang hợp lệ để trích.');
+            showLoading(true, 'ĐANG TRÍCH TRANG PDF...');
+            const out = await PDFLib.PDFDocument.create();
+            const copied = await out.copyPages(src, pages.map(n => n - 1));
+            copied.forEach(p => out.addPage(p));
+            const bytes = await out.save();
+            await pdfSetCurrentBytes(bytes, pdfMakeFileName('TrichTrang'), `Đã trích ${pages.length} trang sang PDF mới.`);
+            showView('pdf');
+        } catch(e) { alert('Lỗi trích trang: ' + (e.message || e)); }
+        finally { showLoading(false); }
+    }
+
+    async function pdfSplitPrompt() {
+        try {
+            const src = await pdfLoadDocument();
+            const pageCount = src.getPageCount();
+            const raw = prompt(`Nhập nhóm trang cần tách, phân cách nhóm bằng dấu ;\nVí dụ: 1-3;4-6;7\nĐể trống = tách từng trang. PDF hiện có ${pageCount} trang.`, '');
+            if (raw === null) return;
+            const groups = pdfParseRangeGroups(raw, pageCount);
+            if (!groups.length) return alert('Không có nhóm trang hợp lệ.');
+            showLoading(true, 'ĐANG TÁCH PDF...');
+            const zip = (typeof JSZip !== 'undefined') ? new JSZip() : null;
+            const base = pdfBaseName(currentPdfFileName);
+            for (let i = 0; i < groups.length; i++) {
+                const out = await PDFLib.PDFDocument.create();
+                const copied = await out.copyPages(src, groups[i].map(n => n - 1));
+                copied.forEach(p => out.addPage(p));
+                const bytes = await out.save();
+                const name = `${base}_tach_${i + 1}_${groups[i][0]}-${groups[i][groups[i].length - 1]}.pdf`;
+                if (zip) zip.file(name, bytes);
+                else pdfDownloadBlob(pdfBytesToBlob(bytes), name);
+                await new Promise(r => setTimeout(r, 0));
+            }
+            if (zip) {
+                const blob = await zip.generateAsync({ type: 'blob' });
+                pdfDownloadBlob(blob, `${base}_tach_pdf.zip`);
+            }
+            renderPdfWorkspace(`Đã tách ${groups.length} file PDF${zip ? ' và đóng gói ZIP.' : '.'}`);
+            showView('pdf');
+        } catch(e) { alert('Lỗi tách PDF: ' + (e.message || e)); }
+        finally { showLoading(false); }
+    }
+
+    async function pdfRotatePagesPrompt() {
+        try {
+            const doc = await pdfLoadDocument();
+            const pageCount = doc.getPageCount();
+            const rawPages = prompt(`Nhập trang cần xoay. Để trống = xoay tất cả. PDF hiện có ${pageCount} trang.`, '');
+            if (rawPages === null) return;
+            const angleRaw = prompt('Nhập góc xoay: 90, 180, 270 hoặc -90', '90');
+            if (angleRaw === null) return;
+            const angle = parseInt(angleRaw, 10);
+            if (![90,180,270,-90].includes(angle)) return alert('Góc xoay không hợp lệ.');
+            const pages = pdfParsePageNumbers(rawPages, pageCount, { blankAll: true, unique: true });
+            showLoading(true, 'ĐANG XOAY TRANG PDF...');
+            const arr = doc.getPages();
+            pages.forEach(n => {
+                const page = arr[n - 1];
+                const old = page.getRotation().angle || 0;
+                const next = ((old + angle) % 360 + 360) % 360;
+                page.setRotation(PDFLib.degrees(next));
+            });
+            const bytes = await doc.save();
+            await pdfSetCurrentBytes(bytes, pdfMakeFileName('XoayTrang'), `Đã xoay ${pages.length} trang.`);
+            showView('pdf');
+        } catch(e) { alert('Lỗi xoay trang: ' + (e.message || e)); }
+        finally { showLoading(false); }
+    }
+
+    async function pdfAddMarkPrompt() {
+        try {
+            const doc = await pdfLoadDocument();
+            const pageCount = doc.getPageCount();
+            const rawPages = prompt(`Nhập trang cần đánh dấu. Để trống = trang 1. PDF hiện có ${pageCount} trang.`, '1');
+            if (rawPages === null) return;
+            const text = prompt('Nhập nội dung đánh dấu/ghi chú:', 'ĐÃ KIỂM TRA');
+            if (text === null) return;
+            const pages = pdfParsePageNumbers(rawPages || '1', pageCount, { unique: true });
+            if (!pages.length) return alert('Không có trang hợp lệ.');
+            showLoading(true, 'ĐANG ĐÁNH DẤU PDF...');
+            const pngBytes = pdfMakeTextPngBytes(text, { fontSize: 30, maxWidth: 900, color: '#7c2d12', weight: '800' });
+            const img = await doc.embedPng(pngBytes);
+            const arr = doc.getPages();
+            pages.forEach(n => {
+                const page = arr[n - 1];
+                const w = page.getWidth(), h = page.getHeight();
+                const boxH = 52;
+                page.drawRectangle({ x: 30, y: h - 90, width: w - 60, height: boxH, color: PDFLib.rgb(1, 0.92, 0.35), opacity: 0.75 });
+                const scale = Math.min((w - 90) / img.width, (boxH - 12) / img.height, 1);
+                page.drawImage(img, { x: 45, y: h - 84, width: img.width * scale, height: img.height * scale });
+            });
+            const bytes = await doc.save();
+            await pdfSetCurrentBytes(bytes, pdfMakeFileName('DanhDau'), `Đã đánh dấu ${pages.length} trang.`);
+            showView('pdf');
+        } catch(e) { alert('Lỗi đánh dấu PDF: ' + (e.message || e)); }
+        finally { showLoading(false); }
+    }
+
+    async function pdfWatermarkPrompt() {
+        try {
+            const doc = await pdfLoadDocument();
+            const pageCount = doc.getPageCount();
+            const text = prompt('Nhập nội dung watermark:', 'PC TUYÊN QUANG');
+            if (text === null) return;
+            const rawPages = prompt(`Nhập trang cần watermark. Để trống = tất cả ${pageCount} trang.`, '');
+            if (rawPages === null) return;
+            const pages = pdfParsePageNumbers(rawPages, pageCount, { blankAll: true, unique: true });
+            showLoading(true, 'ĐANG ĐÓNG WATERMARK...');
+            const pngBytes = pdfMakeTextPngBytes(text, { fontSize: 70, maxWidth: 1400, color: '#1d4ed8', weight: '900' });
+            const img = await doc.embedPng(pngBytes);
+            const arr = doc.getPages();
+            pages.forEach(n => {
+                const page = arr[n - 1];
+                const w = page.getWidth(), h = page.getHeight();
+                const targetW = w * 0.8;
+                const scale = targetW / img.width;
+                page.drawImage(img, { x: w * 0.12, y: h * 0.44, width: img.width * scale, height: img.height * scale, rotate: PDFLib.degrees(-28), opacity: 0.16 });
+            });
+            const bytes = await doc.save();
+            await pdfSetCurrentBytes(bytes, pdfMakeFileName('Watermark'), `Đã thêm watermark cho ${pages.length} trang.`);
+            showView('pdf');
+        } catch(e) { alert('Lỗi watermark PDF: ' + (e.message || e)); }
+        finally { showLoading(false); }
+    }
+
+    async function pdfRedactRectPrompt() {
+        try {
+            const doc = await pdfLoadDocument();
+            const pageCount = doc.getPageCount();
+            const pageNoRaw = prompt(`Nhập số trang cần che/xóa vùng. PDF hiện có ${pageCount} trang.`, '1');
+            if (pageNoRaw === null) return;
+            const pageNo = parseInt(pageNoRaw, 10);
+            if (!(pageNo >= 1 && pageNo <= pageCount)) return alert('Số trang không hợp lệ.');
+            const raw = prompt('Nhập vùng che theo %: x,y,rộng,cao tính từ góc trái dưới. Ví dụ: 10,10,80,12', '10,10,80,12');
+            if (raw === null) return;
+            const vals = raw.split(',').map(v => parseFloat(v.trim()));
+            if (vals.length !== 4 || vals.some(v => isNaN(v))) return alert('Vùng nhập không hợp lệ.');
+            showLoading(true, 'ĐANG CHE VÙNG PDF...');
+            const page = doc.getPages()[pageNo - 1];
+            const w = page.getWidth(), h = page.getHeight();
+            page.drawRectangle({ x: w * vals[0] / 100, y: h * vals[1] / 100, width: w * vals[2] / 100, height: h * vals[3] / 100, color: PDFLib.rgb(1, 1, 1), opacity: 1 });
+            const bytes = await doc.save();
+            await pdfSetCurrentBytes(bytes, pdfMakeFileName('CheVung'), `Đã che vùng trên trang ${pageNo}.`);
+            showView('pdf');
+        } catch(e) { alert('Lỗi che vùng PDF: ' + (e.message || e)); }
+        finally { showLoading(false); }
+    }
+
+    function pdfMergePrompt() {
+        if (!pdfEnsureLib()) return;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.pdf,application/pdf';
+        input.multiple = true;
+        input.onchange = () => pdfMergeFiles(input.files);
+        input.click();
+    }
+
+    async function pdfMergeFiles(fileList) {
+        try {
+            const files = Array.from(fileList || []);
+            if (!files.length) return;
+            showLoading(true, 'ĐANG GỘP PDF...');
+            const out = await PDFLib.PDFDocument.create();
+            if (currentPdfBytes && confirm('Gộp cả PDF đang mở vào đầu file kết quả?')) {
+                const cur = await pdfLoadDocument(currentPdfBytes);
+                const pages = await out.copyPages(cur, cur.getPageIndices());
+                pages.forEach(p => out.addPage(p));
+            }
+            for (const file of files) {
+                const src = await PDFLib.PDFDocument.load(await pdfReadFileBytes(file), { ignoreEncryption: true });
+                const pages = await out.copyPages(src, src.getPageIndices());
+                pages.forEach(p => out.addPage(p));
+                await new Promise(r => setTimeout(r, 0));
+            }
+            if (out.getPageCount() === 0) return alert('Không có trang nào để gộp.');
+            const bytes = await out.save();
+            await pdfSetCurrentBytes(bytes, pdfMakeFileName('GopPDF'), `Đã gộp ${files.length} file PDF${currentPdfBytes ? ' cùng PDF đang mở' : ''}.`);
+            showView('pdf');
+        } catch(e) { alert('Lỗi gộp PDF: ' + (e.message || e)); }
+        finally { showLoading(false); }
+    }
+
     async function handleZip(file) { const zip = await JSZip.loadAsync(file); activeZip = zip; let h = '<div class="list-group list-group-flush">'; zip.forEach((p, e) => { h += `<div class="list-group-item d-flex justify-content-between"><span>${p}</span><button class="btn btn-sm btn-success fw-bold" onclick="dlZip('${p}')">TẢI</button></div>`; }); document.getElementById('zip-view').innerHTML = h + '</div>'; document.getElementById('tab-zip').style.display='block'; showView('zip'); showLoading(false); }
     function globalSearch() { const term = document.getElementById('find-global').value.trim(); const editor = document.getElementById('main-editor'); editor.innerHTML = editor.innerHTML.replace(/<mark class="hl-yellow">|<\/mark>/g, ""); document.querySelectorAll('.excel-cell').forEach(c => c.classList.remove('hl-yellow')); if (!term) return; const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); const regex = new RegExp(`(${safeTerm})`, 'gi'); const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null, false); const nodes = []; let node; while(node = walker.nextNode()) nodes.push(node); nodes.forEach(n => { if (n.parentNode.tagName !== 'MARK' && n.nodeValue.match(regex)) { const s = document.createElement('span'); s.innerHTML = n.nodeValue.replace(regex, '<mark class="hl-yellow">$1</mark>'); n.parentNode.replaceChild(s, n); } }); if (document.getElementById('excel-view').style.display !== 'none') { document.querySelectorAll('.excel-cell').forEach(c => { if(c.innerText.toLowerCase().includes(term.toLowerCase())) c.classList.add('hl-yellow'); }); } }
     function onPasteSecure(e) { const items = (e.clipboardData || e.originalEvent.clipboardData).items; for (let i of items) { if (i.type.indexOf("image") !== -1) { e.preventDefault(); const blob = i.getAsFile(); const r = new FileReader(); r.onload = (ev) => { document.execCommand('insertHTML', false, `<img src="${ev.target.result}">`); }; r.readAsDataURL(blob); break; } } }
@@ -4070,7 +4502,7 @@ function initCameraZoom() {
 function startCam() {
     const camBox = document.getElementById('camera-box');
     if (camBox) camBox.style.display = 'block';
-
+    
     if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader");
 
     if (!isCamRunning) {
@@ -4078,224 +4510,64 @@ function startCam() {
     }
 }
 
-// Trả về callback xử lý QR dùng chung cho CAM thường và ĐỌC QRTEXT
-function getAirgapCameraSuccessHandler() {
-    return (txt) => {
-        let d = txt;
-        try { d = decodeURIComponent(escape(txt)); } catch(e) {}
-
-        if (window.qrScanMode === 'qrtext') {
-            if (typeof handleQrTextDecodedText === "function") handleQrTextDecodedText("Camera", d);
-            return;
-        }
-
-        if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
-        if (typeof handleDlQrDecodedText === "function" && handleDlQrDecodedText("Camera", d)) return;
-        if (typeof appendScanResult === "function") appendScanResult("Camera", d, true);
-    };
-}
-
-function getAirgapCameraFailureHandler() {
-    return () => {}; // Giấu lỗi dò nét để log không bị nhiễu
-}
-
-function ensureScanCameraStatusBox() {
-    const camBox = document.getElementById('camera-box');
-    if (!camBox) return null;
-
-    let status = document.getElementById('scan-camera-quality-status');
-    if (!status) {
-        status = document.createElement('div');
-        status.id = 'scan-camera-quality-status';
-        status.className = 'small fw-bold text-info mt-2 px-2 py-1 border border-info rounded';
-        status.style.cssText = 'background:rgba(0,0,0,.55); line-height:1.35;';
-        const reader = document.getElementById('camera-reader');
-        if (reader && reader.parentNode === camBox) {
-            reader.insertAdjacentElement('afterend', status);
-        } else {
-            camBox.insertBefore(status, camBox.firstChild);
-        }
-    }
-    return status;
-}
-
-function setScanCameraQualityStatus(message, type = 'info') {
-    const status = ensureScanCameraStatusBox();
-    if (!status) return;
-
-    status.classList.remove('text-info', 'text-success', 'text-warning', 'text-danger', 'border-info', 'border-success', 'border-warning', 'border-danger');
-
-    const cls = {
-        success: ['text-success', 'border-success'],
-        warning: ['text-warning', 'border-warning'],
-        danger: ['text-danger', 'border-danger'],
-        info: ['text-info', 'border-info']
-    }[type] || ['text-info', 'border-info'];
-
-    status.classList.add(...cls);
-    status.textContent = message;
-}
-
-function getRunningVideoTrackSafe() {
-    try {
-        if (html5QrCodeCam && typeof html5QrCodeCam.getRunningTrack === 'function') {
-            const t = html5QrCodeCam.getRunningTrack();
-            if (t) return t;
-        }
-    } catch(e) {}
-
-    try {
-        const videoEl = document.querySelector('#camera-reader video');
-        if (videoEl && videoEl.srcObject) {
-            return videoEl.srcObject.getVideoTracks()[0] || null;
-        }
-    } catch(e) {}
-
-    return null;
-}
-
-function describeRunningCameraQuality() {
-    const track = getRunningVideoTrackSafe();
-    if (!track) {
-        setScanCameraQualityStatus('✅ Camera đã mở. Không đọc được thông số độ phân giải thực tế.', 'success');
-        return;
-    }
-
-    let settings = {};
-    let caps = {};
-    try { settings = track.getSettings ? track.getSettings() : {}; } catch(e) {}
-    try { caps = track.getCapabilities ? track.getCapabilities() : {}; } catch(e) {}
-
-    const w = settings.width || '?';
-    const h = settings.height || '?';
-    const fps = Math.round(settings.frameRate || 0) || '?';
-    const label = settings.deviceId ? 'camera đã chọn' : (settings.facingMode ? `camera ${settings.facingMode}` : 'camera');
-    const maxW = caps.width && caps.width.max ? caps.width.max : null;
-    const maxH = caps.height && caps.height.max ? caps.height.max : null;
-
-    const capText = maxW && maxH ? ` · Tối đa thiết bị báo: ${maxW}×${maxH}` : '';
-    setScanCameraQualityStatus(`✅ Đang dùng ${label}: ${w}×${h} · FPS: ${fps}${capText}`, 'success');
-}
-
-function buildBestScanCameraCandidates(mode) {
-    const facing = mode || currentFacingMode || 'environment';
-
-    // Với Html5Qrcode, độ phân giải camera phải truyền qua scanConfig.videoConstraints.
-    // Nếu truyền width/height trực tiếp vào tham số cameraIdOrConfig, một số trình duyệt sẽ không mở được camera.
-    return [
-        { label: '4K',       constraints: { facingMode: { ideal: facing }, width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 30 } } },
-        { label: '2K',       constraints: { facingMode: { ideal: facing }, width: { ideal: 2560 }, height: { ideal: 1440 }, frameRate: { ideal: 30 } } },
-        { label: 'Full HD',  constraints: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } } },
-        { label: 'HD',       constraints: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720  }, frameRate: { ideal: 30 } } },
-        { label: 'Tự động',  constraints: { facingMode: { ideal: facing } } },
-        { label: 'Mặc định', constraints: true }
-    ];
-}
-
-function getSimpleHtml5QrCameraSelector(mode) {
-    const facing = mode || currentFacingMode || 'environment';
-    return { facingMode: { ideal: facing } };
-}
-
-async function safeStopAndClearScanCamera() {
-    try {
-        if (html5QrCodeCam && isCamRunning && typeof html5QrCodeCam.stop === 'function') {
-            await html5QrCodeCam.stop();
-        }
-    } catch(e) {}
-    try {
-        if (html5QrCodeCam && typeof html5QrCodeCam.clear === 'function') html5QrCodeCam.clear();
-    } catch(e) {}
-    isCamRunning = false;
-}
-
-async function startHtml5QrWithBestCamera(mode, scanConfig) {
-    const successHandler = getAirgapCameraSuccessHandler();
-    const failureHandler = getAirgapCameraFailureHandler();
-    const candidates = buildBestScanCameraCandidates(mode);
-    const simpleCameraSelector = getSimpleHtml5QrCameraSelector(mode);
-
-    let lastError = null;
-
-    for (let i = 0; i < candidates.length; i++) {
-        const item = candidates[i];
-        const configForScan = Object.assign({}, scanConfig || {});
-
-        if (item.constraints && item.constraints !== true) {
-            configForScan.videoConstraints = item.constraints;
-        }
-
-        try {
-            setScanCameraQualityStatus(
-                i === 0
-                    ? '🔎 Đang dò chất lượng camera tốt nhất...'
-                    : `🔎 Đang thử ${item.label || 'dự phòng'} (${i + 1}/${candidates.length})...`,
-                'info'
-            );
-
-            // Điểm sửa chính: cameraIdOrConfig chỉ để chọn camera/facingMode;
-            // độ phân giải thật được đặt trong config.videoConstraints.
-            await html5QrCodeCam.start(simpleCameraSelector, configForScan, successHandler, failureHandler);
-            isCamRunning = true;
-
-            setTimeout(() => {
-                describeRunningCameraQuality();
-                initCameraZoom(); // 🌟 Kích hoạt zoom sau khi luồng chạy ổn định
-            }, 450);
-
-            return;
-        } catch (err) {
-            lastError = err;
-            await safeStopAndClearScanCamera();
-            if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader");
-        }
-    }
-
-    // Fallback cuối: dùng đúng kiểu mở camera nguyên bản của html5-qrcode.
-    try {
-        setScanCameraQualityStatus('🔁 Đang mở camera bằng cấu hình mặc định...', 'warning');
-        await html5QrCodeCam.start(simpleCameraSelector, scanConfig || {}, successHandler, failureHandler);
-        isCamRunning = true;
-        setTimeout(() => {
-            describeRunningCameraQuality();
-            initCameraZoom();
-        }, 450);
-        return;
-    } catch (err) {
-        lastError = err;
-        await safeStopAndClearScanCamera();
-    }
-
-    throw lastError || new Error('Không tìm được cấu hình camera phù hợp.');
-}
-
-// 3. Lõi khởi động luồng Video: tự ưu tiên chất lượng thực tế cao nhất của camera được chọn
+// 3. Lõi khởi động luồng Video với thông số động (Đã tích hợp luồng kích hoạt Zoom)
 function launchCam(mode) {
-    currentFacingMode = mode || currentFacingMode || "environment";
-
     // Ẩn toàn bộ UI bên phát để tập trung cho camera quét
     const senderUI = document.getElementById('airgap-sender-uimoi');
     if (senderUI) senderUI.style.display = 'none';
     const scadaUI = document.getElementById('scheduler-scada');
     if (scadaUI) scadaUI.style.display = 'none';
+    
+    // Đọc thông số từ giao diện (nếu ô bị trống thì dùng giá trị mặc định)
+    const fpsVal = parseInt(document.getElementById('cam-fps')?.value) || 20;
+    const boxWidth = parseInt(document.getElementById('cam-width')?.value) || 250;
+    const boxHeight = parseInt(document.getElementById('cam-height')?.value) || 250;
 
-    // Đọc thông số quét QR. Lưu ý: cam-width/cam-height là kích thước vùng quét, không phải độ phân giải camera.
-    const fpsInput = parseInt(document.getElementById('cam-fps')?.value, 10);
-    const fpsVal = Number.isFinite(fpsInput) ? Math.max(15, fpsInput) : 30;
-    const boxWidth = parseInt(document.getElementById('cam-width')?.value, 10) || 250;
-    const boxHeight = parseInt(document.getElementById('cam-height')?.value, 10) || 250;
-
-    const scanConfig = {
-        fps: fpsVal,
-        qrbox: { width: boxWidth, height: boxHeight }
+    // Đóng gói cấu hình quét
+    const scanConfig = { 
+        fps: fpsVal, 
+        qrbox: { width: boxWidth, height: boxHeight } 
     };
 
-    if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode("camera-reader");
-
-    startHtml5QrWithBestCamera(currentFacingMode, scanConfig).catch(err => {
-        console.warn("Không thể mở camera ở các mức chất lượng đã thử:", err);
-        setScanCameraQualityStatus("❌ Không thể mở Camera. Hãy kiểm tra quyền camera, HTTPS/PWA hoặc camera đang bị ứng dụng khác sử dụng.", 'danger');
-        alert("Không thể mở Camera: " + (err && err.message ? err.message : err));
+    html5QrCodeCam.start(
+        { facingMode: mode }, 
+        scanConfig, 
+        (txt) => {
+            let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
+            if (window.qrScanMode === 'qrtext') {
+                if (typeof handleQrTextDecodedText === "function") handleQrTextDecodedText("Camera", d);
+                return;
+            }
+            if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
+            if (typeof handleDlQrDecodedText === "function" && handleDlQrDecodedText("Camera", d)) return;
+            if (typeof appendScanResult === "function") appendScanResult("Camera", d, true);
+        }, 
+        (err) => {} // Giấu các lỗi dò nét
+    ).then(() => { 
+        isCamRunning = true; 
+        initCameraZoom(); // 🌟 KÍCH HOẠT ZOOM KHI LUỒNG CHÍNH CHẠY THÀNH CÔNG
+    }).catch(e => {
+        console.warn("Máy không hỗ trợ cấu hình hiện tại, đang hạ cấp...", e);
+        
+        // Chế độ dự phòng: Nếu cấu hình do người dùng nhập gây lỗi
+        html5QrCodeCam.start(
+            { facingMode: mode }, 
+            { fps: 15 }, 
+            (txt) => {
+                let d = txt; try { d = decodeURIComponent(escape(txt)); } catch(e) {}
+                if (window.qrScanMode === 'qrtext') {
+                    if (typeof handleQrTextDecodedText === "function") handleQrTextDecodedText("Camera", d);
+                    return;
+                }
+                if (typeof interceptAirGapData === "function" && interceptAirGapData(d)) return;
+                if (typeof handleDlQrDecodedText === "function" && handleDlQrDecodedText("Camera", d)) return;
+                if (typeof appendScanResult === "function") appendScanResult("Camera", d, true);
+            }, 
+            (err) => {}
+        ).then(() => { 
+            isCamRunning = true; 
+            initCameraZoom(); // 🌟 KÍCH HOẠT ZOOM KHI LUỒNG DỰ PHÒNG CHẠY THÀNH CÔNG
+        }).catch(err2 => alert("Không thể mở Camera: " + err2));
     });
 }
 
@@ -5729,6 +6001,957 @@ window.addEventListener('beforeunload',function(){stopCamera();revokeUrls();stat
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
+
+/* =========================================================
+   PDF ADVANCED EXTENSIONS V45.2
+   - Tạo PDF từ nhiều nguồn dữ liệu ngoài
+   - Thêm nhiều nguồn vào PDF hiện tại
+   - Đánh dấu/Watermark dạng lớp có thể xóa trong phiên hiện tại
+   - Di chuyển trang đến vị trí chỉ định
+   - Thử lưu lại PDF đã mở được để bỏ hạn chế quyền nếu hợp lệ
+   - Trích text: hỗ trợ nếu có pdf.js; mặc định PDFLib không trích text
+   ========================================================= */
+(function(){
+  let pdfLayerBaseBytes = null;
+  let pdfLayerOps = [];
+  let pdfLayerFileName = '';
+  const originalPdfSetCurrentBytes = window.pdfSetCurrentBytes || pdfSetCurrentBytes;
+
+  function cloneBytes(bytes){
+    if (!bytes) return null;
+    return new Uint8Array(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
+  }
+
+  window.pdfSetCurrentBytes = async function(bytes, fileName, statusText){
+    if (!window.__pdfApplyingLayerOps) {
+      pdfLayerBaseBytes = cloneBytes(bytes);
+      pdfLayerOps = [];
+      pdfLayerFileName = fileName || window.currentPdfFileName || currentPdfFileName || 'tai_lieu.pdf';
+    }
+    return await originalPdfSetCurrentBytes(bytes, fileName, statusText);
+  };
+
+  function pdfSelectFiles(accept, multiple=true){
+    return new Promise(resolve => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = accept || '*/*';
+      input.multiple = !!multiple;
+      input.onchange = () => resolve(Array.from(input.files || []));
+      input.click();
+    });
+  }
+
+  function pdfSourceKind(file){
+    const name = (file?.name || '').toLowerCase();
+    const type = (file?.type || '').toLowerCase();
+    if (name.endsWith('.pdf') || type === 'application/pdf') return 'pdf';
+    if (/\.(png|jpe?g)$/i.test(name) || /^image\/(png|jpe?g)$/i.test(type)) return 'image-native';
+    if (/\.(webp|bmp|gif|svg)$/i.test(name) || /^image\//i.test(type)) return 'image-convert';
+    if (/\.(txt|csv|json|xml|md|html?|log)$/i.test(name) || /^text\//i.test(type) || /json|xml|html/i.test(type)) return 'text';
+    return 'text';
+  }
+
+  function pdfFileStem(name){
+    return String(name || 'nguon').split(/[\\/]/).pop().replace(/\.[^.]+$/,'') || 'nguon';
+  }
+
+  async function pdfImageFileToPngBytes(file){
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.decoding = 'async';
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => reject(new Error('Không đọc được ảnh: ' + file.name));
+        img.src = url;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, img.naturalWidth || img.width || 1);
+      canvas.height = Math.max(1, img.naturalHeight || img.height || 1);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      return pdfDataUrlToBytes(canvas.toDataURL('image/png'));
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function pdfPlainTextFromHtml(html){
+    try {
+      const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+      doc.querySelectorAll('script,style,noscript').forEach(e => e.remove());
+      return doc.body ? doc.body.innerText : String(html || '');
+    } catch(e) { return String(html || ''); }
+  }
+
+  function pdfMakeTextPngPages(text, options={}){
+    const fontSize = options.fontSize || 24;
+    const pageW = options.pageW || 1500;
+    const pageH = options.pageH || 2120;
+    const padding = options.padding ?? 70;
+    const lineH = Math.ceil(fontSize * 1.45);
+    const color = options.color || '#0f172a';
+    const weight = options.weight || '700';
+    const title = options.title ? String(options.title) : '';
+    const tmp = document.createElement('canvas').getContext('2d');
+    tmp.font = `${weight} ${fontSize}px Arial, sans-serif`;
+    const maxTextW = pageW - padding * 2;
+    const lines = [];
+    if (title) {
+      lines.push(title);
+      lines.push('');
+    }
+    String(text || '').replace(/\r\n/g, '\n').split('\n').forEach(par => {
+      if (!par.trim()) { lines.push(''); return; }
+      let line = '';
+      const words = par.split(/\s+/);
+      words.forEach(word => {
+        const probe = line ? line + ' ' + word : word;
+        if (tmp.measureText(probe).width > maxTextW && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = probe;
+        }
+      });
+      lines.push(line || '');
+    });
+    const perPage = Math.max(1, Math.floor((pageH - padding * 2) / lineH));
+    const pages = [];
+    for (let start = 0; start < lines.length; start += perPage) {
+      const chunk = lines.slice(start, start + perPage);
+      const canvas = document.createElement('canvas');
+      canvas.width = pageW;
+      canvas.height = pageH;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, pageW, pageH);
+      ctx.fillStyle = color;
+      ctx.font = `${weight} ${fontSize}px Arial, sans-serif`;
+      ctx.textBaseline = 'top';
+      chunk.forEach((line, i) => ctx.fillText(line, padding, padding + i * lineH));
+      pages.push(pdfDataUrlToBytes(canvas.toDataURL('image/png')));
+    }
+    if (!pages.length) pages.push(pdfMakeTextPngBytes('(trống)', { fontSize, maxWidth: pageW, weight }));
+    return pages;
+  }
+
+  async function pdfAddImageBytesAsPage(doc, imageBytes, isJpeg, title){
+    const pageW = 595.28, pageH = 841.89, margin = 28;
+    const page = doc.addPage([pageW, pageH]);
+    let img = isJpeg ? await doc.embedJpg(imageBytes) : await doc.embedPng(imageBytes);
+    const scale = Math.min((pageW - margin * 2) / img.width, (pageH - margin * 2) / img.height, 1);
+    const w = img.width * scale, h = img.height * scale;
+    page.drawImage(img, { x: (pageW - w) / 2, y: (pageH - h) / 2, width: w, height: h });
+    if (title) {
+      try {
+        const png = await doc.embedPng(pdfMakeTextPngBytes(title, { fontSize: 18, maxWidth: 1100, color:'#334155', weight:'700' }));
+        const ts = Math.min((pageW - margin * 2) / png.width, 26 / png.height, 1);
+        page.drawImage(png, { x: margin, y: 10, width: png.width * ts, height: png.height * ts, opacity: 0.65 });
+      } catch(e) {}
+    }
+  }
+
+  async function pdfAddTextAsPages(doc, text, title){
+    const pngPages = pdfMakeTextPngPages(text, { title, fontSize: 24, weight: '700' });
+    for (const pngBytes of pngPages) {
+      const page = doc.addPage([595.28, 841.89]);
+      const img = await doc.embedPng(pngBytes);
+      const margin = 28;
+      const scale = Math.min((page.getWidth() - margin * 2) / img.width, (page.getHeight() - margin * 2) / img.height, 1);
+      page.drawImage(img, { x: margin, y: page.getHeight() - margin - img.height * scale, width: img.width * scale, height: img.height * scale });
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  async function pdfAddSourceFilesToDoc(doc, files, statusPrefix){
+    let added = 0;
+    for (const file of files) {
+      const kind = pdfSourceKind(file);
+      const stem = pdfFileStem(file.name);
+      if (typeof showLoading === 'function') showLoading(true, `${statusPrefix || 'ĐANG XỬ LÝ'}: ${file.name}`);
+      if (kind === 'pdf') {
+        const src = await PDFLib.PDFDocument.load(await pdfReadFileBytes(file), { ignoreEncryption: true });
+        const pages = await doc.copyPages(src, src.getPageIndices());
+        pages.forEach(p => doc.addPage(p));
+        added += pages.length;
+      } else if (kind === 'image-native') {
+        const bytes = await pdfReadFileBytes(file);
+        const isJpeg = /\.jpe?g$/i.test(file.name) || /jpeg/i.test(file.type || '');
+        await pdfAddImageBytesAsPage(doc, bytes, isJpeg, file.name);
+        added += 1;
+      } else if (kind === 'image-convert') {
+        const pngBytes = await pdfImageFileToPngBytes(file);
+        await pdfAddImageBytesAsPage(doc, pngBytes, false, file.name);
+        added += 1;
+      } else {
+        let text = await file.text();
+        if (/\.html?$/i.test(file.name) || /html/i.test(file.type || '')) text = pdfPlainTextFromHtml(text);
+        await pdfAddTextAsPages(doc, text, file.name);
+        added = doc.getPageCount();
+      }
+      await new Promise(r => setTimeout(r, 0));
+    }
+    return added;
+  }
+
+  window.pdfCreateFromSourcesPrompt = async function(){
+    try {
+      if (!pdfEnsureLib()) return;
+      const files = await pdfSelectFiles('.pdf,.png,.jpg,.jpeg,.webp,.bmp,.gif,.svg,.txt,.csv,.json,.xml,.html,.htm,.md,.log', true);
+      if (!files.length) return;
+      showLoading(true, 'ĐANG TẠO PDF TỪ NHIỀU NGUỒN...');
+      const doc = await PDFLib.PDFDocument.create();
+      await pdfAddSourceFilesToDoc(doc, files, 'ĐANG TẠO PDF');
+      if (doc.getPageCount() === 0) return alert('Không tạo được trang PDF nào từ nguồn đã chọn.');
+      const bytes = await doc.save();
+      await window.pdfSetCurrentBytes(bytes, pdfMakeFileName('TaoTuNguon'), `Đã tạo PDF từ ${files.length} nguồn dữ liệu ngoài.`);
+      showView('pdf');
+    } catch(e) { alert('Lỗi tạo PDF từ nguồn ngoài: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfAppendSourcesPrompt = async function(){
+    try {
+      if (!pdfEnsureLib()) return;
+      const files = await pdfSelectFiles('.pdf,.png,.jpg,.jpeg,.webp,.bmp,.gif,.svg,.txt,.csv,.json,.xml,.html,.htm,.md,.log', true);
+      if (!files.length) return;
+      showLoading(true, 'ĐANG THÊM NGUỒN VÀO PDF...');
+      const doc = currentPdfBytes ? await pdfLoadDocument() : await PDFLib.PDFDocument.create();
+      const before = doc.getPageCount();
+      await pdfAddSourceFilesToDoc(doc, files, 'ĐANG THÊM NGUỒN');
+      const bytes = await doc.save();
+      await window.pdfSetCurrentBytes(bytes, pdfMakeFileName('ThemNguon'), `Đã thêm ${doc.getPageCount() - before} trang từ ${files.length} nguồn vào PDF.`);
+      showView('pdf');
+    } catch(e) { alert('Lỗi thêm nguồn vào PDF: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfCreateFromTextPrompt = async function(){
+    try {
+      if (!pdfEnsureLib()) return;
+      const title = prompt('Nhập tiêu đề PDF:', 'Tài liệu mới');
+      if (title === null) return;
+      const body = prompt('Nhập nội dung PDF. Có thể dùng tiếng Việt:', 'Nội dung tài liệu...');
+      if (body === null) return;
+      showLoading(true, 'ĐANG TẠO PDF...');
+      const doc = await PDFLib.PDFDocument.create();
+      await pdfAddTextAsPages(doc, body, title);
+      const bytes = await doc.save();
+      await window.pdfSetCurrentBytes(bytes, pdfMakeFileName('TaoMoi'), 'Đã tạo PDF mới từ nội dung nhập. Muốn tạo từ file ngoài, dùng nút TẠO TỪ NGUỒN.');
+      showView('pdf');
+    } catch(e) { alert('Lỗi tạo PDF: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfAddBlankPage = async function(){
+    try {
+      if (!pdfEnsureLib()) return;
+      const choose = confirm('Bấm OK để chọn nhiều nguồn dữ liệu thêm vào PDF.\nBấm HỦY để thêm 1 trang trắng.');
+      if (choose) return await window.pdfAppendSourcesPrompt();
+      showLoading(true, 'ĐANG THÊM TRANG TRẮNG...');
+      const doc = currentPdfBytes ? await pdfLoadDocument() : await PDFLib.PDFDocument.create();
+      doc.addPage([595.28, 841.89]);
+      const bytes = await doc.save();
+      await window.pdfSetCurrentBytes(bytes, currentPdfBytes ? pdfMakeFileName('ThemTrang') : pdfMakeFileName('PDFMoi'), 'Đã thêm một trang trắng vào cuối PDF.');
+      showView('pdf');
+    } catch(e) { alert('Lỗi thêm trang: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  async function pdfDrawLayerOps(doc, ops){
+    const pages = doc.getPages();
+    for (const op of ops) {
+      if (op.type === 'mark') {
+        const img = await doc.embedPng(pdfMakeTextPngBytes(op.text || 'ĐÁNH DẤU', { fontSize: 30, maxWidth: 900, color: '#7c2d12', weight: '800' }));
+        op.pages.forEach(n => {
+          const page = pages[n - 1]; if (!page) return;
+          const w = page.getWidth(), h = page.getHeight();
+          const y = h - (op.y || 90);
+          const boxH = op.boxH || 52;
+          page.drawRectangle({ x: 30, y, width: w - 60, height: boxH, color: PDFLib.rgb(1, 0.92, 0.35), opacity: 0.75 });
+          const scale = Math.min((w - 90) / img.width, (boxH - 12) / img.height, 1);
+          page.drawImage(img, { x: 45, y: y + 6, width: img.width * scale, height: img.height * scale });
+        });
+      } else if (op.type === 'watermark') {
+        const img = await doc.embedPng(pdfMakeTextPngBytes(op.text || 'WATERMARK', { fontSize: 70, maxWidth: 1400, color: '#1d4ed8', weight: '900' }));
+        op.pages.forEach(n => {
+          const page = pages[n - 1]; if (!page) return;
+          const w = page.getWidth(), h = page.getHeight();
+          const targetW = w * 0.8;
+          const scale = targetW / img.width;
+          page.drawImage(img, { x: w * 0.12, y: h * 0.44, width: img.width * scale, height: img.height * scale, rotate: PDFLib.degrees(op.rotate ?? -28), opacity: op.opacity ?? 0.16 });
+        });
+      }
+    }
+  }
+
+  async function pdfApplyLayerOps(statusText){
+    if (!pdfLayerBaseBytes) pdfLayerBaseBytes = cloneBytes(currentPdfBytes);
+    if (!pdfLayerBaseBytes) throw new Error('Chưa có PDF nền.');
+    const doc = await PDFLib.PDFDocument.load(pdfLayerBaseBytes, { ignoreEncryption: true });
+    await pdfDrawLayerOps(doc, pdfLayerOps);
+    const bytes = await doc.save();
+    window.__pdfApplyingLayerOps = true;
+    try {
+      await originalPdfSetCurrentBytes(bytes, pdfLayerFileName || currentPdfFileName || pdfMakeFileName('PDF'), statusText || 'Đã cập nhật lớp đánh dấu/watermark.');
+    } finally {
+      window.__pdfApplyingLayerOps = false;
+    }
+  }
+
+  window.pdfAddMarkPrompt = async function(){
+    try {
+      const baseDoc = await pdfLoadDocument(pdfLayerBaseBytes || currentPdfBytes);
+      const pageCount = baseDoc.getPageCount();
+      const text = prompt('Nhập nội dung đánh dấu:', 'CẦN CHÚ Ý');
+      if (text === null) return;
+      const rawPages = prompt(`Nhập trang cần đánh dấu. Để trống = tất cả ${pageCount} trang.`, '');
+      if (rawPages === null) return;
+      const pages = pdfParsePageNumbers(rawPages, pageCount, { blankAll: true, unique: true });
+      if (!pages.length) return alert('Không có trang hợp lệ.');
+      if (!pdfLayerBaseBytes) pdfLayerBaseBytes = cloneBytes(currentPdfBytes);
+      pdfLayerOps.push({ type: 'mark', text, pages });
+      showLoading(true, 'ĐANG THÊM ĐÁNH DẤU...');
+      await pdfApplyLayerOps(`Đã thêm đánh dấu cho ${pages.length} trang. Có thể bấm XÓA ĐÁNH DẤU để bỏ các đánh dấu vừa thêm trong phiên này.`);
+      showView('pdf');
+    } catch(e) { alert('Lỗi đánh dấu PDF: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfRemoveMarks = async function(){
+    try {
+      const old = pdfLayerOps.length;
+      pdfLayerOps = pdfLayerOps.filter(op => op.type !== 'mark');
+      if (old === pdfLayerOps.length) return alert('Không có đánh dấu nào do công cụ này thêm trong phiên hiện tại để xóa.');
+      showLoading(true, 'ĐANG XÓA ĐÁNH DẤU...');
+      await pdfApplyLayerOps('Đã xóa các đánh dấu thêm trong phiên hiện tại.');
+      showView('pdf');
+    } catch(e) { alert('Lỗi xóa đánh dấu: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfWatermarkPrompt = async function(){
+    try {
+      const baseDoc = await pdfLoadDocument(pdfLayerBaseBytes || currentPdfBytes);
+      const pageCount = baseDoc.getPageCount();
+      const text = prompt('Nhập nội dung watermark:', 'PC TUYÊN QUANG');
+      if (text === null) return;
+      const rawPages = prompt(`Nhập trang cần watermark. Để trống = tất cả ${pageCount} trang.`, '');
+      if (rawPages === null) return;
+      const pages = pdfParsePageNumbers(rawPages, pageCount, { blankAll: true, unique: true });
+      if (!pages.length) return alert('Không có trang hợp lệ.');
+      if (!pdfLayerBaseBytes) pdfLayerBaseBytes = cloneBytes(currentPdfBytes);
+      pdfLayerOps.push({ type: 'watermark', text, pages });
+      showLoading(true, 'ĐANG THÊM WATERMARK...');
+      await pdfApplyLayerOps(`Đã thêm watermark cho ${pages.length} trang. Có thể bấm XÓA WATERMARK để bỏ watermark vừa thêm trong phiên này.`);
+      showView('pdf');
+    } catch(e) { alert('Lỗi watermark PDF: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfRemoveWatermarks = async function(){
+    try {
+      const old = pdfLayerOps.length;
+      pdfLayerOps = pdfLayerOps.filter(op => op.type !== 'watermark');
+      if (old === pdfLayerOps.length) return alert('Không có watermark nào do công cụ này thêm trong phiên hiện tại để xóa.');
+      showLoading(true, 'ĐANG XÓA WATERMARK...');
+      await pdfApplyLayerOps('Đã xóa watermark thêm trong phiên hiện tại.');
+      showView('pdf');
+    } catch(e) { alert('Lỗi xóa watermark: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfMovePagesPrompt = async function(){
+    try {
+      const src = await pdfLoadDocument();
+      const pageCount = src.getPageCount();
+      const rawPages = prompt(`Nhập trang cần di chuyển. Ví dụ: 2,5-7\nPDF hiện có ${pageCount} trang.`, '1');
+      if (rawPages === null) return;
+      const selected = pdfParsePageNumbers(rawPages, pageCount, { unique: true }).sort((a,b)=>a-b);
+      if (!selected.length) return alert('Không có trang hợp lệ để di chuyển.');
+      const rawTarget = prompt(`Nhập vị trí chèn trước.\n1 = đầu PDF, ${pageCount + 1} = cuối PDF.`, String(pageCount + 1));
+      if (rawTarget === null) return;
+      let target = parseInt(rawTarget, 10);
+      if (!(target >= 1 && target <= pageCount + 1)) return alert('Vị trí chèn không hợp lệ.');
+      showLoading(true, 'ĐANG DI CHUYỂN TRANG...');
+      const set = new Set(selected);
+      const remaining = Array.from({length: pageCount}, (_,i)=>i+1).filter(n => !set.has(n));
+      const removedBefore = selected.filter(n => n < target).length;
+      let idx = Math.max(0, Math.min(remaining.length, target - 1 - removedBefore));
+      const order = remaining.slice(0, idx).concat(selected, remaining.slice(idx));
+      const out = await PDFLib.PDFDocument.create();
+      const copied = await out.copyPages(src, order.map(n => n - 1));
+      copied.forEach(p => out.addPage(p));
+      const bytes = await out.save();
+      await window.pdfSetCurrentBytes(bytes, pdfMakeFileName('DiChuyenTrang'), `Đã di chuyển ${selected.length} trang đến vị trí ${target}.`);
+      showView('pdf');
+    } catch(e) { alert('Lỗi di chuyển trang PDF: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfCopyTextPrompt = async function(){
+    try {
+      if (!currentPdfBytes) return alert('Chưa có PDF đang mở.');
+      if (typeof pdfjsLib === 'undefined') {
+        alert('Bản HTML hiện tại chỉ có PDFLib. PDFLib không hỗ trợ trích/copy text thật từ trang PDF.\n\nĐể copy text tự động cần tích hợp thêm PDF.js hoặc OCR, nhưng sẽ làm HTML nặng hơn nhiều. Hiện có thể dùng MỞ NGOÀI để chọn/copy text bằng trình xem PDF của trình duyệt nếu PDF có lớp text.');
+        return;
+      }
+      const pageRaw = prompt(`Nhập trang cần copy text. Để trống = tất cả ${currentPdfPageCount || ''} trang.`, '');
+      if (pageRaw === null) return;
+      const pages = pdfParsePageNumbers(pageRaw, currentPdfPageCount, { blankAll: true, unique: true });
+      showLoading(true, 'ĐANG TRÍCH TEXT PDF...');
+      const loadingTask = pdfjsLib.getDocument({ data: cloneBytes(currentPdfBytes) });
+      const pdf = await loadingTask.promise;
+      let text = '';
+      for (const n of pages) {
+        const page = await pdf.getPage(n);
+        const tc = await page.getTextContent();
+        text += `\n--- Trang ${n} ---\n` + tc.items.map(i => i.str).join(' ') + '\n';
+      }
+      await navigator.clipboard.writeText(text.trim());
+      alert('Đã copy text vào clipboard.');
+    } catch(e) { alert('Không copy được text PDF: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfTryUnlockPrompt = async function(){
+    try {
+      if (!currentPdfBytes) return alert('Chưa có PDF đang mở.');
+      if (!confirm('Chức năng này KHÔNG dò/bẻ mật khẩu.\nChỉ thử lưu lại PDF đã mở được để loại bỏ một số hạn chế quyền đối với tài liệu anh có quyền xử lý. Tiếp tục?')) return;
+      showLoading(true, 'ĐANG THỬ LƯU LẠI PDF...');
+      const doc = await PDFLib.PDFDocument.load(currentPdfBytes, { ignoreEncryption: true });
+      const bytes = await doc.save({ useObjectStreams: false });
+      await window.pdfSetCurrentBytes(bytes, pdfMakeFileName('MoKhoaThuQuyen'), 'Đã thử lưu lại PDF. Nếu PDF yêu cầu mật khẩu mở file thật sự thì PDFLib không thể gỡ nếu không có mật khẩu.');
+      showView('pdf');
+    } catch(e) {
+      alert('Không thể bỏ bảo vệ bằng PDFLib. PDF có thể đang được mã hóa/mật khẩu mở file thật sự. Cần mật khẩu hợp lệ hoặc công cụ giải mã chuyên dụng được phép sử dụng.\n\nChi tiết: ' + (e.message || e));
+    } finally { showLoading(false); }
+  };
+
+  window.renderPdfWorkspace = function(statusText = '') {
+    const pdfView = document.getElementById('pdf-view');
+    if (!pdfView) return;
+    const hasPdf = !!currentPdfBlobUrl;
+    const title = hasPdf ? currentPdfFileName : 'Chưa mở PDF';
+    const pageInfo = hasPdf && currentPdfPageCount ? `${currentPdfPageCount} trang` : 'Chưa có số trang';
+    const safeTitle = pdfEscapeHtml(title);
+    const safeStatus = pdfEscapeHtml(statusText || 'Các thao tác đều xử lý cục bộ trong trình duyệt, không gửi PDF ra Internet.');
+    const layerInfo = pdfLayerOps.length ? `<span class="text-warning ms-2">Lớp tạm: ${pdfLayerOps.filter(o=>o.type==='mark').length} đánh dấu, ${pdfLayerOps.filter(o=>o.type==='watermark').length} watermark</span>` : '';
+    pdfView.innerHTML = `
+      <div class="bg-dark border border-info rounded p-2" style="flex:0 0 auto; position:sticky; top:0; z-index:20;">
+        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
+          <div class="small text-info fw-bold text-truncate" style="max-width:60vw;">PDF: ${safeTitle} <span class="text-secondary">(${pageInfo})</span>${layerInfo}</div>
+          <div class="d-flex flex-wrap gap-1">
+            <button type="button" class="btn btn-sm btn-info fw-bold text-dark" onclick="openCurrentPdfExternal()">MỞ NGOÀI</button>
+            <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" onclick="downloadCurrentPdf()">TẢI PDF</button>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-1 mb-2">
+          <button type="button" class="btn btn-sm btn-success fw-bold" onclick="pdfCreateFromTextPrompt()">TẠO PDF</button>
+          <button type="button" class="btn btn-sm btn-outline-success fw-bold" onclick="pdfCreateFromSourcesPrompt()">TẠO TỪ NGUỒN</button>
+          <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfPrintCurrentEditorToPdf()">WORD/HTML → PDF</button>
+          <button type="button" class="btn btn-sm btn-outline-success fw-bold" onclick="pdfAddBlankPage()">THÊM TRANG/NGUỒN</button>
+          <button type="button" class="btn btn-sm btn-primary fw-bold" onclick="pdfMergePrompt()">GỘP PDF</button>
+          <button type="button" class="btn btn-sm btn-outline-primary fw-bold" onclick="pdfSplitPrompt()">TÁCH PDF</button>
+          <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfExtractPrompt()">TRÍCH TRANG</button>
+          <button type="button" class="btn btn-sm btn-danger fw-bold" onclick="pdfDeletePagesPrompt()">XÓA TRANG</button>
+          <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="pdfRotatePagesPrompt()">XOAY TRANG</button>
+          <button type="button" class="btn btn-sm btn-outline-light fw-bold" onclick="pdfMovePagesPrompt()">DI CHUYỂN TRANG</button>
+          <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" onclick="pdfAddMarkPrompt()">THÊM ĐÁNH DẤU</button>
+          <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="pdfRemoveMarks()">XÓA ĐÁNH DẤU</button>
+          <button type="button" class="btn btn-sm btn-secondary fw-bold" onclick="pdfWatermarkPrompt()">THÊM WATERMARK</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" onclick="pdfRemoveWatermarks()">XÓA WATERMARK</button>
+          <button type="button" class="btn btn-sm btn-outline-light fw-bold" onclick="pdfRemoveExternalWatermarkPrompt()">TẨY WATERMARK NGOÀI</button>
+          <button type="button" class="btn btn-sm btn-light fw-bold" onclick="pdfRedactRectPrompt()">CHE/XÓA VÙNG</button>
+          <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfCopyTextPrompt()">COPY TEXT</button>
+          <button type="button" class="btn btn-sm btn-outline-danger fw-bold" onclick="pdfTryUnlockPrompt()">GỠ KHÓA HẠN CHẾ</button>
+        </div>
+        <div class="small text-secondary">${safeStatus}</div>
+      </div>
+      <div style="flex:1 1 auto; min-height:0; width:100%; overflow:hidden; background:#111;">
+        ${hasPdf ? `<iframe src="${currentPdfBlobUrl}" width="100%" height="100%" style="display:block; border:none; width:100%; height:100%; min-height:calc(100vh - 118px); background:#fff;"></iframe>` : `<div class="h-100 d-flex align-items-center justify-content-center text-center text-secondary p-4"><div><div class="fw-bold text-info mb-2">CÔNG CỤ PDF</div><div>Mở file PDF để xem/sửa, hoặc dùng <b>TẠO PDF</b> / <b>TẠO TỪ NGUỒN</b> để tạo tài liệu mới.</div></div></div>`}
+      </div>`;
+    const tab = document.getElementById('tab-pdf');
+    if (tab) tab.style.display = 'block';
+  };
+})();
+
 </script>
+
+<style id="pdf-menu-word-compact-style">
+/* PDF tools compact menu V45.3 */
+.pdf-tools-toolbar{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;justify-content:space-between;position:relative;}
+.pdf-tool-menu{position:relative;display:inline-block;}
+.pdf-tool-menu>summary{list-style:none;cursor:pointer;user-select:none;border:1px solid rgba(13,202,240,.75);background:#0dcaf0;color:#111;border-radius:.35rem;padding:.28rem .55rem;font-size:.78rem;font-weight:900;line-height:1.25;}
+.pdf-tool-menu>summary::-webkit-details-marker{display:none;}
+.pdf-tool-menu[open]>summary{background:#ffc107;border-color:#ffc107;color:#111;}
+.pdf-tool-menu-panel{position:absolute;right:0;top:calc(100% + 6px);z-index:10050;width:min(92vw,620px);max-height:min(72vh,640px);overflow:auto;background:#0b1220;border:1px solid rgba(13,202,240,.55);border-radius:.75rem;padding:.7rem;box-shadow:0 18px 42px rgba(0,0,0,.55);}
+.pdf-tool-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem;}
+.pdf-tool-menu-section{border:1px solid rgba(255,255,255,.1);border-radius:.6rem;padding:.45rem;background:rgba(255,255,255,.035);}
+.pdf-tool-menu-title{font-size:.68rem;font-weight:900;color:#0dcaf0;text-transform:uppercase;letter-spacing:.03em;margin:0 0 .35rem 0;}
+.pdf-tool-menu-section .btn{width:100%;white-space:normal;line-height:1.15;margin-bottom:.3rem;min-height:31px;}
+.pdf-tool-menu-section .btn:last-child{margin-bottom:0;}
+.pdf-tools-status{font-size:.75rem;color:#adb5bd;line-height:1.35;}
+@media(max-width:700px){.pdf-tool-menu-panel{position:fixed;left:8px;right:8px;top:56px;width:auto;max-height:calc(100dvh - 72px);} .pdf-tool-menu-grid{grid-template-columns:1fr;} .pdf-tools-toolbar{align-items:flex-start;} }
+</style>
+<script id="pdf-word-source-and-menu-v453">
+(function(){
+  const PDF_ACCEPT_EXT = '.pdf,.docx,.docm,.doc,.png,.jpg,.jpeg,.webp,.bmp,.gif,.svg,.txt,.csv,.json,.xml,.html,.htm,.md,.log';
+
+  function pdfSelectAnySources(multiple=true){
+    return new Promise(resolve => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = PDF_ACCEPT_EXT;
+      input.multiple = !!multiple;
+      input.onchange = () => resolve(Array.from(input.files || []));
+      input.click();
+    });
+  }
+
+  function pdfGetExt(name){
+    const m = String(name || '').toLowerCase().match(/\.([a-z0-9]+)$/);
+    return m ? m[1] : '';
+  }
+
+  function pdfSourceKindV453(file){
+    const name = file?.name || '';
+    const ext = pdfGetExt(name);
+    const type = String(file?.type || '').toLowerCase();
+    if (ext === 'pdf' || type === 'application/pdf') return 'pdf';
+    if (['docx','docm'].includes(ext)) return 'word-docx';
+    if (ext === 'doc') return 'word-legacy';
+    if (['png','jpg','jpeg'].includes(ext) || /^image\/(png|jpe?g)$/i.test(type)) return 'image-native';
+    if (['webp','bmp','gif','svg'].includes(ext) || /^image\//i.test(type)) return 'image-convert';
+    return 'text';
+  }
+
+  function pdfFileStemV453(name){
+    return String(name || 'nguon').split(/[\\/]/).pop().replace(/\.[^.]+$/,'') || 'nguon';
+  }
+
+  function pdfDataUrlToBytesV453(dataUrl){
+    const b64 = String(dataUrl).split(',')[1] || '';
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+
+  function pdfHtmlToTextV453(html){
+    try {
+      const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+      doc.querySelectorAll('script,style,noscript').forEach(e => e.remove());
+      return doc.body ? doc.body.innerText : String(html || '');
+    } catch(e) { return String(html || ''); }
+  }
+
+  async function pdfWordFileToTextV453(file){
+    const ext = pdfGetExt(file.name);
+    if (['docx','docm'].includes(ext) && typeof mammoth !== 'undefined' && mammoth.convertToHtml) {
+      const result = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
+      return pdfHtmlToTextV453(result.value || '');
+    }
+    // DOC cũ hoặc DOCX lỗi: cố đọc text thuần để không làm đứt luồng.
+    try { return await file.text(); }
+    catch(e) { return '[Không đọc được nội dung Word: ' + file.name + ']'; }
+  }
+
+  function pdfMakeTextPagesPngV453(text, options={}){
+    const fontSize = options.fontSize || 24;
+    const pageW = options.pageW || 1500;
+    const pageH = options.pageH || 2120;
+    const padding = options.padding ?? 70;
+    const lineH = Math.ceil(fontSize * 1.45);
+    const title = options.title ? String(options.title) : '';
+    const canvasProbe = document.createElement('canvas');
+    const probe = canvasProbe.getContext('2d');
+    probe.font = `700 ${fontSize}px Arial, sans-serif`;
+    const maxTextW = pageW - padding * 2;
+    const lines = [];
+    if (title) { lines.push(title); lines.push(''); }
+    String(text || '').replace(/\r\n/g,'\n').split('\n').forEach(par => {
+      if (!par.trim()) { lines.push(''); return; }
+      let line = '';
+      par.split(/\s+/).forEach(word => {
+        const test = line ? line + ' ' + word : word;
+        if (probe.measureText(test).width > maxTextW && line) { lines.push(line); line = word; }
+        else line = test;
+      });
+      lines.push(line || '');
+    });
+    const perPage = Math.max(1, Math.floor((pageH - padding * 2) / lineH));
+    const out = [];
+    for (let start=0; start<lines.length; start += perPage) {
+      const pageLines = lines.slice(start, start + perPage);
+      const canvas = document.createElement('canvas');
+      canvas.width = pageW; canvas.height = pageH;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,pageW,pageH);
+      ctx.fillStyle = '#0f172a'; ctx.font = `700 ${fontSize}px Arial, sans-serif`; ctx.textBaseline = 'top';
+      pageLines.forEach((line, i) => ctx.fillText(line, padding, padding + i * lineH));
+      out.push(pdfDataUrlToBytesV453(canvas.toDataURL('image/png')));
+    }
+    if (!out.length && typeof pdfMakeTextPngBytes === 'function') out.push(pdfMakeTextPngBytes('(trống)', {fontSize, maxWidth: pageW, weight:'700'}));
+    return out;
+  }
+
+  async function pdfAddTextPagesV453(doc, text, title){
+    const pages = pdfMakeTextPagesPngV453(text, { title });
+    for (const pngBytes of pages) {
+      const page = doc.addPage([595.28, 841.89]);
+      const img = await doc.embedPng(pngBytes);
+      const margin = 28;
+      const scale = Math.min((page.getWidth()-margin*2)/img.width, (page.getHeight()-margin*2)/img.height, 1);
+      page.drawImage(img, {x: margin, y: page.getHeight() - margin - img.height*scale, width: img.width*scale, height: img.height*scale});
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  async function pdfImageFileToPngBytesV453(file){
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image(); img.decoding = 'async';
+      await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('Không đọc được ảnh: '+file.name)); img.src = url; });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, img.naturalWidth || img.width || 1);
+      canvas.height = Math.max(1, img.naturalHeight || img.height || 1);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      return pdfDataUrlToBytesV453(canvas.toDataURL('image/png'));
+    } finally { URL.revokeObjectURL(url); }
+  }
+
+  async function pdfAddImagePageV453(doc, bytes, isJpeg, title){
+    const pageW = 595.28, pageH = 841.89, margin = 28;
+    const page = doc.addPage([pageW, pageH]);
+    const img = isJpeg ? await doc.embedJpg(bytes) : await doc.embedPng(bytes);
+    const scale = Math.min((pageW - margin*2)/img.width, (pageH - margin*2)/img.height, 1);
+    const w = img.width*scale, h = img.height*scale;
+    page.drawImage(img, {x:(pageW-w)/2, y:(pageH-h)/2, width:w, height:h});
+    if (title && typeof pdfMakeTextPngBytes === 'function') {
+      try {
+        const titleImg = await doc.embedPng(pdfMakeTextPngBytes(title, {fontSize:18, maxWidth:1100, color:'#334155', weight:'700'}));
+        const ts = Math.min((pageW - margin*2)/titleImg.width, 26/titleImg.height, 1);
+        page.drawImage(titleImg, {x:margin, y:10, width:titleImg.width*ts, height:titleImg.height*ts, opacity:.65});
+      } catch(e) {}
+    }
+  }
+
+  async function pdfAddSourcesToDocV453(doc, files, statusPrefix){
+    let added = 0;
+    for (const file of files) {
+      const kind = pdfSourceKindV453(file);
+      if (typeof showLoading === 'function') showLoading(true, `${statusPrefix || 'ĐANG XỬ LÝ'}: ${file.name}`);
+      if (kind === 'pdf') {
+        const src = await PDFLib.PDFDocument.load(await pdfReadFileBytes(file), { ignoreEncryption: true });
+        const pages = await doc.copyPages(src, src.getPageIndices());
+        pages.forEach(p => doc.addPage(p));
+        added += pages.length;
+      } else if (kind === 'word-docx' || kind === 'word-legacy') {
+        const text = await pdfWordFileToTextV453(file);
+        await pdfAddTextPagesV453(doc, text, file.name);
+        added = doc.getPageCount();
+      } else if (kind === 'image-native') {
+        const bytes = await pdfReadFileBytes(file);
+        const isJpeg = /\.jpe?g$/i.test(file.name) || /jpeg/i.test(file.type || '');
+        await pdfAddImagePageV453(doc, bytes, isJpeg, file.name);
+        added += 1;
+      } else if (kind === 'image-convert') {
+        const pngBytes = await pdfImageFileToPngBytesV453(file);
+        await pdfAddImagePageV453(doc, pngBytes, false, file.name);
+        added += 1;
+      } else {
+        let text = await file.text();
+        if (/\.html?$/i.test(file.name) || /html/i.test(file.type || '')) text = pdfHtmlToTextV453(text);
+        await pdfAddTextPagesV453(doc, text, file.name);
+        added = doc.getPageCount();
+      }
+      await new Promise(r => setTimeout(r, 0));
+    }
+    return added;
+  }
+
+  window.pdfCreateFromSourcesPrompt = async function(){
+    try {
+      if (!pdfEnsureLib()) return;
+      const files = await pdfSelectAnySources(true);
+      if (!files.length) return;
+      showLoading(true, 'ĐANG TẠO PDF TỪ NHIỀU NGUỒN...');
+      const doc = await PDFLib.PDFDocument.create();
+      await pdfAddSourcesToDocV453(doc, files, 'ĐANG TẠO PDF');
+      if (doc.getPageCount() === 0) return alert('Không tạo được trang PDF nào từ nguồn đã chọn.');
+      const bytes = await doc.save();
+      await window.pdfSetCurrentBytes(bytes, pdfMakeFileName('TaoTuNguon'), `Đã tạo PDF từ ${files.length} nguồn dữ liệu, bao gồm Word nếu có.`);
+      showView('pdf');
+    } catch(e) { alert('Lỗi tạo PDF từ nguồn ngoài: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfAppendSourcesPrompt = async function(){
+    try {
+      if (!pdfEnsureLib()) return;
+      const files = await pdfSelectAnySources(true);
+      if (!files.length) return;
+      showLoading(true, 'ĐANG THÊM NGUỒN VÀO PDF...');
+      const doc = currentPdfBytes ? await pdfLoadDocument() : await PDFLib.PDFDocument.create();
+      const before = doc.getPageCount();
+      await pdfAddSourcesToDocV453(doc, files, 'ĐANG THÊM NGUỒN');
+      const bytes = await doc.save();
+      await window.pdfSetCurrentBytes(bytes, pdfMakeFileName('ThemNguon'), `Đã thêm ${doc.getPageCount() - before} trang từ ${files.length} nguồn vào PDF.`);
+      showView('pdf');
+    } catch(e) { alert('Lỗi thêm nguồn vào PDF: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.pdfAddBlankPage = async function(){
+    try {
+      if (!pdfEnsureLib()) return;
+      const choose = confirm('Bấm OK để chọn nhiều nguồn dữ liệu thêm vào PDF, bao gồm Word DOCX/DOCM.\nBấm HỦY để thêm 1 trang trắng.');
+      if (choose) return await window.pdfAppendSourcesPrompt();
+      showLoading(true, 'ĐANG THÊM TRANG TRẮNG...');
+      const doc = currentPdfBytes ? await pdfLoadDocument() : await PDFLib.PDFDocument.create();
+      doc.addPage([595.28, 841.89]);
+      const bytes = await doc.save();
+      await window.pdfSetCurrentBytes(bytes, currentPdfBytes ? pdfMakeFileName('ThemTrang') : pdfMakeFileName('PDFMoi'), 'Đã thêm một trang trắng vào cuối PDF.');
+      showView('pdf');
+    } catch(e) { alert('Lỗi thêm trang: ' + (e.message || e)); }
+    finally { showLoading(false); }
+  };
+
+  window.renderPdfWorkspace = function(statusText = '') {
+    const pdfView = document.getElementById('pdf-view');
+    if (!pdfView) return;
+    const hasPdf = !!currentPdfBlobUrl;
+    const title = hasPdf ? currentPdfFileName : 'Chưa mở PDF';
+    const pageInfo = hasPdf && currentPdfPageCount ? `${currentPdfPageCount} trang` : 'Chưa có số trang';
+    const safeTitle = pdfEscapeHtml(title);
+    const safeStatus = pdfEscapeHtml(statusText || 'Các thao tác đều xử lý cục bộ trong trình duyệt, không gửi PDF ra Internet.');
+    const layerCount = (typeof pdfLayerOps !== 'undefined' && Array.isArray(pdfLayerOps)) ? pdfLayerOps.length : 0;
+    const layerInfo = layerCount ? `<span class="text-warning ms-2">Có lớp đánh dấu/watermark tạm</span>` : '';
+    pdfView.innerHTML = `
+      <div class="bg-dark border border-info rounded p-2" style="flex:0 0 auto; position:sticky; top:0; z-index:20;">
+        <div class="pdf-tools-toolbar mb-1">
+          <div class="small text-info fw-bold text-truncate" style="max-width:min(62vw,760px);">PDF: ${safeTitle} <span class="text-secondary">(${pageInfo})</span>${layerInfo}</div>
+          <div class="d-flex flex-wrap gap-1 align-items-center">
+            <button type="button" class="btn btn-sm btn-info fw-bold text-dark" onclick="openCurrentPdfExternal()">MỞ NGOÀI</button>
+            <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" onclick="downloadCurrentPdf()">TẢI PDF</button>
+            <details class="pdf-tool-menu">
+              <summary>PDF MENU</summary>
+              <div class="pdf-tool-menu-panel">
+                <div class="pdf-tool-menu-grid">
+                  <div class="pdf-tool-menu-section">
+                    <div class="pdf-tool-menu-title">Tạo / Thêm nguồn</div>
+                    <button type="button" class="btn btn-sm btn-success fw-bold" onclick="pdfCreateFromTextPrompt()">TẠO PDF TỪ TEXT</button>
+                    <button type="button" class="btn btn-sm btn-outline-success fw-bold" onclick="pdfCreateFromSourcesPrompt()">TẠO TỪ NGUỒN PDF / WORD / ẢNH / TEXT</button>
+                    <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfPrintCurrentEditorToPdf()">WORD/HTML ĐANG XEM → PDF</button>
+                    <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfPrintWordHtmlSourcesPrompt()">WORD/HTML NGOÀI → PDF</button>
+                    <button type="button" class="btn btn-sm btn-outline-success fw-bold" onclick="pdfAddBlankPage()">THÊM TRANG / THÊM NGUỒN</button>
+                    <button type="button" class="btn btn-sm btn-primary fw-bold" onclick="pdfMergePrompt()">GỘP PDF</button>
+                  </div>
+                  <div class="pdf-tool-menu-section">
+                    <div class="pdf-tool-menu-title">Trang PDF</div>
+                    <button type="button" class="btn btn-sm btn-outline-primary fw-bold" onclick="pdfSplitPrompt()">TÁCH PDF</button>
+                    <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfExtractPrompt()">TRÍCH TRANG</button>
+                    <button type="button" class="btn btn-sm btn-danger fw-bold" onclick="pdfDeletePagesPrompt()">XÓA TRANG</button>
+                    <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="pdfRotatePagesPrompt()">XOAY TRANG</button>
+                    <button type="button" class="btn btn-sm btn-outline-light fw-bold" onclick="pdfMovePagesPrompt()">DI CHUYỂN TRANG</button>
+                  </div>
+                  <div class="pdf-tool-menu-section">
+                    <div class="pdf-tool-menu-title">Đánh dấu / Watermark</div>
+                    <button type="button" class="btn btn-sm btn-warning fw-bold text-dark" onclick="pdfAddMarkPrompt()">THÊM ĐÁNH DẤU</button>
+                    <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="pdfRemoveMarks()">XÓA ĐÁNH DẤU</button>
+                    <button type="button" class="btn btn-sm btn-secondary fw-bold" onclick="pdfWatermarkPrompt()">THÊM WATERMARK</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" onclick="pdfRemoveWatermarks()">XÓA WATERMARK</button>
+          <button type="button" class="btn btn-sm btn-outline-light fw-bold" onclick="pdfRemoveExternalWatermarkPrompt()">TẨY WATERMARK NGOÀI</button>
+                  </div>
+                  <div class="pdf-tool-menu-section">
+                    <div class="pdf-tool-menu-title">Khác</div>
+                    <button type="button" class="btn btn-sm btn-light fw-bold" onclick="pdfRedactRectPrompt()">CHE / XÓA VÙNG</button>
+                    <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfCopyTextPrompt()">COPY TEXT</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger fw-bold" onclick="pdfTryUnlockPrompt()">GỠ KHÓA HẠN CHẾ</button>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+        <div class="pdf-tools-status">${safeStatus}</div>
+      </div>
+      <div style="flex:1 1 auto; min-height:0; width:100%; overflow:hidden; background:#111;">
+        ${hasPdf ? `<iframe src="${currentPdfBlobUrl}" width="100%" height="100%" style="display:block; border:none; width:100%; height:100%; min-height:calc(100vh - 118px); background:#fff;"></iframe>` : `<div class="h-100 d-flex align-items-center justify-content-center text-center text-secondary p-4"><div><div class="fw-bold text-info mb-2">CÔNG CỤ PDF</div><div>Mở file PDF để xem/sửa, hoặc dùng <b>PDF MENU</b> để tạo PDF từ Text, Word, ảnh, HTML hoặc PDF khác.</div></div></div>`}
+      </div>`;
+    const tab = document.getElementById('tab-pdf');
+    if (tab) tab.style.display = 'block';
+  };
+})();
+</script>
+
+<script id="pdf-word-html-print-and-external-watermark-patch">
+(function(){
+  function pdfPrintEscapeTitle(s){
+    return String(s || 'Tai_lieu').replace(/[\\/:*?"<>|]+/g, '_').slice(0, 80) || 'Tai_lieu';
+  }
+
+  function pdfBuildPrintableHtmlDocument(bodyHtml, title){
+    const safeTitle = pdfPrintEscapeTitle(title || 'Tai_lieu_Word_HTML');
+    return `<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>${safeTitle}</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  html, body { margin:0; padding:0; background:#fff; color:#111827; font-family: "Times New Roman", Arial, sans-serif; font-size: 12pt; line-height: 1.45; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-page { max-width: 190mm; margin: 0 auto; background:#fff; }
+  img { max-width: 100%; height: auto; }
+  table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
+  tr { page-break-inside: avoid; page-break-after: auto; }
+  td, th { border: 1px solid #888; padding: 4px 6px; vertical-align: top; }
+  p { margin: 0 0 8px 0; }
+  h1,h2,h3,h4,h5,h6 { page-break-after: avoid; margin: 10px 0 6px; }
+  a { color:#1d4ed8; text-decoration: underline; }
+  .page-break, .pdf-source-break { break-before: page; page-break-before: always; }
+  @media screen { body { background:#e5e7eb; padding: 18px; } .print-page { min-height: 297mm; box-shadow: 0 12px 36px rgba(0,0,0,.18); padding: 16mm 14mm; } }
+  @media print { .print-page { max-width:none; margin:0; padding:0; box-shadow:none; } }
+</style>
+</head>
+<body>
+  <div class="print-page">${bodyHtml || '<p></p>'}</div>
+<script>
+  window.addEventListener('load', function(){ setTimeout(function(){ window.focus(); window.print(); }, 450); });
+<\/script>
+</body>
+</html>`;
+  }
+
+  function pdfOpenHtmlForPrint(bodyHtml, title){
+    const docHtml = pdfBuildPrintableHtmlDocument(bodyHtml, title);
+    const win = window.open('', '_blank');
+    if (!win) {
+      const blob = new Blob([docHtml], {type:'text/html;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = pdfPrintEscapeTitle(title || 'Tai_lieu_Word_HTML') + '_in_pdf.html';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      alert('Trình duyệt đã chặn popup. Tôi đã tải xuống file HTML in PDF. Hãy mở file này rồi chọn In / Lưu thành PDF.');
+      return;
+    }
+    win.document.open();
+    win.document.write(docHtml);
+    win.document.close();
+  }
+
+  window.pdfPrintCurrentEditorToPdf = function(){
+    try {
+      const editor = document.getElementById('main-editor');
+      if (!editor) return alert('Không tìm thấy vùng nội dung Word/HTML đang xem.');
+      const html = (editor.innerHTML || '').trim();
+      const text = (editor.innerText || '').trim();
+      if (!html && !text) return alert('Vùng nội dung đang xem đang trống. Hãy mở file Word/HTML trước.');
+      pdfOpenHtmlForPrint(html || `<pre>${text}</pre>`, (window.fNameCur || 'Noi_dung_dang_xem') + '_PDF');
+    } catch(e) { alert('Không tạo được bản in PDF từ nội dung đang xem: ' + (e.message || e)); }
+  };
+
+  async function pdfReadWordOrHtmlAsRenderableHtml(file){
+    const name = file?.name || 'nguon';
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    if (['docx','docm'].includes(ext)) {
+      if (typeof mammoth === 'undefined' || !mammoth.convertToHtml) throw new Error('Thiếu Mammoth.js để đọc Word.');
+      const result = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
+      return `<section class="pdf-source-doc"><h2>${name}</h2>${result.value || ''}</section>`;
+    }
+    if (['html','htm'].includes(ext) || /html/i.test(file.type || '')) {
+      const raw = await file.text();
+      try {
+        const dom = new DOMParser().parseFromString(raw, 'text/html');
+        dom.querySelectorAll('script,noscript').forEach(e => e.remove());
+        return `<section class="pdf-source-doc"><h2>${name}</h2>${dom.body ? dom.body.innerHTML : raw}</section>`;
+      } catch(e) { return `<section><h2>${name}</h2>${raw}</section>`; }
+    }
+    const txt = await file.text();
+    const esc = (typeof pdfEscapeHtml === 'function') ? pdfEscapeHtml(txt) : String(txt).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    return `<section class="pdf-source-doc"><h2>${name}</h2><pre style="white-space:pre-wrap;font-family:Consolas,monospace">${esc}</pre></section>`;
+  }
+
+  window.pdfPrintWordHtmlSourcesPrompt = async function(){
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = true;
+      input.accept = '.docx,.docm,.html,.htm,.txt,.md,.log,.xml,.json,.csv';
+      input.onchange = async () => {
+        const files = Array.from(input.files || []);
+        if (!files.length) return;
+        try {
+          if (typeof showLoading === 'function') showLoading(true, 'ĐANG DỰNG WORD/HTML ĐỂ IN PDF...');
+          const parts = [];
+          for (let i=0;i<files.length;i++) {
+            if (i) parts.push('<div class="pdf-source-break"></div>');
+            parts.push(await pdfReadWordOrHtmlAsRenderableHtml(files[i]));
+            await new Promise(r => setTimeout(r, 0));
+          }
+          pdfOpenHtmlForPrint(parts.join('\n'), 'Word_HTML_To_PDF');
+        } finally { if (typeof showLoading === 'function') showLoading(false); }
+      };
+      input.click();
+    } catch(e) { alert('Không tạo được PDF từ Word/HTML: ' + (e.message || e)); }
+  };
+
+  function pdfParseExternalWmPages(pageCount){
+    const rawPages = prompt(`Nhập trang cần xử lý watermark ngoài. Để trống = tất cả ${pageCount} trang.`, '');
+    if (rawPages === null) return null;
+    return (typeof pdfParsePageNumbers === 'function') ? pdfParsePageNumbers(rawPages, pageCount, { blankAll: true, unique: true }) : Array.from({length: pageCount}, (_,i)=>i+1);
+  }
+
+  window.pdfRemoveExternalWatermarkPrompt = async function(){
+    try {
+      if (!window.PDFLib) return alert('Thiếu PDFLib.');
+      if (!window.currentPdfBytes && typeof currentPdfBytes === 'undefined') return alert('Chưa có PDF đang mở.');
+      const doc = await (typeof pdfLoadDocument === 'function' ? pdfLoadDocument() : PDFLib.PDFDocument.load(currentPdfBytes, {ignoreEncryption:true}));
+      const pageCount = doc.getPageCount();
+      const mode = prompt('Chọn kiểu tẩy watermark ngoài:\n1 = Tẩy dải chéo giữa trang, phù hợp watermark chữ mờ\n2 = Tẩy vùng theo tọa độ phần trăm x,y,w,h\n3 = Tẩy vùng giữa trang\n\nLưu ý: chỉ phủ màu nền, không xóa object gốc trong PDF.', '1');
+      if (mode === null) return;
+      const pages = pdfParseExternalWmPages(pageCount);
+      if (!pages || !pages.length) return alert('Không có trang hợp lệ.');
+      let rectPct = null;
+      if (String(mode).trim() === '2') {
+        const raw = prompt('Nhập vùng cần phủ theo phần trăm: x,y,w,h\nVí dụ 10,35,80,25', '10,35,80,25');
+        if (raw === null) return;
+        const nums = raw.split(/[;,\s]+/).map(Number).filter(n => Number.isFinite(n));
+        if (nums.length < 4) return alert('Tọa độ không hợp lệ.');
+        rectPct = nums.slice(0,4);
+      }
+      const opacityRaw = prompt('Độ phủ màu trắng 0.1 đến 1.0. Nên dùng 0.92-1.0.', '0.96');
+      if (opacityRaw === null) return;
+      const opacity = Math.max(0.1, Math.min(1, Number(opacityRaw) || 0.96));
+      if (typeof showLoading === 'function') showLoading(true, 'ĐANG TẨY WATERMARK NGOÀI...');
+      const allPages = doc.getPages();
+      pages.forEach(n => {
+        const page = allPages[n-1]; if (!page) return;
+        const W = page.getWidth(), H = page.getHeight();
+        if (String(mode).trim() === '2' && rectPct) {
+          const [x,y,w,h] = rectPct;
+          page.drawRectangle({ x: W*x/100, y: H*(100-y-h)/100, width: W*w/100, height: H*h/100, color: PDFLib.rgb(1,1,1), opacity });
+        } else if (String(mode).trim() === '3') {
+          page.drawRectangle({ x: W*0.12, y: H*0.34, width: W*0.76, height: H*0.32, color: PDFLib.rgb(1,1,1), opacity });
+        } else {
+          // Dải chéo lớn giữa trang. Tốt cho watermark chữ mờ chéo trên nền trắng.
+          page.drawRectangle({ x: -W*0.22, y: H*0.41, width: W*1.55, height: Math.max(70, H*0.18), color: PDFLib.rgb(1,1,1), opacity, rotate: PDFLib.degrees(-28) });
+          page.drawRectangle({ x: -W*0.18, y: H*0.45, width: W*1.45, height: Math.max(40, H*0.10), color: PDFLib.rgb(1,1,1), opacity: Math.min(1, opacity + 0.02), rotate: PDFLib.degrees(-28) });
+        }
+      });
+      const bytes = await doc.save();
+      await window.pdfSetCurrentBytes(bytes, (typeof pdfMakeFileName === 'function' ? pdfMakeFileName('TayWatermarkNgoai') : 'TayWatermarkNgoai.pdf'), `Đã phủ/tẩy watermark ngoài trên ${pages.length} trang. Nếu nền không trắng hoặc watermark nằm dưới nội dung, cần dùng chế độ vùng tọa độ.`);
+      if (typeof showView === 'function') showView('pdf');
+    } catch(e) { alert('Không tẩy được watermark ngoài: ' + (e.message || e)); }
+    finally { if (typeof showLoading === 'function') showLoading(false); }
+  };
+})();
+</script>
+
 </body>
 </html>
