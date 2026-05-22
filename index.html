@@ -1171,9 +1171,9 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <select class="form-select form-select-sm bg-dark text-warning border-secondary" id="scan-camera-device">
 <option value="">Tự động theo camera sau/trước</option>
 </select>
-<button class="btn btn-outline-info fw-bold" onclick="listScanCameras()" type="button">DÒ CAM</button><button class="btn btn-outline-success fw-bold" onclick="probeScanCameraQuality()" type="button">DÒ CHẤT LƯỢNG</button><button id="btn-scan-autofocus" class="btn btn-outline-warning fw-bold" onclick="toggleScanCameraAutofocus()" type="button">TỰ LẤY NÉT</button>
+<button id="btn-scan-camera-smart" class="btn btn-outline-info fw-bold" onclick="scanCameraSmartDetectOrQuality()" type="button" data-mode="detect">DÒ CAM</button><button id="btn-scan-autofocus" class="btn btn-outline-warning fw-bold" onclick="toggleScanCameraAutofocus()" type="button">TỰ LẤY NÉT</button>
 </div>
-<div class="small text-secondary mt-1">Nếu không chọn camera cụ thể, hệ thống ưu tiên camera sau. Bấm DÒ CHẤT LƯỢNG một lần để lưu độ phân giải tốt nhất; nút TỰ LẤY NÉT hoạt động dạng bật/tắt: bật autofocus liên tục nếu hỗ trợ, bấm lại để thử chuyển về manual/thôi autofocus. Nếu thiết bị chỉ hỗ trợ single-shot thì nút sẽ lấy nét một lần.</div>
+<div class="small text-secondary mt-1">Nếu không chọn camera cụ thể, hệ thống ưu tiên camera sau. Bấm DÒ CAM để liệt kê camera; nếu phát hiện được camera, nút này tự đổi thành DÒ CHẤT LƯỢNG để lưu độ phân giải tốt nhất. Nút TỰ LẤY NÉT hoạt động dạng bật/tắt: bật autofocus liên tục nếu hỗ trợ, bấm lại để thử chuyển về manual/thôi autofocus. Nếu thiết bị chỉ hỗ trợ single-shot thì nút sẽ lấy nét một lần.</div>
 </div>
 <div class="col-4">
 <label class="small text-light mb-1">FPS:</label>
@@ -4689,6 +4689,46 @@ function setScanCameraQualityStatus(message, type = 'info') {
     status.textContent = message;
 }
 
+
+function updateScanCameraSmartButton(mode, cameraCount) {
+    const btn = document.getElementById('btn-scan-camera-smart');
+    if (!btn) return;
+
+    btn.classList.remove('btn-outline-info', 'btn-outline-success', 'btn-outline-warning');
+
+    if (mode === 'quality') {
+        btn.dataset.mode = 'quality';
+        btn.textContent = 'DÒ CHẤT LƯỢNG';
+        btn.title = cameraCount ? `Đã phát hiện ${cameraCount} camera. Bấm để dò và lưu chất lượng tốt nhất cho camera đang chọn.` : 'Bấm để dò và lưu chất lượng tốt nhất cho camera đang chọn.';
+        btn.classList.add('btn-outline-success');
+    } else {
+        btn.dataset.mode = 'detect';
+        btn.textContent = 'DÒ CAM';
+        btn.title = 'Bấm để xin quyền và liệt kê camera thật của thiết bị.';
+        btn.classList.add('btn-outline-info');
+    }
+}
+
+async function scanCameraSmartDetectOrQuality() {
+    const btn = document.getElementById('btn-scan-camera-smart');
+    const mode = btn && btn.dataset ? btn.dataset.mode : 'detect';
+
+    if (mode === 'quality') {
+        if (typeof probeScanCameraQuality === 'function') {
+            await probeScanCameraQuality();
+        }
+        return;
+    }
+
+    const count = await listScanCameras();
+    if (Number(count) > 0) {
+        updateScanCameraSmartButton('quality', count);
+    } else {
+        updateScanCameraSmartButton('detect', 0);
+    }
+}
+
+
 function getSelectedScanCameraDeviceId() {
     const sel = document.getElementById('scan-camera-device');
     return sel && sel.value ? sel.value : '';
@@ -4756,13 +4796,37 @@ async function listScanCameras() {
             sel.appendChild(opt);
         });
         if (oldValue && cams.some(c => c.deviceId === oldValue)) sel.value = oldValue;
-        setScanCameraQualityStatus(`Đã dò được ${cams.length} camera. Muốn lưu chất lượng tối ưu, bấm DÒ CHẤT LƯỢNG một lần.`, 'success');
+        if (cams.length > 0) {
+            setScanCameraQualityStatus(`Đã dò được ${cams.length} camera. Bấm DÒ CHẤT LƯỢNG để lưu độ phân giải tối ưu.`, 'success');
+            updateScanCameraSmartButton('quality', cams.length);
+        } else {
+            setScanCameraQualityStatus('Không phát hiện được camera nào. Hãy kiểm tra quyền camera hoặc trình duyệt.', 'warning');
+            updateScanCameraSmartButton('detect', 0);
+        }
+        return cams.length;
     } catch(err) {
         setScanCameraQualityStatus('Không dò được danh sách camera: ' + (err && err.message ? err.message : err), 'warning');
+        updateScanCameraSmartButton('detect', 0);
+        return 0;
     } finally {
         try { if (tmpStream) tmpStream.getTracks().forEach(t => t.stop()); } catch(e) {}
     }
 }
+
+
+
+// Khi người dùng đổi camera trong danh sách, giữ nút ở trạng thái DÒ CHẤT LƯỢNG
+// vì danh sách camera đã được cấp quyền; người dùng có thể bấm để lưu lại chất lượng cho camera mới.
+window.addEventListener('DOMContentLoaded', () => {
+    updateScanCameraSmartButton('detect', 0);
+    const sel = document.getElementById('scan-camera-device');
+    if (sel) {
+        sel.addEventListener('change', () => {
+            const hasAnyCamera = sel.options && sel.options.length > 1;
+            updateScanCameraSmartButton(hasAnyCamera ? 'quality' : 'detect', Math.max(0, sel.options.length - 1));
+        });
+    }
+});
 
 function getRunningVideoTrackSafe() {
     try {
