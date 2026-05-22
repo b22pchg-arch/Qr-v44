@@ -176,7 +176,7 @@ if (!reg) {
 
 /* =========================================================================
    AIRGAP QR THEATER QUALITY STYLE V45.1
-   Tối ưu hiển thị QR Theater: quiet-zone, không làm mờ QR, panel co giãn tốt.
+   Tối ưu hiển thị QR Theater: quiet-zone, không làm mờ QR, panel co giãn tốt, cho phép chỉnh viền trắng ngoài QR.
    ========================================================================= */
 .airgap-theater-v451 img,
 .airgap-theater-v451 canvas,
@@ -1158,9 +1158,9 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <p class="text-secondary small mb-2" style="font-size: 0.75rem; line-height: 1.35;">
                         Chọn file <b>.txt</b>. Nếu tên có dạng <b>tênfile_phầnmởrộng.txt</b> thì tự lấy đuôi sau dấu gạch dưới cuối; nếu không có thì dùng ô bên dưới.
                     </p>
-<div class="input-group input-group-sm mb-2">
-<span class="input-group-text bg-dark text-secondary border-secondary">Đuôi</span>
-<input class="form-control bg-dark text-light border-secondary text-center fw-bold" id="restore-ext-input" placeholder="xlsx" type="text" value="xlsx"/>
+<div class="mb-2" style="display:flex; align-items:center; gap:8px; width:100%;">
+<label for="restore-ext-input" style="margin:0; min-width:44px; color:#adb5bd !important; font-size:0.82rem; font-weight:700; line-height:1;">Đuôi</label>
+<input class="form-control form-control-sm bg-dark text-light border-secondary text-center fw-bold" id="restore-ext-input" placeholder="xlsx" type="text" value="xlsx" style="flex:1 1 auto; min-width:0;"/>
 </div>
 <label class="btn btn-outline-warning btn-sm fw-bold w-100 mb-0">
                         CHỌN FILE .TXT VÀ ĐỔI LẠI ĐUÔI
@@ -1265,18 +1265,19 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <div class="row g-2">
 <div class="col-12">
 <label class="small text-info mb-1 fw-bold">Hồ sơ truyền QR:</label>
-<div class="d-flex gap-2">
-<select class="form-select form-select-sm bg-dark text-info border-info" id="qr-quality-profile" onchange="applyQrQualityProfile(this.value, true)">
+<div style="display:flex; gap:8px; align-items:stretch; width:100%;">
+<select class="form-select form-select-sm bg-dark text-info border-info" id="qr-quality-profile" onchange="applyQrQualityProfile(this.value, true)" style="flex:1 1 auto; min-width:0;">
 <option value="custom">Tùy chỉnh thủ công</option>
 <option value="safe">AN TOÀN - camera yếu / ánh sáng kém</option>
 <option selected="" value="balanced">CÂN BẰNG - khuyến nghị mặc định</option>
 <option value="fast">NHANH - camera tốt / màn hình lớn</option>
 <option value="turbo">SIÊU NHANH - thử nghiệm</option>
 </select>
-<button class="btn btn-sm btn-outline-info fw-bold" type="button" onclick="applyQrQualityProfile(document.getElementById('qr-quality-profile')?.value || 'balanced', true)">ÁP DỤNG</button>
+<button class="btn btn-sm btn-outline-info fw-bold" type="button" onclick="applyQrQualityProfile(document.getElementById('qr-quality-profile')?.value || 'balanced', true)" style="flex:0 0 72px; min-width:72px; white-space:normal; line-height:1.05; padding-left:6px; padding-right:6px;">ÁP DỤNG</button>
 </div>
 <div class="small text-info mt-1" id="qr-density-advice" style="font-size:0.72rem; line-height:1.35;">Chọn hồ sơ để tự cân bằng kích thước QR, mật độ, sửa lỗi và tốc độ rạp chiếu.</div>
 </div>
+
 <div class="col-6">
 <label class="small text-info mb-1 fw-bold">Kích thước QR (px):</label>
 <input class="form-control form-control-sm bg-dark text-info border-info text-center" id="qr-size" max="1000" min="200" type="number" value="550"/>
@@ -1285,6 +1286,15 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <label class="small text-info mb-1 fw-bold">Mật độ (Ký tự/QR):</label>
 <input class="form-control form-control-sm bg-dark text-info border-info text-center fw-bold" id="airgap-chunk-size" max="2800" min="100" type="number" value="700"/>
 </div>
+
+<div class="col-12">
+<label class="small text-info mb-1 fw-bold">Viền trắng ngoài QR (px):</label>
+<input class="form-control form-control-sm bg-dark text-info border-info text-center fw-bold" id="qr-outer-border" max="240" min="0" type="number" value="40" onchange="saveQrOuterBorderSetting(); updateQrDensityAdvice();"/>
+<div class="small mt-1" style="display:block; width:100%; color:#9fb0bf !important; font-size:0.74rem; line-height:1.35;">
+Áp dụng cho QR tạo trên trang, ZIP ảnh QR, Mega Sheet và QR Theater.
+</div>
+</div>
+
 <div class="col-12">
 <label class="small text-info mb-1 fw-bold">Mức sửa lỗi (Error Correction):</label>
 <select class="form-select form-select-sm bg-dark text-info border-info" id="qr-error-level" onchange="validateChunkSize()">
@@ -1293,22 +1303,20 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <option value="Q">Level Q (25% - Max: 1500 ký tự)</option>
 <option value="H">Level H (30% - Max: 1100 ký tự)</option>
 </select>
-<div class="text-warning small mt-1" id="density-warning" style="display:none; font-size: 0.75rem;">
-                    ⚠️ Mật độ đã được điều chỉnh về mức an toàn.
-                </div>
+<div class="text-warning small mt-1" id="density-warning" style="display:none; font-size: 0.75rem;">⚠️ Mật độ đã được điều chỉnh về mức an toàn.</div>
 </div>
 </div>
 </div>
 </div>
 <div class="mb-3">
-<label class="small text-warning fw-bold d-block mb-2">CHUẨN NÉN DỮ LIỆU:</label>
+<label class="small fw-bold d-block mb-2" style="color:#b85a00 !important;">CHUẨN NÉN DỮ LIỆU:</label>
 <select class="form-select form-select-sm bg-dark text-warning border-warning" id="compression-choice">
 <option selected="" value="ZIP">Tiêu chuẩn (ZIP/Deflate - Nén nhanh)</option>
 <option value="LZMA">Cực đại (LZMA/7-Zip - File siêu nhỏ)</option>
 </select>
-<div class="form-check mt-2">
-<input class="form-check-input" id="pre-compressed-mode" type="checkbox"/>
-<label class="form-check-label small text-success fw-bold" for="pre-compressed-mode" style="cursor: pointer;">
+<div class="form-check mt-2" style="display:flex; align-items:center; gap:8px; padding:7px 9px; border:1px solid rgba(255,152,0,.55); border-radius:7px; background:rgba(255,152,0,.08);">
+<input class="form-check-input" id="pre-compressed-mode" type="checkbox" style="-webkit-appearance:checkbox !important; appearance:auto !important; accent-color:#ff9800; width:1.1rem; height:1.1rem; margin:0 !important; float:none !important; flex:0 0 auto; opacity:1 !important; cursor:pointer; position:relative; z-index:2;"/>
+<label class="form-check-label small fw-bold" for="pre-compressed-mode" style="color:#198754 !important; cursor:pointer; margin:0; line-height:1.25;">
     Tôi đã tự nén file (Bỏ qua xử lý Excel/CSV)
 </label>
 </div>
@@ -2015,11 +2023,45 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         return AIRGAP_QR_PROFILES[profileName] || null;
     }
 
+    function getQrOuterBorderPx() {
+        const el = document.getElementById('qr-outer-border');
+        let px = parseInt(el?.value, 10);
+        if (!Number.isFinite(px)) px = 40;
+        px = Math.max(0, Math.min(240, px));
+        if (el) el.value = px;
+        return px;
+    }
+
+    function saveQrOuterBorderSetting() {
+        try { localStorage.setItem('AIRGAP_QR_OUTER_BORDER_PX_V451', String(getQrOuterBorderPx())); }
+        catch (e) {}
+    }
+
+    function applyQrOuterBorderToHolder(holderEl, borderPx) {
+        if (!holderEl) return;
+        const px = Math.max(0, parseInt(borderPx, 10) || 0);
+        holderEl.style.background = '#ffffff';
+        holderEl.style.padding = px + 'px';
+        holderEl.style.borderRadius = '4px';
+        holderEl.style.display = 'inline-flex';
+        holderEl.style.alignItems = 'center';
+        holderEl.style.justifyContent = 'center';
+        holderEl.style.boxSizing = 'content-box';
+        const inner = holderEl.querySelector('canvas, img');
+        if (inner) {
+            inner.style.display = 'block';
+            inner.style.maxWidth = '100%';
+            inner.style.height = 'auto';
+            inner.style.imageRendering = 'pixelated';
+        }
+    }
+
     function updateQrDensityAdvice() {
         const advice = document.getElementById('qr-density-advice');
         if (!advice) return;
         const qrSize = parseInt(document.getElementById('qr-size')?.value, 10) || 550;
         const chunk = parseInt(document.getElementById('airgap-chunk-size')?.value, 10) || 700;
+        const border = getQrOuterBorderPx();
         const level = (document.getElementById('qr-error-level')?.value || 'L').toUpperCase();
         const speed = parseInt(document.getElementById('airgap-speed-custom')?.value, 10) || 1000;
         let risk = 'Ổn định';
@@ -2034,13 +2076,14 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         advice.className = `small mt-1 ${cls}`;
         advice.style.fontSize = '0.72rem';
         advice.style.lineHeight = '1.35';
-        advice.innerHTML = `Đánh giá: <b>${risk}</b>. QR ${qrSize}px · mật độ ${chunk} · sửa lỗi ${level} · rạp chiếu ${speed}ms/frame. Hệ thống chia theo độ dài QR thực tế sau mã hóa Unicode và tự thêm CRC32 để kiểm tra dữ liệu ghép.`;
+        advice.innerHTML = `Đánh giá: <b>${risk}</b>. QR ${qrSize}px · viền trắng ${border}px · mật độ ${chunk} · sửa lỗi ${level} · rạp chiếu ${speed}ms/frame. Hệ thống chia theo độ dài QR thực tế sau mã hóa Unicode và tự thêm CRC32 để kiểm tra dữ liệu ghép.`;
     }
 
     function applyQrQualityProfile(profileName = 'balanced', save = false) {
-        const profile = getQrProfile(profileName);
+        const requestedName = (profileName || 'balanced').toString();
+        const profile = getQrProfile(requestedName);
         const sel = document.getElementById('qr-quality-profile');
-        if (sel && profileName) sel.value = profile ? profileName : 'custom';
+        if (sel) sel.value = profile ? requestedName : 'custom';
         if (!profile) {
             updateQrDensityAdvice();
             return;
@@ -2048,15 +2091,22 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         const setVal = (id, value) => { const el = document.getElementById(id); if (el) el.value = value; };
         setVal('qr-size', profile.size);
         setVal('airgap-chunk-size', profile.chunk);
+        if (!document.getElementById('qr-outer-border')?.value) setVal('qr-outer-border', 40);
         setVal('qr-error-level', profile.level);
         setVal('airgap-speed-custom', profile.speed);
         setVal('airgap-speed-preset', String(profile.speed));
         setVal('airgap-play-strategy', profile.strategy);
-        if (save) localStorage.setItem(AIRGAP_QR_PROFILE_KEY, profileName);
-        validateChunkSize();
+        if (save) localStorage.setItem(AIRGAP_QR_PROFILE_KEY, requestedName);
+        window.__airgapApplyingQrProfile = true;
+        try { validateChunkSize(); } finally { window.__airgapApplyingQrProfile = false; }
+        if (sel) {
+            sel.value = requestedName;
+            Array.from(sel.options || []).forEach(opt => { opt.selected = (opt.value === requestedName); });
+        }
         const advice = document.getElementById('qr-density-advice');
         if (advice) advice.innerHTML = `<b>${profile.label}:</b> ${profile.note}`;
     }
+    window.applyQrQualityProfile = applyQrQualityProfile;
 
     // Lấy thông số QR từ khối "TỐI ƯU MẬT ĐỘ DỮ LIỆU" đang có sẵn trên giao diện.
     // Dùng chung cho QRText, QR không dấu và rạp chiếu QR.
@@ -2064,6 +2114,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         const qrSizeEl = document.getElementById('qr-size');
         const chunkSizeEl = document.getElementById('airgap-chunk-size');
         const errorLevelEl = document.getElementById('qr-error-level');
+        const outerBorderPx = getQrOuterBorderPx();
 
         const errorLevelStr = (errorLevelEl?.value || defaults.correctLevel || 'M').toString().toUpperCase();
         let chunkSize = parseInt(chunkSizeEl?.value, 10) || defaults.chunkSize || 700;
@@ -2085,7 +2136,8 @@ Tên file cần có: BaoCao_202605201030.html</pre>
             chunkSize,
             width: qrSize,
             height: qrSize,
-            correctLevel: errorLevelStr
+            correctLevel: errorLevelStr,
+            outerBorderPx
         };
     }
 
@@ -2220,6 +2272,45 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         return true;
     }
 
+
+    function normalizeSingleQrOutput(holderEl, payloadTitle) {
+        if (!holderEl) return;
+        const nodes = Array.from(holderEl.querySelectorAll('img, canvas, table, svg'));
+        if (nodes.length <= 1) {
+            const only = nodes[0];
+            if (only) {
+                only.style.display = 'block';
+                only.style.margin = '0 auto';
+                only.title = payloadTitle || '';
+            }
+            return;
+        }
+
+        let keep = holderEl.querySelector('img') || holderEl.querySelector('canvas') || nodes[0];
+        nodes.forEach(n => {
+            if (n !== keep && n.parentNode) n.parentNode.removeChild(n);
+        });
+
+        keep.style.display = 'block';
+        keep.style.margin = '0 auto';
+        keep.title = payloadTitle || '';
+
+        // Nếu chỉ còn canvas, tạo thêm IMG thay thế để các hàm tải ZIP đang chọn img vẫn chạy.
+        if (keep.tagName && keep.tagName.toLowerCase() === 'canvas') {
+            try {
+                const img = document.createElement('img');
+                img.src = keep.toDataURL('image/png');
+                img.width = keep.width;
+                img.height = keep.height;
+                img.title = payloadTitle || '';
+                img.style.display = 'block';
+                img.style.margin = '0 auto';
+                keep.parentNode.replaceChild(img, keep);
+                keep = img;
+            } catch (e) {}
+        }
+    }
+
     async function renderQrPayloadsInBatches(qrPayloads, ui, displayId = 'qr-display') {
         const box = document.getElementById(displayId);
         if (!box) return;
@@ -2227,6 +2318,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         const total = qrPayloads.length;
         const batchSize = total > 300 ? 4 : (total > 120 ? 6 : 10);
         const correctLevel = getQrCorrectionLevel(ui.correctLevel);
+        const outerBorderPx = Math.max(0, parseInt(ui?.outerBorderPx, 10) || 0);
 
         for (let i = 0; i < total; i++) {
             const item = qrPayloads[i];
@@ -2234,13 +2326,18 @@ Tên file cần có: BaoCao_202605201030.html</pre>
             d.className = "qr-card text-center";
             d.innerHTML = `<small class="text-muted fw-bold">${item.sessionId} - Mảnh ${item.index}/${item.total}</small><div id="qro-${i}" class="qr-render-box d-flex justify-content-center mt-2"></div>`;
             box.appendChild(d);
-            new QRCode(document.getElementById(`qro-${i}`), {
+            const holder = document.getElementById(`qro-${i}`);
+            new QRCode(holder, {
                 text: safeUtf8ForQrjs(item.payload),
                 width: ui.width,
                 height: ui.height,
                 correctLevel
             });
-            setTimeout(() => { const img = document.querySelector(`#qro-${i} img`); if (img) img.title = item.payload; }, 100);
+            requestAnimationFrame(() => normalizeSingleQrOutput(holder, item.payload));
+            setTimeout(() => {
+                normalizeSingleQrOutput(holder, item.payload);
+                applyQrOuterBorderToHolder(holder, outerBorderPx);
+            }, 100);
 
             if ((i + 1) % batchSize === 0 || i + 1 === total) {
                 setQrFastJobStatus('🎞️ Đang dựng QR theo lô...', `Đã vẽ ${i + 1}/${total} mảnh. Trình duyệt vẫn có thời gian phản hồi.`);
@@ -2361,17 +2458,22 @@ Tên file cần có: BaoCao_202605201030.html</pre>
         for (let i = 0; i < imgs.length; i++) {
             const r = Math.floor(i / cols), c = i % cols;
             const x = padding + c * (qrSize + padding), y = padding + r * (qrSize + padding + labelH);
-            ctx.drawImage(imgs[i], x, y, qrSize, qrSize);
+            const imgData = await addWhiteBorder(imgs[i].src);
+            const tmpImg = new Image();
+            await new Promise(resolve => { tmpImg.onload = resolve; tmpImg.src = 'data:image/png;base64,' + imgData; });
+            ctx.drawImage(tmpImg, x, y, qrSize, qrSize);
             ctx.fillStyle = "#004a99"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
             ctx.fillText(`MANH_${String(i+1).padStart(3,'0')}`, x + qrSize/2, y + qrSize + 25);
         }
         canvas.toBlob((blob) => { saveFile(blob, `MEGA_SHEET_${imgs.length}_QR.png`); showLoading(false); });
     }
 
-    function addWhiteBorder(src) {
+    function addWhiteBorder(src, forcedPad) {
         return new Promise(res => {
             let img = new Image(); img.onload = () => {
-                let cv = document.createElement('canvas'); let p = 40;
+                let cv = document.createElement('canvas');
+                let p = Number.isFinite(parseInt(forcedPad, 10)) ? parseInt(forcedPad, 10) : getQrOuterBorderPx();
+                p = Math.max(0, Math.min(400, p));
                 cv.width = img.width + p*2; cv.height = img.height + p*2;
                 let cx = cv.getContext('2d'); cx.fillStyle="white"; cx.fillRect(0,0,cv.width,cv.height);
                 cx.drawImage(img, p, p); res(cv.toDataURL().split(',')[1]);
@@ -3793,11 +3895,12 @@ Tên file cần có: BaoCao_202605201030.html</pre>
     // =========================================================================
     let airgapWakeLock = null;
 
-    function airgapCanvasToPaddedDataUrl(canvas, qrSize) {
+    function airgapCanvasToPaddedDataUrl(canvas, qrSize, forcedPad) {
         if (!canvas) return '';
         const srcW = canvas.width || qrSize || 600;
         const srcH = canvas.height || qrSize || 600;
-        const pad = Math.max(24, Math.round(Math.max(srcW, srcH) * 0.08));
+        const uiPad = Number.isFinite(parseInt(forcedPad, 10)) ? parseInt(forcedPad, 10) : getQrOuterBorderPx();
+        const pad = Math.max(0, Math.min(400, uiPad));
         const out = document.createElement('canvas');
         out.width = srcW + pad * 2;
         out.height = srcH + pad * 2;
@@ -4102,6 +4205,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
             document.getElementById('theater-counter').innerText = `0 / ${totalFrags}`;
             // ----------------------------------------------------------------------------------
 
+            window.airgapTheaterBackupZipHtml = "";
             document.getElementById('theater-missing-ui').style.display = 'none';
             document.getElementById('theater-missing-status').innerText = "";
             document.getElementById('theater-filename').innerText = file.name;
@@ -4627,11 +4731,13 @@ function cancelScheduler() {
     // 2. LẤY THÔNG SỐ QR-SIZE VÀ TỰ ĐỘNG CO GIÃN
     const qrSizeInput = document.getElementById('qr-size');
     const targetSize = qrSizeInput ? parseInt(qrSizeInput.value) : 600;
+    const outerBorderPx = getQrOuterBorderPx();
+    const targetOuterSize = targetSize + outerBorderPx * 2;
 
     // Giới hạn QR không vượt quá 90% chiều cao màn hình để camera luôn thấy 3 ô định vị
     const maxHeight = window.innerHeight * 0.9;
     const maxWidth = window.innerWidth * 0.7; // 70% chiều rộng (vì cột trái chiếm 75%)
-    const finalDisplaySize = Math.min(targetSize, maxHeight, maxWidth);
+    const finalDisplaySize = Math.min(targetOuterSize, maxHeight, maxWidth);
 
     if (qrImg) {
         qrImg.style.width = finalDisplaySize + "px";
@@ -4639,6 +4745,8 @@ function cancelScheduler() {
     }
 
     // 3. Reset trạng thái
+    // AIRGAP V45.1 PATCH: mỗi lần mở một phiên rạp chiếu mới thì xóa link ZIP dự phòng cũ.
+    window.airgapTheaterBackupZipHtml = "";
     document.getElementById('theater-missing-ui').style.display = 'none';
     document.getElementById('theater-missing-status').innerText = "";
     
@@ -4733,11 +4841,36 @@ function updateTheaterDisplay() {
     }
 
     // ==========================================
+    // AIRGAP V45.1 PATCH: GIỮ FILE ZIP DỰ PHÒNG KHI PHÁT MẢNH LỖI
+    // Mục đích: Trước đây nút "PHÁT MẢNH LỖI" ghi đè theater-missing-status,
+    // làm mất nút tải file ZIP dự phòng. Helper này tách link ZIP dự phòng khỏi
+    // nội dung trạng thái, nên khi đổi trạng thái phát lại mảnh lỗi link vẫn còn.
+    // ==========================================
+    window.airgapTheaterBackupZipHtml = window.airgapTheaterBackupZipHtml || "";
+
+    function setTheaterMissingStatus(messageHtml) {
+        const statusEl = document.getElementById('theater-missing-status');
+        if (!statusEl) return;
+
+        const backupHtml = window.airgapTheaterBackupZipHtml || "";
+        const msgHtml = messageHtml || "";
+
+        statusEl.innerHTML = `
+            ${backupHtml ? `<div class="mb-2">${backupHtml}</div>` : ""}
+            ${msgHtml ? `<div>${msgHtml}</div>` : ""}
+        `;
+    }
+
+    // ==========================================
     // 1. SỬA LỖI VĂNG FULLSCREEN (ĐỔI AUTO-DOWNLOAD THÀNH NÚT BẤM)
     // ==========================================
     async function exportZipInBackground() {
         let statusEl = document.getElementById('theater-missing-status');
-        statusEl.innerHTML = "<i>🔄 Đang tạo file ZIP dự phòng...</i>";
+        if (typeof setTheaterMissingStatus === 'function') {
+            setTheaterMissingStatus("<i>🔄 Đang tạo file ZIP dự phòng...</i>");
+        } else if (statusEl) {
+            statusEl.innerHTML = "<i>🔄 Đang tạo file ZIP dự phòng...</i>";
+        }
         
         try {
             const qrZip = new JSZip();
@@ -4751,15 +4884,26 @@ function updateTheaterDisplay() {
             // KHÔNG ÉP TẢI TỰ ĐỘNG NỮA (Để tránh trình duyệt đá văng Fullscreen)
             // Thay vào đó, tạo một nút Tải Xuống ngay trên màn hình Rạp chiếu
             const downloadUrl = URL.createObjectURL(finalZipBlob);
-            statusEl.innerHTML = `
+            window.airgapTheaterBackupZipHtml = `
                 <a href="${downloadUrl}" download="AIRGAP_AUTO_SAVE_${currentAirGapFileName}.zip" 
                    class="btn btn-sm btn-success fw-bold mt-1" 
                    style="text-decoration:none; padding:6px 12px; border-radius:5px; display:inline-block;">
                    ⬇️ BẤM ĐỂ TẢI FILE ZIP DỰ PHÒNG
                 </a>`;
+            if (typeof setTheaterMissingStatus === 'function') {
+                setTheaterMissingStatus('<span class="text-success fw-bold">✅ File ZIP dự phòng đã sẵn sàng. Có thể phát mảnh lỗi mà không mất nút tải.</span>');
+            } else if (statusEl) {
+                statusEl.innerHTML = window.airgapTheaterBackupZipHtml;
+            }
             
             isDirectPlayMode = false; 
-        } catch (e) { statusEl.innerText = "❌ Lỗi tạo ZIP: " + e.message; }
+        } catch (e) {
+            if (typeof setTheaterMissingStatus === 'function') {
+                setTheaterMissingStatus("❌ Lỗi tạo ZIP: " + e.message);
+            } else if (statusEl) {
+                statusEl.innerText = "❌ Lỗi tạo ZIP: " + e.message;
+            }
+        }
     }
     // --- PHÁT LẠI MẢNH CHỈ ĐỊNH ---
     function playSpecificFrames() {
@@ -4801,9 +4945,11 @@ function updateTheaterDisplay() {
     }
 
     // 3. Thông báo trạng thái phát lại
-    const statusEl = document.getElementById('theater-missing-status');
-    if (statusEl) {
-        statusEl.innerHTML = `<span class="text-warning">🔁 Đang phát lại ${framesSequence.length} mảnh lỗi...</span>`;
+    if (typeof setTheaterMissingStatus === 'function') {
+        setTheaterMissingStatus(`<span class="text-warning">🔁 Đang phát lại ${framesSequence.length} mảnh lỗi...</span>`);
+    } else {
+        const statusEl = document.getElementById('theater-missing-status');
+        if (statusEl) statusEl.innerHTML = `<span class="text-warning">🔁 Đang phát lại ${framesSequence.length} mảnh lỗi...</span>`;
     }
 
     // 4. Bắt đầu phát lại từ mảnh lỗi đầu tiên
@@ -4819,7 +4965,11 @@ function resetToFullLoop() {
     framesSequence = Array.from({length: airgapFrames.length}, (_, i) => i);
     currentSequenceIndex = 0;
     document.getElementById('missing-frames-input').value = "";
-    document.getElementById('theater-missing-status').innerText = "✅ Đang phát toàn bộ vòng lặp.";
+    if (typeof setTheaterMissingStatus === 'function') {
+        setTheaterMissingStatus("✅ Đang phát toàn bộ vòng lặp.");
+    } else {
+        document.getElementById('theater-missing-status').innerText = "✅ Đang phát toàn bộ vòng lặp.";
+    }
     playAirGap();
 }
 
@@ -4848,6 +4998,7 @@ function resetToFullLoop() {
     if (missingUi) missingUi.style.display = 'none'; // Ẩn phân vùng nhập mảnh sót đi
 
     // 4. GIẢI PHÓNG RAM NGAY LẬP TỨC (Rất quan trọng với file SCADA lớn)
+    window.airgapTheaterBackupZipHtml = "";
     airgapFrames = []; 
     framesSequence = [];
     currentSequenceIndex = 0;
@@ -5921,7 +6072,7 @@ Không tự bung file để tránh sai dữ liệu.`);
             if (warningEl) warningEl.style.display = 'none';
         }
         const profileSel = document.getElementById('qr-quality-profile');
-        if (profileSel) profileSel.value = 'custom';
+        if (profileSel && !window.__airgapApplyingQrProfile) profileSel.value = 'custom';
         updateQrDensityAdvice();
     }
 	
