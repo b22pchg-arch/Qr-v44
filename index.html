@@ -1035,6 +1035,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <li><b>THÊM ĐÁNH DẤU / XÓA ĐÁNH DẤU:</b> thêm dải ghi chú nổi bật ở đầu các trang đã chọn. Các đánh dấu do công cụ này thêm trong phiên hiện tại có thể xóa lại bằng nút <b>XÓA ĐÁNH DẤU</b>.</li>
 <li><b>THÊM WATERMARK / XÓA WATERMARK:</b> đóng watermark mờ chéo trên một hoặc nhiều trang. Watermark do công cụ này thêm trong phiên hiện tại có thể xóa lại bằng nút <b>XÓA WATERMARK</b>.</li>
 <li><b>CHE/XÓA VÙNG:</b> phủ trắng một vùng theo tọa độ phần trăm <code>x,y,rộng,cao</code> tính từ góc trái dưới trang PDF. Dùng để che thông tin trước khi chia sẻ. Đây là thao tác phủ trắng vào PDF mới, không phải xóa đối tượng gốc trong PDF.</li>
+<li><b>CHUYỂN ĐỔI PDF:</b> trong PDF MENU có thêm nhóm PDF → ẢNH PNG/JPG, PDF → WORD TEXT, PDF → WORD ẢNH, PDF → EXCEL và PDF → CSV. Các chức năng Word/Excel dạng text chỉ hiệu quả khi PDF có lớp text thật; PDF scan ảnh cần OCR mới trích được chữ/bảng.</li>
 <li><b>COPY TEXT:</b> PDFLib không tự trích text thật từ PDF. Nếu bản HTML sau này tích hợp thêm PDF.js thì nút này có thể copy text; còn bản nhẹ hiện tại nên dùng <b>MỞ NGOÀI</b> để chọn/copy text bằng trình xem PDF của trình duyệt nếu PDF có lớp text.</li>
 <li><b>GỠ KHÓA HẠN CHẾ:</b> không dò hoặc bẻ mật khẩu. Nút này chỉ thử lưu lại PDF đã mở được để loại bỏ một số hạn chế quyền đối với tài liệu anh có quyền xử lý. PDF yêu cầu mật khẩu mở file thật sự thì PDFLib không thể gỡ nếu không có mật khẩu hợp lệ.</li>
 </ul>
@@ -7575,6 +7576,315 @@ updateOfflineCameraSmartButton('detect',0);
     finally { showLoading(false); }
   };
 
+
+  // ============================================================
+  // AIRGAP PDF CONVERSION TOOLS V13.1
+  // Chuyển đổi PDF offline bằng PDF.js + SheetJS có sẵn:
+  // - PDF -> ảnh PNG/JPG
+  // - PDF -> Word dạng text
+  // - PDF -> Word dạng ảnh theo trang
+  // - PDF -> Excel/CSV dạng text tương đối
+  // Lưu ý: PDF scan ảnh cần OCR mới ra text/bảng thật.
+  // ============================================================
+  function pdfConvertFileName(prefix, ext) {
+    const base = pdfBaseName(currentPdfFileName);
+    const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
+    return `${prefix}_${base}_${stamp}.${String(ext || 'dat').replace(/^\./, '')}`;
+  }
+
+  function pdfEnsurePdfJsForConvert() {
+    if (!currentPdfBytes) {
+      alert('Chưa có PDF đang mở.');
+      return false;
+    }
+    if (typeof pdfjsLib === 'undefined' || !pdfjsLib.getDocument) {
+      alert('Chưa nạp được PDF.js nên không thể chuyển đổi PDF. Hãy dùng bản V13 có PDF.js inline.');
+      return false;
+    }
+    return true;
+  }
+
+  function pdfPromptPagesForConvert(actionName) {
+    const total = currentPdfPageCount || 0;
+    const raw = prompt(`${actionName}\nNhập trang cần xử lý, ví dụ: 1,3,5-7\nĐể trống = tất cả ${total || ''} trang.`, '');
+    if (raw === null) return null;
+    const pages = pdfParsePageNumbers(raw, total, { blankAll: true, unique: true });
+    if (!pages.length) {
+      alert('Không có trang hợp lệ.');
+      return null;
+    }
+    return pages;
+  }
+
+  function pdfPromptScale(defaultScale = 2) {
+    const raw = prompt('Nhập độ nét ảnh/render PDF.\n1 = nhẹ, 2 = nét tốt, 3 = rất nét nhưng nặng hơn.', String(defaultScale));
+    if (raw === null) return null;
+    let scale = parseFloat(String(raw).replace(',', '.'));
+    if (!Number.isFinite(scale)) scale = defaultScale;
+    return Math.max(0.5, Math.min(4, scale));
+  }
+
+  function pdfPromptJpegQuality(defaultQuality = 0.88) {
+    const raw = prompt('Nhập chất lượng JPG từ 0.5 đến 0.98.', String(defaultQuality));
+    if (raw === null) return null;
+    let q = parseFloat(String(raw).replace(',', '.'));
+    if (!Number.isFinite(q)) q = defaultQuality;
+    return Math.max(0.5, Math.min(0.98, q));
+  }
+
+  async function pdfOpenPdfJsDocumentForConvert() {
+    const loadingTask = pdfjsLib.getDocument({ data: cloneBytes(currentPdfBytes) });
+    return await loadingTask.promise;
+  }
+
+  async function pdfRenderPageToCanvas(pdf, pageNo, scale) {
+    const page = await pdf.getPage(pageNo);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    return canvas;
+  }
+
+  function pdfCanvasToBlob(canvas, type, quality) {
+    return new Promise(resolve => {
+      canvas.toBlob(blob => resolve(blob), type, quality);
+    });
+  }
+
+  function pdfCanvasToDataUrl(canvas, type, quality) {
+    return canvas.toDataURL(type, quality);
+  }
+
+  function pdfEscapeTextForHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function pdfLineItemsFromTextContent(tc) {
+    const lines = [];
+    const tolerance = 3.5;
+    const items = (tc.items || []).map(item => ({
+      str: item.str || '',
+      x: item.transform ? item.transform[4] : 0,
+      y: item.transform ? item.transform[5] : 0,
+      w: item.width || 0
+    })).filter(item => item.str.trim());
+
+    items.sort((a, b) => (b.y - a.y) || (a.x - b.x));
+
+    for (const item of items) {
+      let line = lines.find(l => Math.abs(l.y - item.y) <= tolerance);
+      if (!line) {
+        line = { y: item.y, items: [] };
+        lines.push(line);
+      }
+      line.items.push(item);
+    }
+
+    lines.sort((a, b) => b.y - a.y);
+    return lines.map(line => {
+      line.items.sort((a, b) => a.x - b.x);
+      let out = '';
+      let prevEnd = null;
+      for (const item of line.items) {
+        if (prevEnd !== null) {
+          const gap = item.x - prevEnd;
+          out += gap > 18 ? '    ' : ' ';
+        }
+        out += item.str;
+        prevEnd = item.x + item.w;
+      }
+      return out.trim();
+    }).filter(Boolean);
+  }
+
+  async function pdfExtractTextLinesByPages(pages) {
+    const pdf = await pdfOpenPdfJsDocumentForConvert();
+    const result = [];
+    for (const pageNo of pages) {
+      const page = await pdf.getPage(pageNo);
+      const tc = await page.getTextContent();
+      const lines = pdfLineItemsFromTextContent(tc);
+      result.push({ pageNo, lines });
+    }
+    return result;
+  }
+
+  function pdfRowsToCsv(rows) {
+    return rows.map(row => row.map(cell => {
+      const s = String(cell ?? '');
+      return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(',')).join('\n');
+  }
+
+  window.pdfExportImagesPrompt = async function(format = 'png') {
+    try {
+      if (!pdfEnsurePdfJsForConvert()) return;
+      const pages = pdfPromptPagesForConvert(`PDF → ẢNH ${String(format).toUpperCase()}`);
+      if (!pages) return;
+      const scale = pdfPromptScale(2);
+      if (scale === null) return;
+      const isJpg = String(format).toLowerCase().startsWith('j');
+      const quality = isJpg ? pdfPromptJpegQuality(0.88) : undefined;
+      if (isJpg && quality === null) return;
+
+      showLoading(true, 'ĐANG XUẤT PDF THÀNH ẢNH...');
+      const pdf = await pdfOpenPdfJsDocumentForConvert();
+      const ext = isJpg ? 'jpg' : 'png';
+      const mime = isJpg ? 'image/jpeg' : 'image/png';
+
+      if (pages.length === 1) {
+        const canvas = await pdfRenderPageToCanvas(pdf, pages[0], scale);
+        const blob = await pdfCanvasToBlob(canvas, mime, quality);
+        pdfDownloadBlob(blob, pdfConvertFileName(`PDF_Trang_${pages[0]}`, ext));
+      } else {
+        const zip = new JSZip();
+        const padLen = String(Math.max(...pages)).length;
+        for (let i = 0; i < pages.length; i++) {
+          const p = pages[i];
+          const loadingText = document.getElementById('loading-text');
+          if (loadingText) loadingText.innerText = `Đang xuất ảnh trang ${p} (${i + 1}/${pages.length})...`;
+          const canvas = await pdfRenderPageToCanvas(pdf, p, scale);
+          const blob = await pdfCanvasToBlob(canvas, mime, quality);
+          zip.file(`Trang_${String(p).padStart(padLen, '0')}.${ext}`, blob);
+          await new Promise(r => setTimeout(r, 0));
+        }
+        const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+        pdfDownloadBlob(zipBlob, pdfConvertFileName(`PDF_Anh_${ext.toUpperCase()}`, 'zip'));
+      }
+    } catch(e) {
+      alert('Không xuất ảnh từ PDF được: ' + (e.message || e));
+    } finally {
+      showLoading(false);
+    }
+  };
+
+  window.pdfExportWordTextPrompt = async function() {
+    try {
+      if (!pdfEnsurePdfJsForConvert()) return;
+      const pages = pdfPromptPagesForConvert('PDF → WORD TEXT');
+      if (!pages) return;
+
+      showLoading(true, 'ĐANG TRÍCH TEXT PDF SANG WORD...');
+      const extracted = await pdfExtractTextLinesByPages(pages);
+
+      let body = '';
+      for (const page of extracted) {
+        body += `<h2>Trang ${page.pageNo}</h2>\n`;
+        if (!page.lines.length) {
+          body += `<p><i>Không tìm thấy text thật trên trang này. Có thể đây là PDF scan ảnh.</i></p>\n`;
+        } else {
+          body += page.lines.map(line => `<p>${pdfEscapeTextForHtml(line)}</p>`).join('\n');
+        }
+        body += `<div style="page-break-after:always;"></div>\n`;
+      }
+
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>${pdfEscapeTextForHtml(pdfBaseName(currentPdfFileName))}</title>
+<style>body{font-family:"Times New Roman",serif;font-size:12pt;line-height:1.45;}h2{font-size:14pt;color:#0f5132;}p{margin:0 0 6pt 0;}</style>
+</head><body>${body}</body></html>`;
+      const blob = new Blob([html], { type: 'application/msword;charset=utf-8' });
+      pdfDownloadBlob(blob, pdfConvertFileName('PDF_Word_Text', 'doc'));
+    } catch(e) {
+      alert('Không chuyển PDF sang Word text được: ' + (e.message || e));
+    } finally {
+      showLoading(false);
+    }
+  };
+
+  window.pdfExportWordImagePrompt = async function() {
+    try {
+      if (!pdfEnsurePdfJsForConvert()) return;
+      const pages = pdfPromptPagesForConvert('PDF → WORD ẢNH THEO TRANG');
+      if (!pages) return;
+      const scale = pdfPromptScale(1.6);
+      if (scale === null) return;
+
+      showLoading(true, 'ĐANG RENDER PDF THÀNH WORD ẢNH...');
+      const pdf = await pdfOpenPdfJsDocumentForConvert();
+      let body = '';
+
+      for (let i = 0; i < pages.length; i++) {
+        const p = pages[i];
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText) loadingText.innerText = `Đang dựng trang ảnh ${p} (${i + 1}/${pages.length})...`;
+        const canvas = await pdfRenderPageToCanvas(pdf, p, scale);
+        const dataUrl = pdfCanvasToDataUrl(canvas, 'image/png');
+        body += `<div class="page"><div class="caption">Trang ${p}</div><img src="${dataUrl}" /></div>\n`;
+        await new Promise(r => setTimeout(r, 0));
+      }
+
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>${pdfEscapeTextForHtml(pdfBaseName(currentPdfFileName))}</title>
+<style>
+@page{size:A4;margin:10mm;}body{margin:0;font-family:Arial,sans-serif;background:#fff;}
+.page{page-break-after:always;text-align:center;} .caption{font-size:10pt;color:#555;margin:0 0 6px 0;}
+img{max-width:100%;height:auto;}
+</style></head><body>${body}</body></html>`;
+      const blob = new Blob([html], { type: 'application/msword;charset=utf-8' });
+      pdfDownloadBlob(blob, pdfConvertFileName('PDF_Word_Anh', 'doc'));
+    } catch(e) {
+      alert('Không chuyển PDF sang Word ảnh được: ' + (e.message || e));
+    } finally {
+      showLoading(false);
+    }
+  };
+
+  window.pdfExportExcelPrompt = async function(format = 'xlsx') {
+    try {
+      if (!pdfEnsurePdfJsForConvert()) return;
+      const pages = pdfPromptPagesForConvert(String(format).toLowerCase() === 'csv' ? 'PDF → CSV' : 'PDF → EXCEL');
+      if (!pages) return;
+
+      const splitMode = confirm('Tách cột tự động theo khoảng trắng lớn/tab?\n\nOK = Tách cột tương đối\nCancel = Mỗi dòng PDF thành một ô nội dung');
+      showLoading(true, 'ĐANG TRÍCH TEXT PDF SANG BẢNG...');
+      const extracted = await pdfExtractTextLinesByPages(pages);
+
+      const rows = [['Trang', 'Dòng', 'Nội dung / Cột 1']];
+      for (const page of extracted) {
+        if (!page.lines.length) {
+          rows.push([page.pageNo, '', 'Không tìm thấy text thật trên trang này. Có thể đây là PDF scan ảnh.']);
+          continue;
+        }
+        page.lines.forEach((line, idx) => {
+          if (splitMode) {
+            const cols = line.split(/\s{2,}|\t+/).map(s => s.trim()).filter(Boolean);
+            rows.push([page.pageNo, idx + 1, ...cols]);
+          } else {
+            rows.push([page.pageNo, idx + 1, line]);
+          }
+        });
+      }
+
+      if (String(format).toLowerCase() === 'csv') {
+        const csv = '\ufeff' + pdfRowsToCsv(rows);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        pdfDownloadBlob(blob, pdfConvertFileName('PDF_CSV', 'csv'));
+      } else {
+        if (typeof XLSX === 'undefined' || !XLSX.utils) {
+          alert('Không thấy SheetJS/XLSX để xuất Excel. Sẽ xuất CSV thay thế.');
+          const csv = '\ufeff' + pdfRowsToCsv(rows);
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+          pdfDownloadBlob(blob, pdfConvertFileName('PDF_CSV', 'csv'));
+          return;
+        }
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'PDF_Text');
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        pdfDownloadBlob(blob, pdfConvertFileName('PDF_Excel', 'xlsx'));
+      }
+    } catch(e) {
+      alert('Không chuyển PDF sang Excel/CSV được: ' + (e.message || e));
+    } finally {
+      showLoading(false);
+    }
+  };
+
+
   window.pdfTryUnlockPrompt = async function(){
     try {
       if (!currentPdfBytes) return alert('Chưa có PDF đang mở.');
@@ -7924,6 +8234,15 @@ updateOfflineCameraSmartButton('detect',0);
                     <button type="button" class="btn btn-sm btn-secondary fw-bold" onclick="pdfWatermarkPrompt()">THÊM WATERMARK</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" onclick="pdfRemoveWatermarks()">XÓA WATERMARK</button>
           <button type="button" class="btn btn-sm btn-outline-light fw-bold" onclick="pdfRemoveExternalWatermarkPrompt()">TẨY WATERMARK NGOÀI</button>
+                  </div>
+                  <div class="pdf-tool-menu-section">
+                    <div class="pdf-tool-menu-title">Chuyển đổi PDF</div>
+                    <button type="button" class="btn btn-sm btn-outline-success fw-bold" onclick="pdfExportImagesPrompt('png')">PDF → ẢNH PNG</button>
+                    <button type="button" class="btn btn-sm btn-outline-success fw-bold" onclick="pdfExportImagesPrompt('jpg')">PDF → ẢNH JPG</button>
+                    <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfExportWordTextPrompt()">PDF → WORD TEXT</button>
+                    <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfExportWordImagePrompt()">PDF → WORD ẢNH</button>
+                    <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="pdfExportExcelPrompt('xlsx')">PDF → EXCEL</button>
+                    <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="pdfExportExcelPrompt('csv')">PDF → CSV</button>
                   </div>
                   <div class="pdf-tool-menu-section">
                     <div class="pdf-tool-menu-title">Khác</div>
@@ -8456,6 +8775,15 @@ updateOfflineCameraSmartButton('detect',0);
                     <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" onclick="pdfRemoveWatermarks()">XÓA WATERMARK</button>
                     <button type="button" class="btn btn-sm btn-outline-light fw-bold" onclick="pdfRemoveExternalWatermarkPrompt()">TẨY WATERMARK NGOÀI</button>
                     <button type="button" class="btn btn-sm btn-light fw-bold" onclick="pdfRedactRectPrompt()">CHE/XÓA VÙNG</button>
+                  </div>
+                  <div class="pdf-tool-menu-section">
+                    <div class="pdf-tool-menu-title">Chuyển đổi PDF</div>
+                    <button type="button" class="btn btn-sm btn-outline-success fw-bold" onclick="pdfExportImagesPrompt('png')">PDF → ẢNH PNG</button>
+                    <button type="button" class="btn btn-sm btn-outline-success fw-bold" onclick="pdfExportImagesPrompt('jpg')">PDF → ẢNH JPG</button>
+                    <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfExportWordTextPrompt()">PDF → WORD TEXT</button>
+                    <button type="button" class="btn btn-sm btn-outline-info fw-bold" onclick="pdfExportWordImagePrompt()">PDF → WORD ẢNH</button>
+                    <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="pdfExportExcelPrompt('xlsx')">PDF → EXCEL</button>
+                    <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="pdfExportExcelPrompt('csv')">PDF → CSV</button>
                   </div>
                   <div class="pdf-tool-menu-section">
                     <div class="pdf-tool-menu-title">PDF.js / Khác</div>
