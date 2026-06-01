@@ -1,4 +1,4 @@
-// Nhật ký cập nhật AirGap SCADA: Tích hợp nút check thủ công - Ngày 19/05/2026 qr
+// Nhật ký cập nhật AirGap SCADA: Tích hợp nút check thủ công - Ngày 19/05/2026 qr moi
 const CACHE_NAME = 'AirGapSCADA-Static-Cache'; 
 const ASSETS = [
   '',
