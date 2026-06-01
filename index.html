@@ -8855,5 +8855,239 @@ img{max-width:100%;height:auto;}
 
 <!-- AIRGAP PDF.JS MODULE END -->
 
-</body>
+</b
+<script>
+/* ============================================================
+   AIRGAP SCAN CAMERA ROBUST FALLBACK V15.1
+   Mục tiêu:
+   - Khắc phục tình trạng Quét Đa Nhiệm dò thấy camera nhưng không mở/dò chất lượng được.
+   - Dùng getUserMedia giống Ảnh Offline để dò chất lượng, sau đó mới mở Html5Qrcode.
+   - Khi Html5Qrcode không nhận videoConstraints chất lượng cao, tự fallback về mở camera an toàn.
+   - Không ảnh hưởng module Ảnh Offline.
+   ============================================================ */
+
+function getScanCameraVideoBaseConstraint(mode) {
+    const selectedId = getSelectedScanCameraDeviceId();
+    if (selectedId) return { deviceId: { exact: selectedId } };
+    // Dùng string thay vì {ideal}. Html5Qrcode yêu cầu facingMode là string hoặc {exact}.
+    return { facingMode: mode || currentFacingMode || 'environment' };
+}
+
+function getSimpleHtml5QrCameraSelector(mode) {
+    const selectedId = getSelectedScanCameraDeviceId();
+    if (selectedId) return selectedId;
+    return { facingMode: mode || currentFacingMode || 'environment' };
+}
+
+function buildScanCameraConstraint(label, width, height, fps = 30, mode) {
+    return {
+        label,
+        constraints: Object.assign({}, getScanCameraVideoBaseConstraint(mode), {
+            width: { ideal: width },
+            height: { ideal: height },
+            frameRate: { ideal: fps }
+        })
+    };
+}
+
+function buildBestScanCameraCandidates(mode) {
+    return [
+        buildScanCameraConstraint('4K', 3840, 2160, 30, mode),
+        buildScanCameraConstraint('2K', 2560, 1440, 30, mode),
+        buildScanCameraConstraint('Full HD', 1920, 1080, 30, mode),
+        buildScanCameraConstraint('HD', 1280, 720, 30, mode),
+        buildScanCameraConstraint('VGA', 640, 480, 30, mode),
+        { label: 'Tự động theo thiết bị', constraints: getScanCameraVideoBaseConstraint(mode) },
+        { label: 'Mặc định thư viện', constraints: null }
+    ];
+}
+
+function buildQuickScanCameraCandidates(mode) {
+    const saved = loadSavedScanCameraProfile(mode);
+    const list = [];
+    if (saved && saved.constraints) {
+        list.push({ label: 'Cấu hình đã lưu: ' + (saved.label || ''), constraints: saved.constraints, fromSaved: true });
+    } else {
+        list.push(buildScanCameraConstraint('Full HD nhanh', 1920, 1080, 30, mode));
+    }
+    list.push({ label: 'Tự động theo thiết bị', constraints: getScanCameraVideoBaseConstraint(mode) });
+    list.push({ label: 'Mở an toàn không ép chất lượng', constraints: null });
+    return list;
+}
+
+function buildNativeScanProbeConstraints(width, height, fps, mode) {
+    const selectedId = getSelectedScanCameraDeviceId();
+    const video = {};
+    if (selectedId) video.deviceId = { exact: selectedId };
+    else video.facingMode = mode || currentFacingMode || 'environment';
+
+    if (width && height) {
+        video.width = { ideal: width };
+        video.height = { ideal: height };
+    }
+    if (fps) video.frameRate = { ideal: fps };
+    return { audio: false, video };
+}
+
+async function startHtml5QrWithCandidateList(mode, scanConfig, candidates, options = {}) {
+    const successHandler = getAirgapCameraSuccessHandler();
+    const failureHandler = getAirgapCameraFailureHandler();
+    const simpleCameraSelector = getSimpleHtml5QrCameraSelector(mode);
+    let lastError = null;
+
+    for (let i = 0; i < candidates.length; i++) {
+        const item = candidates[i];
+
+        // Với Html5Qrcode, một số trình duyệt bị lỗi nếu đưa videoConstraints quá chi tiết.
+        // Vì vậy mỗi candidate thử 2 lượt:
+        // 1) có videoConstraints để cố lấy chất lượng đã lưu/dò được
+        // 2) bỏ videoConstraints để chắc chắn camera mở được
+        const configsToTry = [];
+        if (item.constraints) {
+            const cfg = Object.assign({}, scanConfig || {});
+            cfg.videoConstraints = item.constraints;
+            configsToTry.push({ label: item.label + ' + constraints', config: cfg });
+        }
+        configsToTry.push({ label: item.label + ' / mở an toàn', config: Object.assign({}, scanConfig || {}) });
+
+        for (let j = 0; j < configsToTry.length; j++) {
+            const attempt = configsToTry[j];
+            try {
+                const prefix = options.probe ? 'Đang mở sau dò chất lượng' : 'Đang mở camera';
+                setScanCameraQualityStatus(`${prefix}: ${attempt.label} (${i + 1}/${candidates.length})...`, 'info');
+
+                if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode('camera-reader');
+                await html5QrCodeCam.start(simpleCameraSelector, attempt.config, successHandler, failureHandler);
+                isCamRunning = true;
+
+                if (options.saveOnSuccess && item.constraints) saveScanCameraProfile(mode, item.label, item.constraints);
+
+                setTimeout(() => {
+                    describeRunningCameraQuality(options.probe ? ('Đã mở ' + item.label) : item.label);
+                    initCameraZoom();
+                }, 450);
+                return item;
+            } catch (err) {
+                lastError = err;
+                console.warn('Html5Qrcode mở camera thất bại, thử fallback:', attempt.label, err);
+                await safeStopAndClearScanCamera();
+                try { html5QrCodeCam = new Html5Qrcode('camera-reader'); } catch(e) {}
+            }
+        }
+    }
+
+    throw lastError || new Error('Không tìm được cấu hình camera phù hợp.');
+}
+
+async function startHtml5QrWithSavedOrQuickCamera(mode, scanConfig) {
+    return startHtml5QrWithCandidateList(mode, scanConfig, buildQuickScanCameraCandidates(mode), {
+        probe: false,
+        saveOnSuccess: false
+    });
+}
+
+async function probeScanCameraQuality() {
+    const camBox = document.getElementById('camera-box');
+    if (camBox) camBox.style.display = 'block';
+    currentFacingMode = currentFacingMode || 'environment';
+
+    const candidates = [
+        { label: '4K', width: 3840, height: 2160, fps: 30 },
+        { label: '2K', width: 2560, height: 1440, fps: 30 },
+        { label: 'Full HD', width: 1920, height: 1080, fps: 30 },
+        { label: 'HD', width: 1280, height: 720, fps: 30 },
+        { label: 'VGA', width: 640, height: 480, fps: 30 },
+        { label: 'Tự động theo thiết bị', width: 0, height: 0, fps: 30 }
+    ];
+
+    let lastErr = null;
+
+    try {
+        await safeStopAndClearScanCamera();
+
+        // Dò bằng native getUserMedia như Ảnh Offline, ổn định hơn Html5Qrcode.
+        for (let i = 0; i < candidates.length; i++) {
+            const cand = candidates[i];
+            let stream = null;
+            try {
+                setScanCameraQualityStatus(`Đang dò chất lượng bằng getUserMedia: ${cand.label} (${i + 1}/${candidates.length})...`, 'info');
+                stream = await navigator.mediaDevices.getUserMedia(
+                    buildNativeScanProbeConstraints(cand.width, cand.height, cand.fps, currentFacingMode)
+                );
+
+                const track = stream.getVideoTracks()[0];
+                const settings = track && track.getSettings ? track.getSettings() : {};
+                const realW = settings.width || cand.width || 0;
+                const realH = settings.height || cand.height || 0;
+                const realFps = settings.frameRate || cand.fps || 30;
+
+                try { stream.getTracks().forEach(t => t.stop()); } catch(e) {}
+
+                const savedConstraints = Object.assign({}, getScanCameraVideoBaseConstraint(currentFacingMode));
+                if (realW && realH) {
+                    savedConstraints.width = { ideal: realW };
+                    savedConstraints.height = { ideal: realH };
+                }
+                if (realFps) savedConstraints.frameRate = { ideal: Math.round(realFps) };
+
+                saveScanCameraProfile(currentFacingMode, `${cand.label} · ${realW || '?'}×${realH || '?'}`, savedConstraints);
+                setScanCameraQualityStatus(`Đã lưu chất lượng: ${cand.label} · thực tế ${realW || '?'}×${realH || '?'} · FPS ${Math.round(realFps) || '?'}. Đang mở camera quét...`, 'success');
+
+                // Sau khi dò được, mở lại Html5Qrcode. Nếu Html5Qrcode không nhận constraints,
+                // bản vá startHtml5QrWithCandidateList sẽ tự fallback mở an toàn.
+                setTimeout(() => launchCam(currentFacingMode), 250);
+                return;
+            } catch (err) {
+                lastErr = err;
+                try { if (stream) stream.getTracks().forEach(t => t.stop()); } catch(e) {}
+            }
+        }
+
+        clearSavedScanCameraProfile(currentFacingMode);
+        setScanCameraQualityStatus('Không dò được chất lượng bằng getUserMedia. Sẽ thử mở camera quét ở chế độ an toàn.', 'warning');
+        setTimeout(() => launchCam(currentFacingMode), 250);
+        if (lastErr) console.warn('Dò chất lượng camera quét thất bại:', lastErr);
+    } catch(err) {
+        clearSavedScanCameraProfile(currentFacingMode);
+        console.warn('Không thể dò chất lượng camera:', err);
+        setScanCameraQualityStatus('Không thể dò chất lượng camera. Sẽ dùng chế độ mở nhanh/tự động khi quét.', 'warning');
+        setTimeout(() => launchCam(currentFacingMode), 250);
+    }
+}
+
+function launchCam(mode) {
+    currentFacingMode = mode || currentFacingMode || 'environment';
+
+    const camBox = document.getElementById('camera-box');
+    if (camBox) camBox.style.display = 'block';
+
+    const senderUI = document.getElementById('airgap-sender-uimoi');
+    if (senderUI) senderUI.style.display = 'none';
+    const scadaUI = document.getElementById('scheduler-scada');
+    if (scadaUI) scadaUI.style.display = 'none';
+
+    const fpsInput = parseInt(document.getElementById('cam-fps')?.value, 10);
+    const fpsVal = Number.isFinite(fpsInput) ? Math.max(10, Math.min(60, fpsInput)) : 30;
+    const boxWidth = parseInt(document.getElementById('cam-width')?.value, 10) || 250;
+    const boxHeight = parseInt(document.getElementById('cam-height')?.value, 10) || 250;
+
+    const scanConfig = {
+        fps: fpsVal,
+        qrbox: { width: boxWidth, height: boxHeight },
+        rememberLastUsedCamera: true,
+        disableFlip: currentFacingMode === 'environment'
+    };
+
+    if (!html5QrCodeCam) html5QrCodeCam = new Html5Qrcode('camera-reader');
+
+    startHtml5QrWithSavedOrQuickCamera(currentFacingMode, scanConfig).catch(err => {
+        console.warn('Không thể mở camera bằng Html5Qrcode:', err);
+        clearSavedScanCameraProfile(currentFacingMode);
+        setScanCameraQualityStatus('Không thể mở Camera quét. Gợi ý: đổi camera trong danh sách, bấm DÒ CAM lại, hoặc đóng ứng dụng khác đang dùng camera.', 'danger');
+        alert('Không thể mở Camera quét: ' + (err && err.message ? err.message : err) + '\n\nẢnh Offline vẫn có thể mở vì dùng getUserMedia trực tiếp; Quét Đa Nhiệm dùng Html5Qrcode nên đã tự fallback, nhưng thiết bị/trình duyệt vẫn từ chối luồng camera.');
+    });
+}
+</script>
+
+ody>
 </html>
