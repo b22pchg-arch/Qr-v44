@@ -302,7 +302,7 @@
 
 <meta charset="utf-8"/>
 <!-- AIRGAP STABLE V13: based on V10, PDF.js inline no Base64, core functions preserved -->
-<!-- AIRGAP V26: Head global CAM fallback + PDF.js robust worker/render fallback -->
+<!-- AIRGAP V29: V26 + safe collapsible mobile blocks + QR Theater hide/show controls -->
 <title>Hệ Thống Dữ Liệu Tổng Hợp V45.1 - PC Tuyên Quang</title>
 <link href="manifest.json" rel="manifest"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
@@ -971,6 +971,228 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
   }
 }
 </style>
+
+<style id="airgap-collapsible-card-style-v29">
+/* AIRGAP COLLAPSIBLE CARDS + THEATER PANEL V29 */
+.airgap-collapsible-card > .card-header{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:.45rem!important;
+  cursor:pointer;
+}
+.airgap-collapsible-title{
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.airgap-card-toggle{
+  flex:0 0 auto;
+  border:1px solid currentColor;
+  background:rgba(255,255,255,.06);
+  color:inherit;
+  border-radius:999px;
+  padding:.12rem .48rem;
+  font-size:.72rem;
+  font-weight:900;
+  line-height:1.2;
+  white-space:nowrap;
+}
+.airgap-card-toggle:active{ transform:scale(.98); }
+.airgap-collapsed > .card-body{ display:none!important; }
+.airgap-collapsed{ margin-bottom:.42rem!important; }
+.airgap-collapsed > .card-header{ border-bottom:none!important; }
+#airgap-collapse-all-controls .btn{ white-space:normal; }
+
+#airgap-theater.airgap-theater-controls-hidden .airgap-theater-panel-v451{
+  display:none!important;
+}
+#airgap-theater.airgap-theater-controls-hidden .airgap-theater-stage-v451{
+  flex:1 1 100%!important;
+  border-right:0!important;
+  border-bottom:0!important;
+}
+#airgap-theater.airgap-theater-controls-hidden #theater-img{
+  max-width:92vw!important;
+  max-height:92dvh!important;
+  width:auto!important;
+  height:auto!important;
+}
+#airgap-theater.airgap-theater-controls-hidden .airgap-theater-quiet-v451{
+  padding:clamp(14px,3vw,44px)!important;
+}
+@media(max-width:820px){
+  .airgap-collapsible-card{ margin-bottom:.5rem!important; }
+  .airgap-card-toggle{ font-size:.7rem; padding:.12rem .42rem; }
+  .airgap-theater-panel-v451{ max-height:42dvh!important; }
+  #theater-toggle-panel-btn{
+    top:12px!important;
+    left:12px!important;
+    min-width:104px!important;
+    height:34px!important;
+    font-size:12px!important;
+  }
+}
+</style>
+<script id="airgap-collapsible-card-script-v29">
+/* AIRGAP COLLAPSIBLE CARDS + THEATER PANEL V29 */
+(function(){
+  const KEY_PREFIX = 'AIRGAP_COLLAPSE_CARD_V29_';
+  const THEATER_KEY = 'AIRGAP_THEATER_CONTROLS_HIDDEN_V29';
+  const targets = [
+    { id:'scan-fallback-card', mobileCollapsed:true },
+    { id:'scan-camera-settings-card', mobileCollapsed:true },
+    { id:'qr-density-card', mobileCollapsed:true },
+    { id:'qrtext-scheduler-card', mobileCollapsed:true },
+    { id:'scheduler-scada', mobileCollapsed:true },
+    { id:'airgap-offline-config-card', mobileCollapsed:true }
+  ];
+
+  function isMobileNarrow(){
+    try { return window.matchMedia && window.matchMedia('(max-width: 820px)').matches; }
+    catch(e){ return (window.innerWidth || 9999) <= 820; }
+  }
+  function getSaved(id){
+    try { return localStorage.getItem(KEY_PREFIX + id); } catch(e){ return null; }
+  }
+  function setSaved(id, collapsed){
+    try { localStorage.setItem(KEY_PREFIX + id, collapsed ? '1' : '0'); } catch(e){}
+  }
+  function directHeader(card){
+    if (!card) return null;
+    for (const ch of Array.from(card.children || [])) {
+      if (ch.classList && ch.classList.contains('card-header')) return ch;
+    }
+    return null;
+  }
+  function directBody(card){
+    if (!card) return null;
+    for (const ch of Array.from(card.children || [])) {
+      if (ch.classList && ch.classList.contains('card-body')) return ch;
+    }
+    return null;
+  }
+  function setCardState(card, collapsed){
+    if (!card) return;
+    card.classList.toggle('airgap-collapsed', !!collapsed);
+    const header = directHeader(card);
+    const btn = header ? header.querySelector('.airgap-card-toggle') : null;
+    if (btn) {
+      btn.textContent = collapsed ? 'MỞ' : 'THU';
+      btn.title = collapsed ? 'Mở khối này' : 'Thu gọn khối này';
+      btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    }
+  }
+  function makeTitleSpan(header){
+    if (!header || header.querySelector('.airgap-collapsible-title')) return;
+    const span = document.createElement('span');
+    span.className = 'airgap-collapsible-title';
+    while (header.firstChild) span.appendChild(header.firstChild);
+    header.appendChild(span);
+  }
+  function initOne(item){
+    const card = document.getElementById(item.id);
+    if (!card) return;
+    const header = directHeader(card);
+    const body = directBody(card);
+    if (!header || !body) return;
+
+    card.classList.add('airgap-collapsible-card');
+    makeTitleSpan(header);
+
+    let btn = header.querySelector('.airgap-card-toggle');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'airgap-card-toggle';
+      header.appendChild(btn);
+    }
+
+    const saved = getSaved(item.id);
+    const defaultCollapsed = (saved === null) ? (!!item.mobileCollapsed && isMobileNarrow()) : (saved === '1');
+    setCardState(card, defaultCollapsed);
+
+    function toggle(ev){
+      if (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+      const collapsed = !card.classList.contains('airgap-collapsed');
+      setCardState(card, collapsed);
+      setSaved(item.id, collapsed);
+    }
+
+    btn.onclick = toggle;
+    if (!header.dataset.airgapCollapseClickBound) {
+      header.dataset.airgapCollapseClickBound = '1';
+      header.addEventListener('click', function(ev){
+        if (ev.target && ev.target.closest && ev.target.closest('button,input,select,label,a')) return;
+        toggle(ev);
+      });
+    }
+  }
+  function initAll(){
+    targets.forEach(initOne);
+    applyTheaterControlState();
+  }
+
+  window.airgapInitCollapsibleCards = initAll;
+  window.airgapExpandAllCards = function(){
+    targets.forEach(function(t){
+      const card = document.getElementById(t.id);
+      if (card) { setCardState(card, false); setSaved(t.id, false); }
+    });
+  };
+  window.airgapCollapseMobileCards = function(){
+    targets.forEach(function(t){
+      const card = document.getElementById(t.id);
+      if (card) { setCardState(card, true); setSaved(t.id, true); }
+    });
+  };
+
+  function getTheaterHidden(){
+    try { return localStorage.getItem(THEATER_KEY) === '1'; } catch(e){ return false; }
+  }
+  function saveTheaterHidden(hidden){
+    try { localStorage.setItem(THEATER_KEY, hidden ? '1' : '0'); } catch(e){}
+  }
+  function setTheaterControlsHidden(hidden){
+    const theater = document.getElementById('airgap-theater');
+    if (!theater) return;
+    theater.classList.toggle('airgap-theater-controls-hidden', !!hidden);
+    const btn = document.getElementById('theater-toggle-panel-btn');
+    if (btn) {
+      btn.textContent = hidden ? 'HIỆN ĐIỀU KHIỂN' : 'ẨN ĐIỀU KHIỂN';
+      btn.title = hidden ? 'Hiện lại vùng điều khiển rạp chiếu' : 'Ẩn vùng điều khiển để mã QR chiếm màn hình';
+    }
+  }
+  function applyTheaterControlState(){
+    setTheaterControlsHidden(getTheaterHidden());
+  }
+  window.toggleTheaterControlPanel = function(){
+    const theater = document.getElementById('airgap-theater');
+    const hidden = theater ? !theater.classList.contains('airgap-theater-controls-hidden') : !getTheaterHidden();
+    setTheaterControlsHidden(hidden);
+    saveTheaterHidden(hidden);
+  };
+  window.showTheaterControlPanel = function(){
+    setTheaterControlsHidden(false);
+    saveTheaterHidden(false);
+  };
+  window.hideTheaterControlPanel = function(){
+    setTheaterControlsHidden(true);
+    saveTheaterHidden(true);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAll);
+  } else {
+    setTimeout(initAll, 0);
+  }
+})();
+</script>
+
 </head>
 <body>
 <div class="loader-overlay" id="loading-screen">
@@ -1390,6 +1612,10 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <li>Vạch dọc giữa vùng xem file và sidebar có thể kéo trái/phải để chia lại kích thước theo nhu cầu. Trạng thái này được lưu cùng cấu hình offline nếu anh bấm <b>LƯU CẤU HÌNH HIỆN TẠI</b> hoặc bật tự lưu.</li>
 <li><b>Màn hình gập / tablet nhỏ:</b> hệ thống giữ thêm cụm nút điều chỉnh nổi ở góc dưới phải và giữ thanh kéo khi bề rộng màn hình còn từ 601px trở lên. Nếu xoay dọc quá hẹp, giao diện tự chuyển sang kiểu mobile để tránh che nội dung.</li>
 <li>Khi kéo rộng sidebar, thanh <b>Tạo mã QR / Quét Đa Nhiệm</b> luôn tự căn giữa theo cùng độ rộng với các khối chức năng. Nếu bấm <b>Quét Đa Nhiệm</b>, hệ thống chỉ hiện nhóm quét QR/camera; nếu bấm <b>Tạo mã QR</b>, hệ thống chỉ hiện nhóm tạo QR.</li>
+
+<li><b>Thu gọn khối dài trên mobile:</b> các khối <b>CAM dự phòng</b>, <b>Tùy chỉnh Camera</b>, <b>Tối ưu mật độ</b>, <b>Hẹn giờ QRText</b>, <b>Hẹn giờ SCADA</b> và <b>Lưu cấu hình Offline</b> có nút <b>THU/MỞ</b> trên tiêu đề. Có thể dùng nút <b>THU GỌN CÁC KHỐI DÀI</b> để giảm chiều cao sidebar.</li>
+<li><b>Rạp chiếu QR Theater:</b> trong rạp chiếu có nút <b>ẨN ĐIỀU KHIỂN / HIỆN ĐIỀU KHIỂN</b> ở góc trái trên. Khi ẩn điều khiển, vùng QR được mở rộng để camera máy nhận dễ bắt mã hơn.</li>
+
 </ul>
 <h6 class="text-warning fw-bold mt-4">16. KHUYẾN NGHỊ VẬN HÀNH</h6>
 <ul class="text-secondary mb-0">
@@ -1412,6 +1638,12 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <button class="btn btn-outline-primary active" id="btn-q-gen" onclick="setSide('gen')">Tạo mã QR</button>
 <button class="btn btn-outline-primary" id="btn-q-scan" onclick="setSide('scan')">Quét Đa Nhiệm</button>
 </div>
+
+<div class="d-grid gap-1 mb-2" id="airgap-collapse-all-controls">
+  <button class="btn btn-outline-secondary btn-sm fw-bold" type="button" onclick="airgapCollapseMobileCards()">▾ THU GỌN CÁC KHỐI DÀI</button>
+  <button class="btn btn-outline-info btn-sm fw-bold" type="button" onclick="airgapExpandAllCards()">▴ MỞ TẤT CẢ KHỐI</button>
+</div>
+
 <div class="is-active" id="side-gen">
 <div class="form-check form-switch mb-1 small fw-bold text-danger">
 <input class="form-check-input" id="merge-ex-rows" type="checkbox"/>
@@ -1524,7 +1756,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
                 Chưa khởi động chế độ đọc QRTEXT.
             </div>
 </div>
-<div class="card bg-dark border-secondary mb-3">
+<div class="card bg-dark border-secondary mb-3" id="scan-camera-settings-card">
 <div class="card-header text-warning fw-bold py-1" style="font-size: 0.9rem;">
         ⚙️ TÙY CHỈNH CAMERA
     </div>
@@ -1578,7 +1810,7 @@ Tên file cần có: BaoCao_202605201030.html</pre>
 <hr class="my-3"/>
 <div class="fw-bold text-danger mb-2"><svg class="fas fa-wifi bi bi-wifi" fill="currentColor" height="1em" viewbox="0 0 16 16" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M15.384 6.115a.485.485 0 0 0-.047-.736A12.444 12.444 0 0 0 8 3C5.259 3 2.723 3.882.663 5.379a.485.485 0 0 0-.048.736.518.518 0 0 0 .668.05A11.448 11.448 0 0 1 8 4c2.507 0 4.827.802 6.716 2.164.205.148.49.13.668-.049z"></path><path d="M13.229 8.271a.482.482 0 0 0-.063-.745A9.455 9.455 0 0 0 8 5c-1.99 0-3.83.61-5.32 1.637a.482.482 0 0 0-.063.745.525.525 0 0 0 .652.065A8.46 8.46 0 0 1 8 6c1.675 0 3.225.484 4.52 1.306a.525.525 0 0 0 .652-.065z"></path><path d="M11.036 10.468a.476.476 0 0 0-.083-.756A6.474 6.474 0 0 0 8 7c-1.445 0-2.778.473-3.953 1.256a.476.476 0 0 0-.083.756.536.536 0 0 0 .633.08A5.478 5.478 0 0 1 8 8c1.13 0 2.183.355 3.064.957a.536.536 0 0 0 .633-.08z"></path><path d="M9.01 12.836a.465.465 0 0 0-.113-.769A3.483 3.483 0 0 0 8 9c-.768 0-1.483.25-2.058.683a.465.465 0 0 0-.113.769.551.551 0 0 0 .604.103A2.49 2.49 0 0 1 8 10c.54 0 1.04.17 1.458.467a.551.551 0 0 0 .604-.103z"></path><path d="M8 13a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"></path></svg> TRUYỀN FILE BẢO MẬT</div>
 <div id="airgap-sender-uimoi">
-<div class="card bg-dark border-info mb-3">
+<div class="card bg-dark border-info mb-3" id="qr-density-card">
 <div class="card-header text-info fw-bold py-1" style="font-size: 0.9rem; border-bottom: 1px solid var(--bs-info);">
         📊 TỐI ƯU MẬT ĐỘ DỮ LIỆU
     </div>
@@ -5065,6 +5297,10 @@ function cancelScheduler() {
         qrImg.style.height = finalDisplaySize + "px";
     }
 
+    if (typeof airgapInitCollapsibleCards === 'function') {
+        airgapInitCollapsibleCards();
+    }
+
     // 3. Reset trạng thái
     // AIRGAP V45.1 PATCH: mỗi lần mở một phiên rạp chiếu mới thì xóa link ZIP dự phòng cũ.
     window.airgapTheaterBackupZipHtml = "";
@@ -6429,6 +6665,7 @@ Không tự bung file để tránh sai dữ liệu.`);
 </script>
 <div id="airgap-theater" class="airgap-theater-v451" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100dvh; background:#000; z-index:10000; align-items:stretch;">
 <button onclick="stopAirGap()" style="position:absolute; top:15px; right:15px; background:rgba(255,255,255,0.2); color:#fff; border:none; border-radius:50%; width:40px; height:40px; font-size:20px; cursor:pointer; z-index:10010;">×</button>
+<button id="theater-toggle-panel-btn" onclick="toggleTheaterControlPanel()" type="button" style="position:absolute; top:15px; left:15px; background:rgba(13,202,240,0.88); color:#001018; border:none; border-radius:999px; min-width:118px; height:38px; font-size:13px; font-weight:900; cursor:pointer; z-index:10010;">ẨN ĐIỀU KHIỂN</button>
 <div class="airgap-theater-stage-v451" style="flex: 0 0 75%; display:flex; align-items:center; justify-content:center; background:#111; border-right: 2px solid #333; overflow: auto;">
 <div class="airgap-theater-quiet-v451" style="background:#fff; padding:28px; border-radius:10px; box-shadow:0 0 30px rgba(0,255,255,0.2);">
 <img id="theater-img" src="" style="display:block; image-rendering: pixelated; width: 600px; height: 600px; object-fit: contain;"/>
