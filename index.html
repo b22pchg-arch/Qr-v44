@@ -302,7 +302,7 @@
 
 <meta charset="utf-8"/>
 <!-- AIRGAP STABLE V13: based on V10, PDF.js inline no Base64, core functions preserved -->
-<!-- AIRGAP V29: V26 + safe collapsible mobile blocks + QR Theater hide/show controls -->
+<!-- AIRGAP V33: V32 + XLAM repair XLSM export for error 40230 -->
 <title>Hệ Thống Dữ Liệu Tổng Hợp V45.1 - PC Tuyên Quang</title>
 <link href="manifest.json" rel="manifest"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
@@ -1339,7 +1339,7 @@ if(n+2>=i)return e;if(t=255&e[++n],128!=(192&t))return e;if(o=255&e[++n],128!=(1
 <h6 class="text-warning fw-bold mt-4">2. ĐỌC FILE VÀ XỬ LÝ NỘI DUNG</h6>
 <ol class="text-secondary mb-3">
 <li>Bấm nút chọn file ở khu vực thao tác chính hoặc kéo/thả file nếu trình duyệt hỗ trợ.</li>
-<li>Ứng dụng tự nhận dạng phần mở rộng như <code>.xlsx</code>, <code>.xlsm</code>, <code>.docx</code>, <code>.pdf</code>, <code>.xml</code>, <code>.zip</code>, <code>.html</code>, <code>.txt</code>.</li>
+<li>Ứng dụng tự nhận dạng phần mở rộng như <code>.xlsx</code>, <code>.xlsm</code>, <code>.xlam</code>, <code>.docx</code>, <code>.pdf</code>, <code>.xml</code>, <code>.zip</code>, <code>.html</code>, <code>.txt</code>.</li>
 <li>Nếu là Excel, ứng dụng mở tab <b>Bảng Excel</b>; nếu là PDF mở tab <b>Trình đọc PDF</b>; nếu là ZIP mở tab <b>ZIP Explorer</b>; nếu là XML mở tab <b>Cấu trúc XML</b>.</li>
 <li>Sau khi chỉnh sửa nội dung, dùng chức năng xuất/lưu để tạo file mới, thường có tiền tố <code>Fixed_</code> hoặc tên tương ứng.</li>
 </ol>
@@ -3649,29 +3649,179 @@ Tên file cần có: BaoCao_202605201030.html</pre>
     // ==========================================
     // KHỐI 6: THỬ THÁCH HEX - BẺ KHÓA VBA
     // ==========================================
+
+    // AIRGAP V33: Xóa chữ ký VBA cũ nếu có.
+    // Khi sửa vbaProject.bin, chữ ký vbaProjectSignature.bin không còn hợp lệ.
+    // Hàm này xóa file chữ ký và dọn tham chiếu trong [Content_Types].xml / _rels nếu có.
+    async function removeVbaProjectSignatureParts(zip, vbaPath) {
+        if (!zip || !vbaPath) return [];
+
+        const prefix = vbaPath.replace(/vbaProject\.bin$/i, "");
+        const signatureNames = [
+            "vbaProjectSignature.bin",
+            "vbaProjectSignatureAgile.bin",
+            "vbaProjectSignatureV3.bin"
+        ];
+
+        const removed = [];
+
+        for (const name of signatureNames) {
+            const sigPath = prefix + name;
+            if (zip.file(sigPath)) {
+                zip.remove(sigPath);
+                removed.push(sigPath);
+            }
+        }
+
+        const contentTypesPath = "[Content_Types].xml";
+        if (zip.file(contentTypesPath) && removed.length) {
+            let contentXml = await zip.file(contentTypesPath).async("string");
+            for (const sigPath of removed) {
+                const partName = "/" + sigPath.replace(/\\/g, "/");
+                const escaped = partName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                contentXml = contentXml.replace(
+                    new RegExp(`<Override[^>]+PartName=["']${escaped}["'][^>]*/>`, "gi"),
+                    ""
+                );
+            }
+            contentXml = contentXml.replace(
+                /<Override[^>]+ContentType=["'][^"']*vbaProjectSignature[^"']*["'][^>]*\/>/gi,
+                ""
+            );
+            zip.file(contentTypesPath, contentXml);
+        }
+
+        const relsPath = prefix + "_rels/vbaProject.bin.rels";
+        if (zip.file(relsPath) && removed.length) {
+            let relsXml = await zip.file(relsPath).async("string");
+            relsXml = relsXml.replace(
+                /<Relationship[^>]+(?:vbaProjectSignature|vbaProjectSignatureAgile|vbaProjectSignatureV3)[^>]*\/>/gi,
+                ""
+            );
+            zip.file(relsPath, relsXml);
+        }
+
+        return removed;
+    }
+
+    // AIRGAP V33: riêng XLAM tạo thêm bản REPAIR .XLSM để dễ mở bằng Excel, sửa VBA Project Properties rồi Save As lại XLAM.
+    // Lý do: .xlam là Add-in, thường ẩn workbook và có ContentType add-in; sau khi đổi DPB -> DPx có thể báo 40230.
+    async function exportXlamRepairWorkbookIfNeeded(zip, originalName, ext) {
+        if (ext !== "xlam") return null;
+
+        const workbookPath = "xl/workbook.xml";
+        if (!zip.file(workbookPath)) return null;
+
+        let workbookXml = await zip.file(workbookPath).async("string");
+
+        if (/<workbookPr\b[^>]*>/i.test(workbookXml)) {
+            workbookXml = workbookXml.replace(/(<workbookPr\b[^>]*?)\s+isAddin=(["'])1\2/ig, "$1 isAddin=$2 0 $2");
+            // Dọn khoảng trắng do thay chuỗi an toàn ở trên.
+            workbookXml = workbookXml.replace(/isAddin=(["'])\s*0\s*\1/ig, 'isAddin="0"');
+            if (!/\bisAddin=/i.test(workbookXml.match(/<workbookPr\b[^>]*>/i)?.[0] || "")) {
+                workbookXml = workbookXml.replace(/<workbookPr\b/i, '<workbookPr isAddin="0"');
+            }
+        } else {
+            workbookXml = workbookXml.replace(/<workbook\b([^>]*)>/i, '<workbook$1><workbookPr isAddin="0"/>');
+        }
+
+        zip.file(workbookPath, workbookXml);
+
+        const contentTypesPath = "[Content_Types].xml";
+        if (zip.file(contentTypesPath)) {
+            let ct = await zip.file(contentTypesPath).async("string");
+            ct = ct.replace(
+                /application\/vnd\.ms-excel\.addin\.macroEnabled\.main\+xml/gi,
+                "application/vnd.ms-excel.sheet.macroEnabled.main+xml"
+            );
+            zip.file(contentTypesPath, ct);
+        }
+
+        const repairName = "REPAIR_" + String(originalName || "addin.xlam").replace(/\.xlam$/i, ".xlsm");
+        const repairBlob = await zip.generateAsync({ type: "blob" });
+        saveFile(repairBlob, repairName);
+        return repairName;
+    }
+
     async function unlockVBAHex() {
         const fileInput = document.getElementById('file-router').files[0];
-        if (!fileInput || !['xlsm', 'xlsb', 'docm'].includes(fExtCur)) return alert("❌ Vui lòng chọn file Excel/Word có chứa Macro (.xlsm, .docm) để bẻ khóa!");
+        const ext = String(fExtCur || (fileInput?.name || '').split('.').pop() || '').toLowerCase();
+
+        // AIRGAP V33: hỗ trợ Add-in Excel .XLAM, xóa chữ ký VBA cũ nếu có, và tạo thêm bản REPAIR .XLSM cho XLAM.
+        const supportedVbaExts = ['xlsm', 'xlsb', 'xlam', 'xltm', 'docm', 'dotm'];
+        if (!fileInput || !supportedVbaExts.includes(ext)) {
+            return alert([
+                "❌ Vui lòng chọn file Office có chứa Macro dạng OOXML:",
+                ".xlsm, .xlsb, .xlam, .xltm, .docm hoặc .dotm.",
+                "",
+                "Lưu ý: .xla legacy không hỗ trợ bằng cơ chế này."
+            ].join("\\n"));
+        }
+
         showLoading(true, "ĐANG HACK HEX VBA...");
         try {
             const zip = await JSZip.loadAsync(fileInput);
-            let vbaPath = zip.file("xl/vbaProject.bin") ? "xl/vbaProject.bin" : (zip.file("word/vbaProject.bin") ? "word/vbaProject.bin" : null);
-            if (!vbaPath) throw new Error("Không tìm thấy lõi VBA trong file này.");
+
+            let vbaPath = null;
+            if (zip.file("xl/vbaProject.bin")) vbaPath = "xl/vbaProject.bin";          // xlsm/xlsb/xlam/xltm
+            else if (zip.file("word/vbaProject.bin")) vbaPath = "word/vbaProject.bin"; // docm/dotm
+            else if (zip.file("ppt/vbaProject.bin")) vbaPath = "ppt/vbaProject.bin";   // dự phòng pptm/ppam nếu sau này mở rộng
+
+            if (!vbaPath) throw new Error("Không tìm thấy lõi VBA vbaProject.bin trong file này.");
+
+            const removedSignatures = await removeVbaProjectSignatureParts(zip, vbaPath);
+
             const vbaData = await zip.file(vbaPath).async("uint8array");
             let isHacked = false;
+
+            // Tìm ASCII DPB= rồi đổi B thành x => DPx=
             for (let i = 0; i < vbaData.length - 3; i++) {
                 if (vbaData[i] === 68 && vbaData[i+1] === 80 && vbaData[i+2] === 66 && vbaData[i+3] === 61) {
-                    vbaData[i+2] = 120; 
-                    isHacked = true; break;
+                    vbaData[i+2] = 120;
+                    isHacked = true;
+                    break;
                 }
             }
-            if (!isHacked) throw new Error("File này chưa bị khóa mật khẩu hoặc không chứa chuỗi DPB= !");
+
+            if (!isHacked) throw new Error("File này chưa khóa mật khẩu VBA hoặc không chứa chuỗi DPB=.");
+
             zip.file(vbaPath, vbaData);
-            const newBlob = await zip.generateAsync({type:"blob"});
+
+            // Xuất file đúng định dạng gốc trước.
+            const newBlob = await zip.generateAsync({ type: "blob" });
             saveFile(newBlob, "UNLOCKED_" + fileInput.name);
-            alert("✅ ĐÃ BẺ KHÓA THÀNH CÔNG!\n\n1. Hãy mở file 'UNLOCKED_...' vừa tải về.\n2. Nếu Office báo lỗi, cứ bấm Yes/OK để bỏ qua.\n3. Nhấn Alt+F11, vào VBA Properties, xóa Pass cũ và lưu lại là xong.");
-        } catch (e) { alert("Lỗi bẻ khóa: " + e.message); }
-        showLoading(false);
+
+            // Riêng XLAM xuất thêm bản XLSM dễ mở/sửa để xử lý lỗi 40230 và đặt lại mật khẩu.
+            const repairName = await exportXlamRepairWorkbookIfNeeded(zip, fileInput.name, ext);
+
+            const msg = [
+                "✅ ĐÃ XỬ LÝ VBA THÀNH CÔNG!",
+                "",
+                "File hỗ trợ: " + ext.toUpperCase(),
+                "Đường dẫn VBA: " + vbaPath,
+                "Chữ ký VBA đã xóa: " + (removedSignatures.length ? removedSignatures.join(", ") : "Không có"),
+                "",
+                "File đã xuất: UNLOCKED_" + fileInput.name
+            ];
+
+            if (repairName) {
+                msg.push("File sửa lỗi XLAM đã xuất thêm: " + repairName);
+                msg.push("");
+                msg.push("Nếu UNLOCKED_.xlam báo Unexpected error (40230), hãy mở file REPAIR_.xlsm trước.");
+                msg.push("Trong file REPAIR_.xlsm: bấm OK khi có lỗi 40230, Alt+F11, vào Tools > VBAProject Properties, bỏ khóa/đặt lại mật khẩu, lưu lại, rồi Save As thành Excel Add-in (.xlam).");
+            } else {
+                msg.push("");
+                msg.push("1. Mở file 'UNLOCKED_...' vừa tải về.");
+                msg.push("2. Nếu Office báo lỗi, bấm Yes/OK để Office tự sửa.");
+                msg.push("3. Nhấn Alt+F11, vào Tools > VBAProject Properties và đặt lại mật khẩu mới.");
+            }
+
+            alert(msg.join("\\n"));
+        } catch (err) {
+            alert("❌ Lỗi: " + (err.message || err));
+        } finally {
+            showLoading(false);
+        }
     }
 
     // ==========================================
