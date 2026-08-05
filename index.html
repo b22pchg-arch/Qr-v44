@@ -178,6 +178,12 @@
       return;
     }
 
+    // V46.3: lối getUserMedia(video:true) cuối cùng vẫn phải đi vào đúng LT Decoder.
+    if (state.activeMode === 'decimen-fountain' && typeof window.airgapDecimenRxDeliver === 'function') {
+      window.airgapDecimenRxDeliver(d);
+      return;
+    }
+
     if (typeof window.interceptAirGapData === 'function' && window.interceptAirGapData(d)) return;
     if (typeof window.handleDlQrDecodedText === 'function' && window.handleDlQrDecodedText('CAM dự phòng', d)) return;
     if (typeof window.appendScanResult === 'function') window.appendScanResult('CAM dự phòng', d, true);
@@ -303,8 +309,8 @@
 <meta charset="utf-8"/>
 <!-- AIRGAP STABLE V13: based on V10, PDF.js inline no Base64, core functions preserved -->
 <!-- AIRGAP V46.1 FAST FOUNTAIN: on-demand LT + fixed mask + ImageData canvas pipeline -->
-<!-- AIRGAP V46.2: Decimen-style fountain sender + continuous camera receiver, FNV + SHA-256 verification -->
-<title>Hệ Thống Dữ Liệu Tổng Hợp V46.2 DECIMEN RX - PC Tuyên Quang</title>
+<!-- AIRGAP V46.3: Decimen RX camera fallback fix; no exact facingMode; enumerate real deviceId; adaptive QR box -->
+<title>Hệ Thống Dữ Liệu Tổng Hợp V46.3 DECIMEN RX CAMERA FIX - PC Tuyên Quang</title>
 <link href="manifest.json" rel="manifest"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
@@ -7201,16 +7207,17 @@ async function toggleScanCameraAutofocus() {
 function getScanCameraVideoBaseConstraint(mode) {
     const selectedId = getSelectedScanCameraDeviceId();
     if (selectedId) return { deviceId: { exact: selectedId } };
-    // Dùng exact để tránh lỗi html5-qrcode: facingMode không chấp nhận { ideal: ... } ở một số nhánh.
-    return { facingMode: { exact: mode || currentFacingMode || 'environment' } };
+    // V46.3: KHÔNG dùng exact cho facingMode. Máy tính/USB webcam thường không khai báo
+    // environment/user, nên exact sẽ gây OverconstrainedError dù camera vẫn hoạt động tốt.
+    return { facingMode: mode || currentFacingMode || 'environment' };
 }
 
 function getSimpleHtml5QrCameraSelector(mode) {
     const selectedId = getSelectedScanCameraDeviceId();
     if (selectedId) return selectedId;
-    // Tham số cameraIdOrConfig của Html5Qrcode.start chỉ cần chọn camera/facingMode.
-    // Không dùng { ideal: ... } tại đây vì có thể gây lỗi trên mobile.
-    return { facingMode: { exact: mode || currentFacingMode || 'environment' } };
+    // Chuỗi facingMode là "ideal" theo MediaTrackConstraints, khác với {exact: ...}.
+    // Bộ thu Fountain riêng còn có cơ chế liệt kê deviceId thật nếu nhánh này không mở được.
+    return { facingMode: mode || currentFacingMode || 'environment' };
 }
 
 function buildScanCameraConstraint(label, width, height, fps = 30, mode) {
@@ -7250,10 +7257,27 @@ function buildQuickScanCameraCandidates(mode) {
 }
 
 async function safeStopAndClearScanCamera() {
+    // V46.3: giải phóng cả luồng mở dở. Khi getUserMedia/start() thất bại giữa chừng,
+    // isCamRunning có thể vẫn false nhưng thẻ video đã giữ camera, làm lần thử sau lỗi.
     try {
-        if (html5QrCodeCam && isCamRunning && typeof html5QrCodeCam.stop === 'function') {
-            await html5QrCodeCam.stop();
+        if (html5QrCodeCam && typeof html5QrCodeCam.stop === 'function') {
+            let shouldStop = !!isCamRunning;
+            try {
+                const st = typeof html5QrCodeCam.getState === 'function' ? html5QrCodeCam.getState() : null;
+                // Html5QrcodeScannerState: 2=SCANNING, 3=PAUSED (tùy phiên bản thư viện).
+                if (st === 2 || st === 3) shouldStop = true;
+            } catch(e) {}
+            if (shouldStop) await html5QrCodeCam.stop();
         }
+    } catch(e) {}
+    try {
+        document.querySelectorAll('#camera-reader video').forEach(video => {
+            try {
+                const stream = video.srcObject;
+                if (stream && typeof stream.getTracks === 'function') stream.getTracks().forEach(t => t.stop());
+                video.srcObject = null;
+            } catch(e) {}
+        });
     } catch(e) {}
     try {
         if (html5QrCodeCam && typeof html5QrCodeCam.clear === 'function') html5QrCodeCam.clear();
@@ -7436,7 +7460,7 @@ function stopCam() {
 }
 
 // =========================================================================
-// AIRGAP V46.2 — DECIMEN-STYLE CONTINUOUS RECEIVER
+// AIRGAP V46.3 — DECIMEN-STYLE CONTINUOUS RECEIVER + CAMERA FALLBACK FIX
 // Camera frames are captured with requestVideoFrameCallback. Native
 // BarcodeDetector slots decode concurrently and disposable frames are dropped
 // when every slot is busy. Fountain LT makes dropped frames harmless.
@@ -7650,24 +7674,135 @@ async function airgapDecimenRxStartNative() {
     airgapDecimenRxSchedule(gen);
 }
 
-async function airgapDecimenRxStartHtml5Fallback() {
-    airgapDecimenRx.mode = 'Html5Qrcode fallback';
-    window.qrScanMode = 'normal';
-    const fps = document.getElementById('cam-fps');
-    if (fps && Number(fps.value) < 30) fps.value = '30';
-    const w = document.getElementById('cam-width');
-    const h = document.getElementById('cam-height');
-    if (w && Number(w.value) < 420) w.value = '420';
-    if (h && Number(h.value) < 420) h.value = '420';
-    html5QrCodeCam = new Html5Qrcode('camera-reader');
-    const scanConfig = {
-        fps: 30,
-        qrbox: { width: 420, height: 420 },
-        rememberLastUsedCamera: true,
-        disableFlip: true
+function airgapDecimenRxFriendlyCameraError(error) {
+    const name = String(error?.name || '');
+    const message = String(error?.message || error || 'Không rõ lỗi');
+    const constraint = error?.constraint ? ` · ràng buộc: ${error.constraint}` : '';
+    if (name === 'OverconstrainedError' || /OverconstrainedError/i.test(message)) {
+        return `Camera không đáp ứng cấu hình bị ép${constraint}. V46.3 đã tự bỏ cấu hình đó và thử camera thật/mặc định.`;
+    }
+    if (name === 'NotAllowedError') return 'Trình duyệt chưa được cấp quyền camera hoặc quyền đã bị chặn.';
+    if (name === 'NotReadableError' || /Could not start video source/i.test(message)) return 'Camera đang bị ứng dụng hoặc tab khác sử dụng.';
+    if (name === 'NotFoundError') return 'Không tìm thấy camera khả dụng.';
+    return message;
+}
+
+async function airgapDecimenRxBuildHtml5Selectors(mode) {
+    const found = [];
+    const seen = new Set();
+    const add = (selector, label) => {
+        const key = typeof selector === 'string' ? `id:${selector}` : `cfg:${JSON.stringify(selector)}`;
+        if (!selector || seen.has(key)) return;
+        seen.add(key);
+        found.push({ selector, label });
     };
-    await startHtml5QrWithSavedOrQuickCamera('environment', scanConfig);
-    airgapDecimenRx.running = true;
+
+    const selected = typeof getSelectedScanCameraDeviceId === 'function' ? getSelectedScanCameraDeviceId() : '';
+    if (selected) add(selected, 'Camera đang chọn');
+
+    let cameras = [];
+    try {
+        if (typeof Html5Qrcode?.getCameras === 'function') cameras = await Html5Qrcode.getCameras();
+    } catch(e) {
+        console.warn('Không lấy được camera qua Html5Qrcode.getCameras():', e);
+    }
+    if (!cameras.length) {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            cameras = devices.filter(d => d.kind === 'videoinput').map(d => ({ id:d.deviceId, label:d.label || '' }));
+        } catch(e) {}
+    }
+
+    // Ưu tiên camera sau/rear/environment, nhưng vẫn thử toàn bộ deviceId thật.
+    cameras = cameras.slice().sort((a, b) => {
+        const score = x => /back|rear|environment|sau/i.test(String(x?.label || '')) ? 0 : 1;
+        return score(a) - score(b);
+    });
+    cameras.forEach((cam, index) => {
+        const id = cam?.id || cam?.deviceId;
+        if (id) add(id, cam.label || `Camera ${index + 1}`);
+    });
+
+    // Chỉ là các phương án cuối; không dùng exact nên không khóa cứng webcam desktop.
+    add({ facingMode: mode || 'environment' }, 'Camera sau (không ép exact)');
+    add({ facingMode: 'user' }, 'Camera trước (không ép exact)');
+    return found;
+}
+
+async function airgapDecimenRxStartHtml5Fallback() {
+    airgapDecimenRx.mode = 'Html5Qrcode adaptive';
+    window.qrScanMode = 'normal';
+
+    // Không ép ô Rộng/Cao thành độ phân giải camera. Đây chỉ là kích thước vùng quét.
+    const fpsInput = Number(document.getElementById('cam-fps')?.value || 30);
+    const decodeFps = Math.max(12, Math.min(30, Number.isFinite(fpsInput) ? fpsInput : 30));
+    const adaptiveQrbox = (viewfinderWidth, viewfinderHeight) => {
+        const minEdge = Math.max(120, Math.min(viewfinderWidth || 640, viewfinderHeight || 480));
+        const side = Math.max(100, Math.floor(minEdge * 0.82));
+        return { width: side, height: side };
+    };
+    const scanConfig = {
+        fps: decodeFps,
+        qrbox: adaptiveQrbox,
+        rememberLastUsedCamera: false,
+        disableFlip: false
+    };
+
+    // Cấu hình đã lưu từ phiên cũ có thể chứa facingMode exact/độ phân giải không hợp lệ.
+    // Không dùng profile đó cho bộ thu Fountain; nếu gặp Overconstrained thì xóa luôn.
+    const selectors = await airgapDecimenRxBuildHtml5Selectors('environment');
+    let lastError = null;
+
+    for (let i = 0; i < selectors.length; i++) {
+        const item = selectors[i];
+        try {
+            await safeStopAndClearScanCamera();
+            const reader = document.getElementById('camera-reader');
+            if (reader) reader.innerHTML = '';
+            html5QrCodeCam = new Html5Qrcode('camera-reader');
+            setScanCameraQualityStatus(`Đang mở bộ thu Fountain: ${item.label} (${i + 1}/${selectors.length})...`, 'info');
+            await html5QrCodeCam.start(
+                item.selector,
+                scanConfig,
+                getAirgapCameraSuccessHandler(),
+                getAirgapCameraFailureHandler()
+            );
+            isCamRunning = true;
+            airgapDecimenRx.running = true;
+            airgapDecimenRx.mode = `Html5Qrcode · ${item.label}`;
+            setTimeout(() => describeRunningCameraQuality('Fountain RX'), 350);
+            return item;
+        } catch (error) {
+            lastError = error;
+            console.warn(`Không mở được ${item.label}:`, error);
+            if (String(error?.name || '').includes('Overconstrained') || /OverconstrainedError/i.test(String(error?.message || error))) {
+                try { clearSavedScanCameraProfile('environment'); } catch(e) {}
+            }
+            await safeStopAndClearScanCamera();
+        }
+    }
+
+    // Lối thoát cuối cùng: getUserMedia(video:true) trực tiếp, hoàn toàn không ép
+    // facingMode, deviceId, độ phân giải hay FPS. Bộ quét dự phòng vẫn chuyển DF1
+    // vào airgapDecimenRxDeliver() nhờ mode decimen-fountain.
+    if (typeof window.startScanFallbackCam === 'function') {
+        try {
+            airgapDecimenRx.mode = 'getUserMedia video:true fallback';
+            await window.startScanFallbackCam('decimen-fountain');
+            await new Promise(resolve => setTimeout(resolve, 120));
+            const fallbackVideo = document.getElementById('scan-fallback-video');
+            const fallbackStream = fallbackVideo?.srcObject;
+            const liveTrack = fallbackStream?.getVideoTracks?.().find(t => t.readyState === 'live');
+            if (!liveTrack) throw new Error('Camera mặc định video:true cũng không mở được.');
+            airgapDecimenRx.running = true;
+            return { label: 'Camera mặc định tuyệt đối' };
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    const detail = airgapDecimenRxFriendlyCameraError(lastError);
+    throw new Error(detail);
 }
 
 async function startAirgapDecimenReceiver() {
@@ -7740,8 +7875,12 @@ async function startAirgapDecimenReceiver() {
         try { if (typeof safeStopAndClearScanCamera === 'function') await safeStopAndClearScanCamera(); } catch(e) {}
         if (startBtn) startBtn.disabled = false;
         if (stopBtn) stopBtn.disabled = true;
-        airgapDecimenRxSetStatus('Không mở được bộ thu: ' + String(error?.message || error), 'danger');
-        alert('Không mở được bộ thu Fountain.\n\n' + String(error?.message || error));
+        const friendly = typeof airgapDecimenRxFriendlyCameraError === 'function'
+            ? airgapDecimenRxFriendlyCameraError(error)
+            : String(error?.message || error);
+        airgapDecimenRxSetStatus('Không mở được bộ thu: ' + friendly, 'danger');
+        alert('Không mở được bộ thu Fountain.\n\n' + friendly +
+              '\n\nHãy đóng các tab/ứng dụng đang dùng camera, bấm DÒ CAM để chọn đúng webcam, rồi thử lại.');
     }
 }
 
@@ -7759,8 +7898,11 @@ async function stopAirgapDecimenReceiver(options = {}) {
     airgapDecimenRx.stream = null;
     airgapDecimenRx.video = null;
     try {
-        if (airgapDecimenRx.mode === 'Html5Qrcode fallback' && typeof safeStopAndClearScanCamera === 'function') {
+        if (String(airgapDecimenRx.mode || '').startsWith('Html5Qrcode') && typeof safeStopAndClearScanCamera === 'function') {
             await safeStopAndClearScanCamera();
+        }
+        if (String(airgapDecimenRx.mode || '').includes('getUserMedia video:true') && typeof window.stopScanFallbackCam === 'function') {
+            await window.stopScanFallbackCam();
         }
     } catch(e) {}
     airgapDecimenRx.mode = 'idle';
